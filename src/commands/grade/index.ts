@@ -41,6 +41,11 @@ interface HistoryEntry {
     fileHealth: Grade;
     staleness: Grade;
     overall: Grade;
+    testsDetail?: string | undefined;
+    docsDetail?: string | undefined;
+    architectureDetail?: string | undefined;
+    fileHealthDetail?: string | undefined;
+    stalenessDetail?: string | undefined;
   }>;
 }
 
@@ -585,12 +590,23 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
       const currentIdx = GRADE_ORDER.indexOf(currentGrade);
       const prevIdx = GRADE_ORDER.indexOf(prevGrade);
 
+      // Get detail strings for reason context
+      const currentDetail = dim === 'overall' ? undefined
+        : dim === 'staleness' ? score.staleness.detail
+        : score[dim].detail;
+      const prevDetail = dim === 'overall' ? undefined
+        : prev[`${dim}Detail` as keyof typeof prev] as string | undefined;
+
+      // Generate a concise reason from the detail string
+      const reason = currentDetail ? ` — ${currentDetail}` : '';
+
       if (currentIdx < prevIdx) {
-        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — improved`);
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — improved${reason}`);
       } else if (currentIdx > prevIdx) {
-        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — degraded`);
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — degraded${reason}`);
       } else {
-        trends.push(`${score.domain}/${dim}: ${currentGrade} (stable)`);
+        const stableReason = currentDetail ? ` — ${currentDetail}` : '';
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (stable)${stableReason}`);
       }
     }
 
@@ -660,6 +676,11 @@ function appendTrend(projectRoot: string, scores: DomainScore[]): void {
       fileHealth: s.fileHealth.grade,
       staleness: s.staleness.grade,
       overall: s.overall,
+      testsDetail: s.tests.detail,
+      docsDetail: s.docs.detail,
+      architectureDetail: s.architecture.detail,
+      fileHealthDetail: s.fileHealth.detail,
+      stalenessDetail: s.staleness.detail,
     })),
   });
   appendFileSync(historyPath, entry + '\n');

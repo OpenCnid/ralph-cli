@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain, generateQualityMd } from './index.js';
+import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain, generateQualityMd, gradeCommand } from './index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
 
@@ -141,6 +141,27 @@ describe('scoreProject', () => {
     const gradeOrder = ['A', 'B', 'C', 'D', 'F'];
     const worstIdx = Math.max(...allGrades.map(g => gradeOrder.indexOf(g)));
     expect(score.overall).toBe(gradeOrder[worstIdx]);
+  });
+
+  it('stores detail strings in history entries', () => {
+    mkdirSync(join(tempDir, '.ralph'), { recursive: true });
+    writeFileSync(join(tempDir, '.ralph', 'config.yml'), `project:\n  name: test\n  language: typescript\n`);
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'main.ts'), 'export const x = 1;\n');
+    const origCwd = process.cwd();
+    process.chdir(tempDir);
+    try { gradeCommand(undefined, {}); } catch { /* may warn */ }
+    process.chdir(origCwd);
+    const historyPath = join(tempDir, '.ralph', 'grade-history.jsonl');
+    expect(existsSync(historyPath)).toBe(true);
+    const content = readFileSync(historyPath, 'utf-8').trim();
+    const entry = JSON.parse(content.split('\n').pop()!);
+    // Should have detail fields stored alongside grades
+    expect(entry.scores[0]).toHaveProperty('testsDetail');
+    expect(entry.scores[0]).toHaveProperty('docsDetail');
+    expect(entry.scores[0]).toHaveProperty('architectureDetail');
+    expect(entry.scores[0]).toHaveProperty('fileHealthDetail');
+    expect(entry.scores[0]).toHaveProperty('stalenessDetail');
   });
 });
 
@@ -588,6 +609,34 @@ describe('generateQualityMd', () => {
     expect(md).toContain('auth/tests: A (stable)');
     expect(md).toContain('auth/docs: B (stable)');
     expect(md).toContain('auth/overall: A (stable)');
+  });
+
+  it('includes detail reasons in trend labels', () => {
+    const history = [{
+      timestamp: '2026-03-01T00:00:00Z',
+      scores: [{
+        domain: 'billing',
+        tests: 'B' as const, docs: 'D' as const, architecture: 'A' as const,
+        fileHealth: 'A' as const, staleness: 'A' as const, overall: 'D' as const,
+        docsDetail: '1/5 domain documentation files present',
+      }],
+    }];
+    const scores = [{
+      domain: 'billing',
+      tests: { grade: 'A' as const, detail: '95% coverage' },
+      docs: { grade: 'F' as const, detail: '0/5 domain documentation files present' },
+      architecture: { grade: 'A' as const, detail: 'No architectural violations' },
+      fileHealth: { grade: 'A' as const, detail: 'Avg 100 lines, no oversized files' },
+      staleness: { grade: 'A' as const, detail: 'Median 2 days' },
+      overall: 'F' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Degraded docs should include detail reason
+    expect(md).toMatch(/billing\/docs: F.*degraded.*0\/5 domain documentation/);
+    // Stable architecture should include detail reason
+    expect(md).toContain('No architectural violations');
+    // Improved tests should include detail reason
+    expect(md).toMatch(/billing\/tests: A.*improved.*95% coverage/);
   });
 
   it('detects per-dimension sustained degradation', () => {

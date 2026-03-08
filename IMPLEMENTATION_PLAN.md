@@ -219,6 +219,13 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - **Grade trend temporal context**: Trend labels now include temporal labels relative to the previous snapshot (e.g., "was B yesterday", "was D last week", "was C 3 days ago"). Uses `formatTemporalLabel()` helper with labels: today, yesterday, N days ago, last week, N weeks ago, last month, N months ago. Why: the spec shows "was D last week" — temporal context tells developers when degradation happened.
 - **5 new tests**: Item fingerprints stored in history, persistent items flagged across runs, persistent count in JSON summary, persistent tag in text output, temporal context in grade trend labels.
 
+### Grade Detailed Trend Reasons (0.0.29)
+
+- **Trend reasons from detail strings**: Trend labels now include contextual reasons explaining the grade, not just "improved/degraded/stable". For example: `billing/docs: F (was D last week) — degraded — 0/5 domain documentation files present` or `auth/architecture: A (stable) — No architectural violations`. The detail string from each dimension's scoring function is appended to the trend label. Why: the spec shows `billing/docs: F (was D last week) — design doc deleted, not replaced` — actionable reasons help agents understand what changed and what to fix.
+- **Detail strings stored in history**: Grade history entries (`.ralph/grade-history.jsonl`) now persist `testsDetail`, `docsDetail`, `architectureDetail`, `fileHealthDetail`, and `stalenessDetail` alongside grade letters. This enables future comparisons between current and previous detail strings. Backward compatible — old history entries without detail fields still work.
+- **2 new tests**: Detail reasons in trend labels, detail strings stored in history entries.
+- **293 total tests** across 13 files.
+
 ### GC Dead Code Git Context, Config Schema Alignment (0.0.28)
 
 - **GC dead code git history context**: Dead code (orphaned export) items now include git context showing the last commit that referenced the file (e.g., "last referenced in commit abc123, 2026-03-01"). Uses `git log -S` to find the most recent commit that added or removed a reference to the file's base name. Why: the spec example shows "Last imported: removed in commit abc123 (DATE)" — temporal context helps agents prioritize which orphaned files to address.
@@ -233,9 +240,6 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 
 #### Doctor Command
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
-
-#### Grade Command
-- Temporal labels now implemented (e.g., "was D last week"), but detailed reasons (e.g., "design doc deleted, not replaced") remain unimplemented
 
 #### Lint Command
 - Custom rule scripts not supported (YAML only)
