@@ -178,6 +178,130 @@ export async function refUpdateCommand(name?: string): Promise<void> {
   }
 }
 
+interface DiscoveredRef {
+  name: string;
+  url: string;
+}
+
+function extractDependencies(projectRoot: string): string[] {
+  const deps: string[] = [];
+
+  // package.json (Node.js)
+  const pkgPath = join(projectRoot, 'package.json');
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
+      const allDeps = {
+        ...(pkg['dependencies'] as Record<string, string> | undefined),
+        ...(pkg['devDependencies'] as Record<string, string> | undefined),
+      };
+      deps.push(...Object.keys(allDeps));
+    } catch { /* ignore */ }
+  }
+
+  // pyproject.toml (Python) — basic extraction
+  const pyPath = join(projectRoot, 'pyproject.toml');
+  if (existsSync(pyPath)) {
+    try {
+      const content = readFileSync(pyPath, 'utf-8');
+      const depMatches = content.matchAll(/^\s*"([a-zA-Z0-9_-]+)/gm);
+      for (const m of depMatches) {
+        if (m[1]) deps.push(m[1]);
+      }
+    } catch { /* ignore */ }
+  }
+
+  // go.mod (Go)
+  const goPath = join(projectRoot, 'go.mod');
+  if (existsSync(goPath)) {
+    try {
+      const content = readFileSync(goPath, 'utf-8');
+      const reqMatches = content.matchAll(/^\s+([\w./:-]+)\s+v/gm);
+      for (const m of reqMatches) {
+        if (m[1]) deps.push(m[1]);
+      }
+    } catch { /* ignore */ }
+  }
+
+  return deps;
+}
+
+function depToUrls(dep: string): string[] {
+  const urls: string[] = [];
+
+  // npm scoped packages: @scope/name -> name
+  const cleanName = dep.startsWith('@') ? dep.split('/')[1] ?? dep : dep;
+
+  // Common llms.txt URL patterns
+  urls.push(`https://docs.${cleanName}.dev/llms.txt`);
+  urls.push(`https://${cleanName}.dev/llms.txt`);
+  urls.push(`https://docs.${cleanName}.com/llms.txt`);
+  urls.push(`https://${cleanName}.com/llms.txt`);
+
+  // Go modules: use the module path directly
+  if (dep.includes('/')) {
+    const host = dep.split('/').slice(0, 2).join('/');
+    urls.push(`https://${host}/llms.txt`);
+  }
+
+  return urls;
+}
+
+export async function refDiscoverCommand(): Promise<void> {
+  const projectRoot = findProjectRoot(process.cwd());
+  const deps = extractDependencies(projectRoot);
+
+  if (deps.length === 0) {
+    info('No dependencies found. Ensure package.json, pyproject.toml, or go.mod exists.');
+    return;
+  }
+
+  info(`Scanning ${deps.length} dependencies for llms.txt files...`);
+
+  const discovered: DiscoveredRef[] = [];
+  const checked = new Set<string>();
+
+  for (const dep of deps) {
+    const urls = depToUrls(dep);
+    for (const url of urls) {
+      if (checked.has(url)) continue;
+      checked.add(url);
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(url, {
+          method: 'HEAD',
+          signal: controller.signal,
+          redirect: 'follow',
+        });
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const cleanName = dep.startsWith('@') ? dep.split('/')[1] ?? dep : dep;
+          discovered.push({ name: sanitizeName(cleanName), url });
+          break; // Found one URL for this dep, skip others
+        }
+      } catch {
+        // Network error or timeout — skip
+      }
+    }
+  }
+
+  if (discovered.length === 0) {
+    info('No llms.txt files found for project dependencies.');
+    return;
+  }
+
+  success(`Found ${discovered.length} available reference(s):`);
+  console.log('');
+  for (const ref of discovered) {
+    console.log(`  ${ref.name}: ${ref.url}`);
+  }
+  console.log('');
+  info('Add with: ralph ref add <url> --name <name>');
+}
+
 export function refRemoveCommand(name: string): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);

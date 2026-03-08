@@ -66,4 +66,15 @@ describe('hooks commands', () => {
     expect(content).toContain('command -v ralph');
     expect(content).toContain('exit 0'); // graceful exit if not found
   });
+
+  it('pre-commit hook only lints staged source files', () => {
+    hooksInstallCommand({});
+
+    const content = readFileSync(join(tempDir, '.git', 'hooks', 'pre-commit'), 'utf-8');
+    expect(content).toContain('git diff --cached --name-only');
+    expect(content).toContain('--diff-filter=ACM');
+    expect(content).toContain('\\.(ts|tsx|js|jsx|py|go|rs)');
+    // Should skip lint if no staged source files
+    expect(content).toContain('if [ -z "$STAGED" ]');
+  });
 });

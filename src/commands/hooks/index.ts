@@ -7,11 +7,17 @@ import { success, warn, error, info } from '../../utils/index.js';
 const HOOK_SCRIPTS: Record<string, string> = {
   'pre-commit': `#!/bin/sh
 # ralph-cli pre-commit hook
-# Lint staged files, block on violations
+# Lint staged files only, block on violations
 
 if ! command -v ralph >/dev/null 2>&1; then
   echo "ralph-cli not found. Install with: npm install -g ralph-cli"
   echo "Skipping pre-commit checks."
+  exit 0
+fi
+
+# Skip if no staged source files
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.(ts|tsx|js|jsx|py|go|rs)$' || true)
+if [ -z "$STAGED" ]; then
   exit 0
 fi
 

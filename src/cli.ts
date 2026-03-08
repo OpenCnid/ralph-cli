@@ -10,7 +10,7 @@ import { gradeCommand } from './commands/grade/index.js';
 import { doctorCommand } from './commands/doctor/index.js';
 import { planCreateCommand, planCompleteCommand, planAbandonCommand, planLogCommand, planListCommand, planStatusCommand } from './commands/plan/index.js';
 import { promoteDocCommand, promoteLintCommand, promotePatternCommand, promoteListCommand } from './commands/promote/index.js';
-import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand } from './commands/ref/index.js';
+import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand, refDiscoverCommand } from './commands/ref/index.js';
 import { gcCommand } from './commands/gc/index.js';
 import { hooksInstallCommand, hooksUninstallCommand } from './commands/hooks/index.js';
 import { ciGenerateCommand } from './commands/ci/index.js';
@@ -191,7 +191,7 @@ refCmd
   .command('discover')
   .description('Discover available references from dependencies')
   .action(() => {
-    console.log('ralph ref discover — not yet implemented');
+    refDiscoverCommand();
   });
 
 refCmd

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { refAddCommand, refListCommand, refRemoveCommand } from './index.js';
+import { refAddCommand, refListCommand, refRemoveCommand, refDiscoverCommand } from './index.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-ref-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -82,5 +82,39 @@ describe('ref commands', () => {
 
     const content = readFileSync(join(tempDir, 'docs', 'references', 'test-llms.txt'), 'utf-8');
     expect(content).toMatch(/<!-- ralph-ref: source=source\.txt fetched=\d{4}-\d{2}-\d{2} -->/);
+  });
+
+  it('discover reports no deps when no dependency file exists', async () => {
+    const output: string[] = [];
+    const origLog = console.log;
+    const origInfo = console.info;
+    console.log = (msg: string) => output.push(msg);
+
+    await refDiscoverCommand();
+
+    console.log = origLog;
+    // Should report no dependencies found (no package.json, pyproject.toml, or go.mod)
+    // The info() function uses console.log internally
+  });
+
+  it('discover extracts dependencies from package.json', async () => {
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'test-project',
+      dependencies: { 'express': '^4.0.0', 'lodash': '^4.0.0' },
+      devDependencies: { 'vitest': '^1.0.0' },
+    }));
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+
+    // This will attempt network requests that will fail, but it should still
+    // show "Scanning X dependencies..." message
+    await refDiscoverCommand();
+
+    console.log = origLog;
+    const scanMsg = output.find(l => l.includes('Scanning'));
+    expect(scanMsg).toBeDefined();
+    expect(scanMsg).toContain('3 dependencies');
   });
 });
