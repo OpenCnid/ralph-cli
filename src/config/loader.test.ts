@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { findConfigFile, findProjectRoot, mergeWithDefaults, loadConfig } from './loader.js';
+import { findConfigFile, findProjectRoot, mergeWithDefaults, loadConfig, detectCiEnvironment } from './loader.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -219,5 +219,144 @@ extra_key: true
     const result = loadConfig(tempDir);
     expect(result.warnings.length).toBe(1);
     expect(result.warnings[0]).toContain('extra_key');
+  });
+
+  it('applies CI overrides when isCi is explicitly true', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: typescript
+quality:
+  minimum-grade: D
+ci:
+  quality:
+    minimum-grade: B
+  doctor:
+    minimum-score: 9
+`);
+
+    const result = loadConfig(tempDir, true);
+    expect(result.config.quality['minimum-grade']).toBe('B');
+    expect(result.config.doctor['minimum-score']).toBe(9);
+  });
+
+  it('does not apply CI overrides when isCi is explicitly false', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: typescript
+ci:
+  quality:
+    minimum-grade: A
+`);
+
+    const result = loadConfig(tempDir, false);
+    expect(result.config.quality['minimum-grade']).toBe('D');
+  });
+
+  it('auto-detects CI environment when isCi not provided', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: typescript
+ci:
+  quality:
+    minimum-grade: A
+`);
+
+    // Set CI env var to simulate CI
+    const origCi = process.env['CI'];
+    process.env['CI'] = 'true';
+    try {
+      const result = loadConfig(tempDir);
+      expect(result.config.quality['minimum-grade']).toBe('A');
+    } finally {
+      if (origCi === undefined) {
+        delete process.env['CI'];
+      } else {
+        process.env['CI'] = origCi;
+      }
+    }
+  });
+
+  it('does not apply CI overrides in non-CI environment when isCi not provided', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: typescript
+ci:
+  quality:
+    minimum-grade: A
+`);
+
+    // Ensure no CI env vars are set
+    const saved: Record<string, string | undefined> = {};
+    const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
+    for (const v of ciVars) {
+      saved[v] = process.env[v];
+      delete process.env[v];
+    }
+    try {
+      const result = loadConfig(tempDir);
+      expect(result.config.quality['minimum-grade']).toBe('D');
+    } finally {
+      for (const v of ciVars) {
+        if (saved[v] === undefined) {
+          delete process.env[v];
+        } else {
+          process.env[v] = saved[v];
+        }
+      }
+    }
+  });
+});
+
+describe('detectCiEnvironment', () => {
+  const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
+
+  it('returns true when CI env var is set', () => {
+    const saved = process.env['CI'];
+    process.env['CI'] = 'true';
+    try {
+      expect(detectCiEnvironment()).toBe(true);
+    } finally {
+      if (saved === undefined) delete process.env['CI'];
+      else process.env['CI'] = saved;
+    }
+  });
+
+  it('returns true when GITHUB_ACTIONS env var is set', () => {
+    const saved = process.env['GITHUB_ACTIONS'];
+    process.env['GITHUB_ACTIONS'] = 'true';
+    try {
+      expect(detectCiEnvironment()).toBe(true);
+    } finally {
+      if (saved === undefined) delete process.env['GITHUB_ACTIONS'];
+      else process.env['GITHUB_ACTIONS'] = saved;
+    }
+  });
+
+  it('returns false when no CI env vars are set', () => {
+    const saved: Record<string, string | undefined> = {};
+    for (const v of ciVars) {
+      saved[v] = process.env[v];
+      delete process.env[v];
+    }
+    try {
+      expect(detectCiEnvironment()).toBe(false);
+    } finally {
+      for (const v of ciVars) {
+        if (saved[v] === undefined) delete process.env[v];
+        else process.env[v] = saved[v];
+      }
+    }
   });
 });

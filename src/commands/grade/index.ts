@@ -668,7 +668,7 @@ function displayTrend(history: HistoryEntry[]): void {
 
 export function gradeCommand(domain: string | undefined, options: GradeOptions): void {
   const projectRoot = findProjectRoot(process.cwd());
-  const { config, warnings } = loadConfig(projectRoot);
+  const { config, warnings } = loadConfig(projectRoot, options.ci);
 
   for (const w of warnings) warn(w);
 

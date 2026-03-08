@@ -1,4 +1,4 @@
-export { loadConfig, findConfigFile, findProjectRoot, mergeWithDefaults } from './loader.js';
+export { loadConfig, findConfigFile, findProjectRoot, mergeWithDefaults, detectCiEnvironment } from './loader.js';
 export type { LoadResult } from './loader.js';
 export { validate } from './validate.js';
 export type { ValidationResult } from './validate.js';

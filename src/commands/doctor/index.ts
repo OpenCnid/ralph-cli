@@ -493,7 +493,7 @@ export function runAllChecks(projectRoot: string, config: RalphConfig): Check[] 
 
 export async function doctorCommand(options: DoctorOptions): Promise<void> {
   const projectRoot = findProjectRoot(process.cwd());
-  const { config, warnings } = loadConfig(projectRoot);
+  const { config, warnings } = loadConfig(projectRoot, options.ci);
 
   if (!options.json) {
     for (const w of warnings) warn(w);

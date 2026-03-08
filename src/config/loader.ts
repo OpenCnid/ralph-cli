@@ -8,6 +8,15 @@ import { validate } from './validate.js';
 const CONFIG_FILENAME = 'config.yml';
 const CONFIG_DIR = '.ralph';
 
+/**
+ * Detect if running in a CI environment by checking common CI env vars.
+ * Returns true if any recognized CI environment variable is set.
+ */
+export function detectCiEnvironment(): boolean {
+  const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
+  return ciVars.some(v => !!process.env[v]);
+}
+
 export interface LoadResult {
   config: RalphConfig;
   configPath: string | null;
@@ -126,12 +135,15 @@ export function loadConfig(startDir?: string, isCi?: boolean): LoadResult {
   const configPath = findConfigFile(cwd);
   const warnings: string[] = [];
 
+  // Auto-detect CI environment when not explicitly specified
+  const effectiveIsCi = isCi ?? detectCiEnvironment();
+
   if (!configPath) {
     warnings.push('No .ralph/config.yml found. Using defaults. Run `ralph init` to create one.');
     // Return a minimal default config
     const defaultConfig = mergeWithDefaults({
       project: { name: 'unknown', language: 'typescript' },
-    }, isCi);
+    }, effectiveIsCi);
     return { config: defaultConfig, configPath: null, warnings };
   }
 
@@ -157,6 +169,6 @@ export function loadConfig(startDir?: string, isCi?: boolean): LoadResult {
   }
   warnings.push(...validationResult.warnings);
 
-  const config = mergeWithDefaults(raw as RawRalphConfig, isCi);
+  const config = mergeWithDefaults(raw as RawRalphConfig, effectiveIsCi);
   return { config, configPath, warnings };
 }
