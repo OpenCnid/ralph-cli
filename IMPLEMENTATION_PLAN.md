@@ -227,12 +227,10 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
 
 #### Grade Command
-- Trend output lacks temporal context (spec shows "last week") and detailed reasons (spec shows "design doc deleted, not replaced")
+- Temporal labels now implemented (e.g., "was D last week"), but detailed reasons (e.g., "design doc deleted, not replaced") remain unimplemented
 
 #### GC Command
 - No git history context for dead code (spec shows "Last imported: removed in commit abc123")
-- No git history context for stale docs (spec shows "was deleted 14 days ago")
-- Cross-run deduplication not implemented (only within-run)
 
 #### Lint Command
 - Config schema uses `architecture.files` instead of spec's `architecture.rules`
