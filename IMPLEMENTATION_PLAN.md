@@ -6,29 +6,37 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 113 tests across 13 files — all passing
+- **Tests**: 118 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends)
 
 ---
 
-## Completed Implementation (P0–P9)
+## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 113 tests across 13 files, all passing.
+All 10 commands fully implemented. 118 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
 | P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
 | P2 | Architectural Enforcement | `ralph lint` | 20 | 0.0.2 |
-| P3 | Quality Grading | `ralph grade` | 10 | 0.0.2 |
-| P4 | Repo Diagnostics | `ralph doctor` | 11 | 0.0.2 |
+| P3 | Quality Grading | `ralph grade` | 15 | 0.0.5 |
+| P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.2 |
 | P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
 | P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
 | P8 | References | `ralph ref` | 4 | 0.0.3 |
 | P9 | Integration | `ralph hooks`, `ralph ci` | 9 | 0.0.4 |
+
+### Quality Grading Enhancements (0.0.5)
+
+- **Staleness dimension**: 5th grading dimension using git log to measure median days since last meaningful change per file. Grades: A (≤30d), B (≤90d), C (≤180d), D (≤365d), F (>365d). Gracefully handles no-git and no-files cases.
+- **--trend output**: `ralph grade --trend` reads `.ralph/grade-history.jsonl` and displays last 10 snapshots per domain/dimension.
+- **Sustained degradation detection**: Detects 3+ consecutive overall grade drops across history entries and emits warnings.
+- **Sustained improvement detection**: Detects 3+ consecutive overall grade improvements and emits success messages.
+- **Quality.md trends section**: `docs/QUALITY_SCORE.md` now includes a Trends section showing dimension-level changes vs previous snapshot.
 
 ---
 
@@ -37,7 +45,6 @@ All 10 commands fully implemented. 113 tests across 13 files, all passing.
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
 - **`file-organization` lint rule** — needs heuristic design for detecting business logic in utils/
-- **Staleness grading dimension** — deferred from quality grading
 - **Golden principle violation scanning** in gc — requires NLP-level analysis
 - **`--fix` auto-fix** for lint — flag registered but not implemented
 
@@ -48,3 +55,4 @@ All 10 commands fully implemented. 113 tests across 13 files, all passing.
 - **`exactOptionalPropertyTypes`**: Requires `| undefined` on optional interface properties in schema.ts.
 - **YAML 1.2**: Single quotes required for regex patterns with backslashes in custom rule `.yml` files.
 - **Config validation runs on every command**: Missing config doesn't crash (uses defaults + warns).
+- **Staleness uses `execSync('git log')`**: Runs one git command per file — acceptable for typical repos but could be slow on very large codebases.
