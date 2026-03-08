@@ -1,13 +1,32 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { refAddCommand, refListCommand, refRemoveCommand, refDiscoverCommand } from './index.js';
+import * as prompt from '../../utils/prompt.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-ref-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+let originalIsTtyDescriptor: PropertyDescriptor | undefined;
+
+function setStdinIsTty(value: boolean): void {
+  if (originalIsTtyDescriptor === undefined) {
+    originalIsTtyDescriptor = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+  }
+  Object.defineProperty(process.stdin, 'isTTY', {
+    configurable: true,
+    value,
+  });
+}
+
+function restoreStdinIsTty(): void {
+  if (originalIsTtyDescriptor) {
+    Object.defineProperty(process.stdin, 'isTTY', originalIsTtyDescriptor);
+  }
 }
 
 describe('ref commands', () => {
@@ -24,6 +43,8 @@ describe('ref commands', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
+    restoreStdinIsTty();
     process.chdir(origCwd);
     rmSync(tempDir, { recursive: true, force: true });
   });
@@ -116,5 +137,22 @@ describe('ref commands', () => {
     const scanMsg = output.find(l => l.includes('Scanning'));
     expect(scanMsg).toBeDefined();
     expect(scanMsg).toContain('3 dependencies');
+  });
+
+  it('discover skips add prompt in non-TTY mode', async () => {
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'test-project',
+      dependencies: { express: '^4.0.0' },
+    }));
+
+    setStdinIsTty(false);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 200 }));
+    const askSpy = vi.spyOn(prompt, 'ask');
+
+    await refDiscoverCommand();
+
+    expect(askSpy).not.toHaveBeenCalled();
+    const refFiles = readdirSync(join(tempDir, 'docs', 'references')).filter(f => !f.startsWith('.'));
+    expect(refFiles.length).toBe(0);
   });
 });

@@ -3,6 +3,7 @@ import { join, basename } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { ensureDir, safeWriteFile, safeReadFile } from '../../utils/fs.js';
 import { success, warn, error, info } from '../../utils/index.js';
+import { ask } from '../../utils/prompt.js';
 
 function today(): string {
   return new Date().toISOString().split('T')[0]!;
@@ -299,6 +300,31 @@ export async function refDiscoverCommand(): Promise<void> {
     console.log(`  ${ref.name}: ${ref.url}`);
   }
   console.log('');
+
+  if (process.stdin.isTTY === true) {
+    const answer = await ask('Add references? (numbers like "1,3", "a" for all, Enter to skip)', '');
+    if (answer.trim().toLowerCase() === 'a') {
+      for (const ref of discovered) {
+        await refAddCommand(ref.url, { name: ref.name });
+      }
+      return;
+    }
+
+    if (answer.trim()) {
+      const indices = answer
+        .split(/[,\s]+/)
+        .map(n => Number.parseInt(n, 10) - 1)
+        .filter(i => !Number.isNaN(i));
+      for (const idx of indices) {
+        if (idx >= 0 && idx < discovered.length) {
+          const ref = discovered[idx]!;
+          await refAddCommand(ref.url, { name: ref.name });
+        }
+      }
+      return;
+    }
+  }
+
   info('Add with: ralph ref add <url> --name <name>');
 }
 
