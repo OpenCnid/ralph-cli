@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 241 tests across 13 files — all passing
+- **Tests**: 243 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check)
 
 ---
 
@@ -151,12 +151,16 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Promote escalation path tracking**: `ralph promote lint` now accepts `--from <doc>` option to record provenance. Stores `promoted-from` field in the lint rule YAML file. `promote list` shows `[promoted from <doc>]` suffix for rules with provenance, making the escalation ladder visible.
 - **3 new tests**: Pattern inconsistency line number presence, promoted-from metadata storage, escalation path display in promote list.
 
+### Doctor Tests Run Check (0.0.18)
+
+- **Tests run successfully check**: New backpressure check that actually executes the project's test command and verifies it exits 0. Detects test command from package.json `scripts.test` (Node.js), `go test ./...` (Go), or `python -m pytest` (Python). Only runs when both test runner and test files are detected. Uses 60-second timeout to prevent hanging. Reports specific failure details (exit code or timeout).
+- **2 new tests**: Passing test command detection, failing test command detection with exit code.
+
 ---
 
 ## Discovered Spec Gaps (for future work)
 
 #### Doctor Command
-- "Do tests actually run successfully?" backpressure check not implemented (only checks if test runner is configured)
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
 
 #### Plan Command

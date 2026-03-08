@@ -299,6 +299,55 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     fix: hasTestFiles ? undefined : 'Add test files (e.g., *.test.ts, *_test.go, test_*.py)',
   });
 
+  // Tests actually run successfully
+  if (hasTestRunner && hasTestFiles) {
+    let testCmd = '';
+    // Detect test command
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
+        const scripts = pkg['scripts'] as Record<string, string> | undefined;
+        if (scripts?.['test']) {
+          testCmd = 'npm test';
+        }
+      } catch { /* ignore */ }
+    }
+    if (!testCmd && existsSync(join(projectRoot, 'go.mod'))) {
+      testCmd = 'go test ./...';
+    }
+    if (!testCmd && existsSync(join(projectRoot, 'pyproject.toml'))) {
+      testCmd = 'python -m pytest';
+    }
+
+    if (testCmd) {
+      let testsPass = false;
+      let testDetail = '';
+      try {
+        execSync(testCmd, {
+          cwd: projectRoot,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          timeout: 60000, // 60 second timeout
+        });
+        testsPass = true;
+        testDetail = `\`${testCmd}\` exits 0`;
+      } catch (err: unknown) {
+        const execErr = err as { killed?: boolean; status?: number };
+        if (execErr.killed) {
+          testDetail = `\`${testCmd}\` timed out (>60s)`;
+        } else {
+          testDetail = `\`${testCmd}\` failed (exit ${execErr.status ?? 'unknown'})`;
+        }
+      }
+      checks.push({
+        name: 'Tests run successfully',
+        category: 'backpressure',
+        pass: testsPass,
+        detail: testDetail,
+        fix: testsPass ? undefined : `Fix failing tests: run \`${testCmd}\` and resolve errors`,
+      });
+    }
+  }
+
   // Ralph lint rules configured
   const configPath = join(projectRoot, '.ralph', 'config.yml');
   let hasLintRules = false;

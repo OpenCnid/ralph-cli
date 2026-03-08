@@ -153,6 +153,39 @@ describe('doctor checks', () => {
     expect(testFilesCheck!.pass).toBe(true);
   });
 
+  it('runs tests and reports success when test command passes', () => {
+    // Create package.json with a passing test script
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      scripts: { test: 'node -e "process.exit(0)"' },
+      devDependencies: { vitest: '1.0.0' },
+    }));
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("ok", () => {});\n');
+
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testRunCheck = checks.find(c => c.name === 'Tests run successfully');
+    expect(testRunCheck).toBeDefined();
+    expect(testRunCheck!.pass).toBe(true);
+    expect(testRunCheck!.detail).toContain('exits 0');
+  });
+
+  it('runs tests and reports failure when test command fails', () => {
+    // Create package.json with a failing test script
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      scripts: { test: 'node -e "process.exit(1)"' },
+      devDependencies: { vitest: '1.0.0' },
+    }));
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("ok", () => {});\n');
+
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testRunCheck = checks.find(c => c.name === 'Tests run successfully');
+    expect(testRunCheck).toBeDefined();
+    expect(testRunCheck!.pass).toBe(false);
+    expect(testRunCheck!.detail).toContain('failed');
+    expect(testRunCheck!.fix).toContain('Fix failing tests');
+  });
+
   it('fully initialized repo passes most checks', () => {
     // Set up a fully initialized structure
     mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });
