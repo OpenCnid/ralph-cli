@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 238 tests across 13 files — all passing
+- **Tests**: 241 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path)
 
 ---
 
@@ -145,12 +145,15 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Legacy format display fix**: Fixed `promote list` to also display doc-level entries using the legacy `- **date** — principle` format when the new-format condition wasn't met.
 - **2 new tests**: Violation count display with matching lint rule, zero-violation checkmark display.
 
+### GC Pattern Line Numbers & Promote Escalation Path (0.0.17)
+
+- **GC pattern inconsistency line numbers**: `scanPatternInconsistency` now tracks the first occurrence line number for each pattern variant per file. Drift items for pattern-inconsistency include specific line numbers, enabling agents to navigate directly to the inconsistent code. Uses `findFirstLine()` helper to compute line from regex match index.
+- **Promote escalation path tracking**: `ralph promote lint` now accepts `--from <doc>` option to record provenance. Stores `promoted-from` field in the lint rule YAML file. `promote list` shows `[promoted from <doc>]` suffix for rules with provenance, making the escalation ladder visible.
+- **3 new tests**: Pattern inconsistency line number presence, promoted-from metadata storage, escalation path display in promote list.
+
 ---
 
 ## Discovered Spec Gaps (for future work)
-
-#### GC Command
-- Pattern inconsistency missing specific line numbers in output
 
 #### Doctor Command
 - "Do tests actually run successfully?" backpressure check not implemented (only checks if test runner is configured)
@@ -158,9 +161,6 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 
 #### Plan Command
 - Lightweight/full plan templates use generic placeholder tasks instead of contextual suggestions
-
-#### Promote Command
-- Escalation path tracking not implemented (no provenance between doc → lint → pattern)
 
 #### Lint Command
 - `--fix` flag registered but no auto-fix logic implemented in any rule

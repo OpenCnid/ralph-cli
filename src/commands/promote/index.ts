@@ -39,7 +39,7 @@ export function promoteDocCommand(principle: string, options: { to?: string }): 
 
 export function promoteLintCommand(
   ruleName: string,
-  options: { description?: string; pattern?: string; require?: string; fix?: string }
+  options: { description?: string; pattern?: string; require?: string; fix?: string; from?: string }
 ): void {
   const projectRoot = findProjectRoot(process.cwd());
   const rulesDir = join(projectRoot, '.ralph', 'rules');
@@ -65,6 +65,9 @@ export function promoteLintCommand(
   let content = `name: ${ruleName}\n`;
   content += `description: ${options.description ?? ruleName}\n`;
   content += `severity: error\n`;
+  if (options.from) {
+    content += `promoted-from: ${options.from}\n`;
+  }
   content += `match:\n`;
   content += `  pattern: '${options.pattern}'\n`;
   if (options.require) {
@@ -196,12 +199,14 @@ export function promoteListCommand(): void {
         const content = safeReadFile(join(rulesDir, file)) ?? '';
         const nameMatch = content.match(/^name:\s*(.+)$/m);
         const descMatch = content.match(/^description:\s*(.+)$/m);
+        const fromMatch = content.match(/^promoted-from:\s*(.+)$/m);
         const name = nameMatch?.[1] ?? file;
         const desc = descMatch?.[1] ?? '';
         const count = violationCounts.get(name) ?? 0;
         const marker = count === 0 ? '✓' : '○';
         const suffix = count > 0 ? ` — ${count} violation(s) remaining` : '';
-        console.log(`  ${marker} ${name} — ${desc} (${file})${suffix}`);
+        const fromSuffix = fromMatch?.[1] ? ` [promoted from ${fromMatch[1]}]` : '';
+        console.log(`  ${marker} ${name} — ${desc} (${file})${suffix}${fromSuffix}`);
       }
     }
   }

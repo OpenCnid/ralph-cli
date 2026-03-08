@@ -116,6 +116,38 @@ describe('promote commands', () => {
     expect(lintLine).toContain('2 violation(s) remaining');
   });
 
+  it('promote lint stores promoted-from metadata with --from', () => {
+    promoteLintCommand('no-raw-sql', {
+      description: 'No raw SQL queries',
+      pattern: 'query\\(',
+      fix: 'Use the query builder instead',
+      from: 'core-beliefs.md',
+    });
+
+    const content = readFileSync(join(tempDir, '.ralph', 'rules', 'no-raw-sql.yml'), 'utf-8');
+    expect(content).toContain('promoted-from: core-beliefs.md');
+  });
+
+  it('promote list shows escalation path for promoted lint rules', () => {
+    // Create a lint rule with promoted-from metadata
+    writeFileSync(join(tempDir, '.ralph', 'rules', 'no-raw-sql.yml'),
+      "name: no-raw-sql\ndescription: No raw SQL queries\nseverity: error\npromoted-from: core-beliefs.md\nmatch:\n  pattern: 'query\\\\('\nfix: Use the query builder\n"
+    );
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+    try {
+      promoteListCommand();
+    } finally {
+      console.log = origLog;
+    }
+
+    const lintLine = output.find(l => l.includes('no-raw-sql'));
+    expect(lintLine).toBeDefined();
+    expect(lintLine).toContain('[promoted from core-beliefs.md]');
+  });
+
   it('promote list shows checkmark for lint rules with zero violations', () => {
     // Create a lint rule that won't match anything
     writeFileSync(join(tempDir, '.ralph', 'rules', 'no-yolo.yml'),

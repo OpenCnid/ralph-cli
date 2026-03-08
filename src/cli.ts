@@ -154,7 +154,8 @@ promoteCmd
   .option('--pattern <pattern>', 'Pattern to match')
   .option('--require <require>', 'Required nearby pattern')
   .option('--fix <fix>', 'Fix suggestion')
-  .action((ruleName: string, options: { description?: string; pattern?: string; require?: string; fix?: string }) => {
+  .option('--from <doc>', 'Source document this was promoted from (e.g., core-beliefs.md)')
+  .action((ruleName: string, options: { description?: string; pattern?: string; require?: string; fix?: string; from?: string }) => {
     promoteLintCommand(ruleName, options);
   });
 

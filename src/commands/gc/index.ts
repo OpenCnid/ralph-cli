@@ -387,11 +387,26 @@ function scanPatternInconsistency(projectRoot: string, config: RalphConfig): Dri
   const threshold = config.gc['consistency-threshold'];
 
   // Detect common pattern variants across multiple categories
-  const patterns: Record<string, Map<string, string[]>> = {
-    'error-handling': new Map<string, string[]>(),
-    'export-style': new Map<string, string[]>(),
-    'null-checking': new Map<string, string[]>(),
+  // Track files and the first line number where each pattern appears per file
+  type PatternEntry = { files: string[]; fileLines: Map<string, number> };
+  const patterns: Record<string, Map<string, PatternEntry>> = {
+    'error-handling': new Map<string, PatternEntry>(),
+    'export-style': new Map<string, PatternEntry>(),
+    'null-checking': new Map<string, PatternEntry>(),
   };
+
+  function addPattern(category: string, pattern: string, rel: string, lineNum: number): void {
+    const entry = patterns[category]!.get(pattern) ?? { files: [], fileLines: new Map<string, number>() };
+    entry.files.push(rel);
+    entry.fileLines.set(rel, lineNum);
+    patterns[category]!.set(pattern, entry);
+  }
+
+  function findFirstLine(content: string, regex: RegExp): number {
+    const match = regex.exec(content);
+    if (!match) return 1;
+    return content.slice(0, match.index).split('\n').length;
+  }
 
   for (const file of files) {
     try {
@@ -403,43 +418,29 @@ function scanPatternInconsistency(projectRoot: string, config: RalphConfig): Dri
 
       // Error handling patterns
       if (content.includes('try {')) {
-        const existing = patterns['error-handling']!.get('try-catch') ?? [];
-        existing.push(rel);
-        patterns['error-handling']!.set('try-catch', existing);
+        addPattern('error-handling', 'try-catch', rel, findFirstLine(content, /try\s*\{/));
       }
       if (/\.catch\(/.test(content)) {
-        const existing = patterns['error-handling']!.get('.catch()') ?? [];
-        existing.push(rel);
-        patterns['error-handling']!.set('.catch()', existing);
+        addPattern('error-handling', '.catch()', rel, findFirstLine(content, /\.catch\(/));
       }
 
       // Export style patterns
       if (/^export\s+default\s+/m.test(content)) {
-        const existing = patterns['export-style']!.get('default-export') ?? [];
-        existing.push(rel);
-        patterns['export-style']!.set('default-export', existing);
+        addPattern('export-style', 'default-export', rel, findFirstLine(content, /^export\s+default\s+/m));
       }
       if (/^export\s+(?:const|function|class|interface|type|enum)\s+/m.test(content)) {
-        const existing = patterns['export-style']!.get('named-export') ?? [];
-        existing.push(rel);
-        patterns['export-style']!.set('named-export', existing);
+        addPattern('export-style', 'named-export', rel, findFirstLine(content, /^export\s+(?:const|function|class|interface|type|enum)\s+/m));
       }
 
       // Null checking patterns
       if (/===?\s*null\b/.test(content)) {
-        const existing = patterns['null-checking']!.get('=== null') ?? [];
-        existing.push(rel);
-        patterns['null-checking']!.set('=== null', existing);
+        addPattern('null-checking', '=== null', rel, findFirstLine(content, /===?\s*null\b/));
       }
       if (/!==?\s*null\b/.test(content)) {
-        const existing = patterns['null-checking']!.get('!== null') ?? [];
-        existing.push(rel);
-        patterns['null-checking']!.set('!== null', existing);
+        addPattern('null-checking', '!== null', rel, findFirstLine(content, /!==?\s*null\b/));
       }
       if (/\?\?/.test(content)) {
-        const existing = patterns['null-checking']!.get('nullish-coalescing') ?? [];
-        existing.push(rel);
-        patterns['null-checking']!.set('nullish-coalescing', existing);
+        addPattern('null-checking', 'nullish-coalescing', rel, findFirstLine(content, /\?\?/));
       }
     } catch { /* ignore */ }
   }
@@ -448,25 +449,28 @@ function scanPatternInconsistency(projectRoot: string, config: RalphConfig): Dri
   for (const [category, variants] of Object.entries(patterns)) {
     if (variants.size < 2) continue;
 
-    const totalFiles = [...variants.values()].reduce((sum, files) => sum + files.length, 0);
+    const totalFiles = [...variants.values()].reduce((sum, entry) => sum + entry.files.length, 0);
     let dominant = '';
     let dominantCount = 0;
 
-    for (const [pattern, files] of variants) {
-      if (files.length > dominantCount) {
+    for (const [pattern, entry] of variants) {
+      if (entry.files.length > dominantCount) {
         dominant = pattern;
-        dominantCount = files.length;
+        dominantCount = entry.files.length;
       }
     }
 
     const dominancePct = Math.round((dominantCount / totalFiles) * 100);
     if (dominancePct < threshold) {
-      for (const [pattern, patternFiles] of variants) {
+      for (const [pattern, entry] of variants) {
         if (pattern === dominant) continue;
+        const firstFile = entry.files[0] ?? '';
+        const firstLine = entry.fileLines.get(firstFile);
         items.push({
           category: 'pattern-inconsistency',
-          file: patternFiles[0] ?? '',
-          description: `${category}: "${pattern}" used in ${patternFiles.length} files vs dominant "${dominant}" in ${dominantCount} files (${dominancePct}% dominance)`,
+          file: firstFile,
+          line: firstLine,
+          description: `${category}: "${pattern}" used in ${entry.files.length} files vs dominant "${dominant}" in ${dominantCount} files (${dominancePct}% dominance)`,
           severity: 'warning',
           fix: `Consider migrating from "${pattern}" to "${dominant}" for consistency`,
         });

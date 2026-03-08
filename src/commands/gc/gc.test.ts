@@ -255,6 +255,28 @@ describe('gc command', () => {
     expect(patterns.length).toBeGreaterThan(0);
   });
 
+  it('pattern inconsistency includes line numbers', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    // 3 default + 3 named = 50% dominance, below 60% threshold
+    writeFileSync(join(tempDir, 'src', 'a.ts'), `const x = 1;\nexport default function a() { return 1; }\n`);
+    writeFileSync(join(tempDir, 'src', 'b.ts'), `export default function b() { return 2; }\n`);
+    writeFileSync(join(tempDir, 'src', 'c.ts'), `export default function c() { return 3; }\n`);
+    writeFileSync(join(tempDir, 'src', 'd.ts'), `export function d() { return 4; }\n`);
+    writeFileSync(join(tempDir, 'src', 'e.ts'), `export function e() { return 5; }\n`);
+    writeFileSync(join(tempDir, 'src', 'f.ts'), `export function f() { return 6; }\n`);
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const patterns = (result.items as Array<{ category: string; line?: number }>).filter(i =>
+      i.category === 'pattern-inconsistency');
+    // Pattern inconsistency items should have line numbers
+    expect(patterns.length).toBeGreaterThan(0);
+    for (const p of patterns) {
+      expect(p.line).toBeDefined();
+      expect(typeof p.line).toBe('number');
+      expect(p.line).toBeGreaterThan(0);
+    }
+  });
+
   // --- Trend tracking tests ---
 
   it('saves gc-history.jsonl after each run', () => {
