@@ -134,6 +134,34 @@ describe('gc command', () => {
     expect(deadItems[0]!.description).toContain('no corresponding source');
   });
 
+  it('does not flag <dirname>.test.ts when index.ts exists in same directory', () => {
+    mkdirSync(join(tempDir, 'src', 'commands', 'gc'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'commands', 'gc', 'index.ts'), 'export const runGc = () => true;\n');
+    writeFileSync(
+      join(tempDir, 'src', 'commands', 'gc', 'gc.test.ts'),
+      `import { describe, it } from 'vitest';\ndescribe('gc', () => { it('works', () => {}); });\n`,
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const deadItems = (result.items as Array<{ category: string; file: string }>).filter(i =>
+      i.category === 'dead-code' && i.file.includes('src/commands/gc/gc.test'));
+    expect(deadItems.length).toBe(0);
+  });
+
+  it('flags orphaned .spec.ts files with no direct source and no index file', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(
+      join(tempDir, 'src', 'random.spec.ts'),
+      `import { describe, it } from 'vitest';\ndescribe('random', () => { it('works', () => {}); });\n`,
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const deadItems = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
+      i.category === 'dead-code' && i.file.includes('random.spec'));
+    expect(deadItems.length).toBe(1);
+    expect(deadItems[0]!.description).toContain('no corresponding source');
+  });
+
   it('creates .ralph/gc-history.jsonl when .ralph directory is missing', () => {
     rmSync(join(tempDir, '.ralph'), { recursive: true, force: true });
     gcCommand({});

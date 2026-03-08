@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync, appendFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { dirname, join, relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
@@ -339,9 +339,31 @@ function scanDeadCode(projectRoot: string, config: RalphConfig): DriftItem[] {
   for (const file of allFiles) {
     const rel = relative(projectRoot, file).replace(/\\/g, '/');
     if (rel.includes('.test.') || rel.includes('.spec.')) {
-      const sourceFile = rel.replace(/\.test\./, '.').replace(/\.spec\./, '.');
-      const sourcePath = join(projectRoot, sourceFile);
-      if (!existsSync(sourcePath)) {
+      const fileName = basename(file);
+      const testBase = fileName.replace(/\.(test|spec)\.(ts|tsx|js|jsx|py|go)$/, '');
+      const ext = fileName.match(/\.(ts|tsx|js|jsx|py|go)$/)?.[0] ?? '.ts';
+      const testDir = dirname(file);
+      const dirName = basename(testDir);
+
+      const directSourcePath = join(testDir, testBase + ext);
+      if (existsSync(directSourcePath)) {
+        continue;
+      }
+
+      if (testBase === dirName) {
+        const indexSourcePath = join(testDir, `index${ext}`);
+        if (existsSync(indexSourcePath)) {
+          continue;
+        }
+      }
+
+      const indexInSameDir = join(testDir, `index${ext}`);
+      if (existsSync(indexInSameDir)) {
+        continue;
+      }
+
+      const sourceFile = relative(projectRoot, directSourcePath).replace(/\\/g, '/');
+      if (!existsSync(directSourcePath)) {
         items.push({
           category: 'dead-code',
           file: rel,
