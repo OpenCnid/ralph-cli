@@ -6,23 +6,23 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 118 tests across 13 files — all passing
+- **Tests**: 133 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 118 tests across 13 files, all passing.
+All 10 commands fully implemented. 133 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
 | P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
 | P2 | Architectural Enforcement | `ralph lint` | 20 | 0.0.2 |
-| P3 | Quality Grading | `ralph grade` | 15 | 0.0.5 |
+| P3 | Quality Grading | `ralph grade` | 25 | 0.0.6 |
 | P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.2 |
 | P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
@@ -37,6 +37,14 @@ All 10 commands fully implemented. 118 tests across 13 files, all passing.
 - **Sustained degradation detection**: Detects 3+ consecutive overall grade drops across history entries and emits warnings.
 - **Sustained improvement detection**: Detects 3+ consecutive overall grade improvements and emits success messages.
 - **Quality.md trends section**: `docs/QUALITY_SCORE.md` now includes a Trends section showing dimension-level changes vs previous snapshot.
+
+### Multi-Format Coverage Parsing (0.0.6)
+
+- **Cobertura XML support**: Parses `<coverage line-rate="...">` from pytest-cov and similar tools. Used when `coverage.tool: pytest` is configured.
+- **Go coverage profile support**: Parses `mode: set/count/atomic` profiles from `go test -coverprofile`. Used when `coverage.tool: go-test` is configured.
+- **Auto-detection fallback**: When tool-specific parsing fails, tries all parsers (lcov → Cobertura → Go) to handle misconfigured report paths.
+- **Exported parsers**: `parseLcov`, `parseCoberturaXml`, `parseGoCoverage` are exported for direct unit testing.
+- **15 new tests**: Unit tests for each parser (lcov, Cobertura, Go) plus integration tests for `scoreProject` with each format.
 
 ---
 

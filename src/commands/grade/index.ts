@@ -67,6 +67,67 @@ function gradeIsBelow(grade: Grade, minimum: Grade): boolean {
   return GRADE_ORDER.indexOf(grade) > GRADE_ORDER.indexOf(minimum);
 }
 
+/**
+ * Parse lcov format (vitest, jest, c8).
+ * Sums LF: (lines found) and LH: (lines hit) across all source file records.
+ */
+export function parseLcov(content: string): number | null {
+  const linesFound = content.match(/LF:(\d+)/g);
+  const linesHit = content.match(/LH:(\d+)/g);
+
+  if (linesFound && linesHit) {
+    let totalFound = 0;
+    let totalHit = 0;
+    for (const m of linesFound) totalFound += parseInt(m.replace('LF:', ''), 10);
+    for (const m of linesHit) totalHit += parseInt(m.replace('LH:', ''), 10);
+    return totalFound > 0 ? Math.round((totalHit / totalFound) * 100) : 0;
+  }
+  return null;
+}
+
+/**
+ * Parse Cobertura XML format (pytest-cov, coverage.py, many others).
+ * Extracts line-rate from the root <coverage> element (value 0.0–1.0).
+ */
+export function parseCoberturaXml(content: string): number | null {
+  const lineRateMatch = content.match(/<coverage[^>]+line-rate="([^"]+)"/);
+  if (lineRateMatch?.[1]) {
+    const rate = parseFloat(lineRateMatch[1]);
+    if (!isNaN(rate)) {
+      return Math.round(rate * 100);
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse Go coverage profile format.
+ * Each line after the mode header: file:startLine.startCol,endLine.endCol numStatements count
+ * A statement is covered if count > 0.
+ */
+export function parseGoCoverage(content: string): number | null {
+  const lines = content.trim().split('\n');
+  if (lines.length === 0 || !lines[0]!.startsWith('mode:')) return null;
+
+  let totalStatements = 0;
+  let coveredStatements = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+    if (!line) continue;
+    // Format: file:start,end numStatements count
+    const parts = line.split(/\s+/);
+    if (parts.length < 3) continue;
+    const numStatements = parseInt(parts[1]!, 10);
+    const count = parseInt(parts[2]!, 10);
+    if (isNaN(numStatements) || isNaN(count)) continue;
+    totalStatements += numStatements;
+    if (count > 0) coveredStatements += numStatements;
+  }
+
+  return totalStatements > 0 ? Math.round((coveredStatements / totalStatements) * 100) : 0;
+}
+
 function scoreTestCoverage(projectRoot: string, config: RalphConfig): DimensionScore {
   if (config.quality.coverage.tool === 'none') {
     return { grade: 'C', detail: 'No coverage tool configured' };
@@ -79,16 +140,26 @@ function scoreTestCoverage(projectRoot: string, config: RalphConfig): DimensionS
 
   try {
     const content = readFileSync(reportPath, 'utf-8');
-    // Parse lcov format for line coverage
-    const linesFound = content.match(/LF:(\d+)/g);
-    const linesHit = content.match(/LH:(\d+)/g);
+    let pct: number | null = null;
 
-    if (linesFound && linesHit) {
-      let totalFound = 0;
-      let totalHit = 0;
-      for (const m of linesFound) totalFound += parseInt(m.replace('LF:', ''), 10);
-      for (const m of linesHit) totalHit += parseInt(m.replace('LH:', ''), 10);
-      const pct = totalFound > 0 ? Math.round((totalHit / totalFound) * 100) : 0;
+    // Try format based on configured tool, then auto-detect
+    const tool = config.quality.coverage.tool;
+    if (tool === 'vitest' || tool === 'jest') {
+      pct = parseLcov(content);
+      if (pct === null) pct = parseCoberturaXml(content); // fallback
+    } else if (tool === 'pytest') {
+      pct = parseCoberturaXml(content);
+      if (pct === null) pct = parseLcov(content); // fallback
+    } else if (tool === 'go-test') {
+      pct = parseGoCoverage(content);
+    }
+
+    // Auto-detect if tool-specific parsing failed
+    if (pct === null) {
+      pct = parseLcov(content) ?? parseCoberturaXml(content) ?? parseGoCoverage(content);
+    }
+
+    if (pct !== null) {
       return { grade: gradeFromPercentage(pct), detail: `${pct}% line coverage` };
     }
   } catch { /* ignore */ }
