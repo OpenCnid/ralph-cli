@@ -83,14 +83,14 @@ export function promoteLintCommand(
 export function promotePatternCommand(name: string, options: { description?: string }): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);
-  const designDocsDir = join(projectRoot, config.paths['design-docs']);
-  ensureDir(designDocsDir);
+  const patternsDir = join(projectRoot, config.paths['design-docs'], 'patterns');
+  ensureDir(patternsDir);
 
   const filename = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
-  const filePath = join(designDocsDir, filename);
+  const filePath = join(patternsDir, filename);
 
   if (existsSync(filePath)) {
-    error(`Design doc already exists: ${filename}`);
+    error(`Pattern doc already exists: patterns/${filename}`);
     process.exit(1);
   }
 
@@ -111,13 +111,13 @@ ${options.description ?? 'Describe the pattern and when to use it.'}
 `;
 
   safeWriteFile(filePath, content);
-  success(`Created design doc: ${config.paths['design-docs']}/${filename}`);
+  success(`Created pattern doc: ${config.paths['design-docs']}/patterns/${filename}`);
 
   // Update design-docs/index.md
-  const indexPath = join(designDocsDir, 'index.md');
+  const indexPath = join(projectRoot, config.paths['design-docs'], 'index.md');
   if (existsSync(indexPath)) {
     const indexContent = readFileSync(indexPath, 'utf-8');
-    const entry = `| [${filename}](${filename}) | Draft | ${options.description ?? name} |\n`;
+    const entry = `| [patterns/${filename}](patterns/${filename}) | Draft | ${options.description ?? name} |\n`;
     // Insert before the "## Adding" section if it exists
     const addingIdx = indexContent.indexOf('## Adding');
     if (addingIdx !== -1) {
@@ -211,18 +211,18 @@ export function promoteListCommand(): void {
     }
   }
 
-  // Pattern-level: design docs
-  const designDocsDir = join(projectRoot, config.paths['design-docs']);
-  if (existsSync(designDocsDir)) {
-    const docs = readdirSync(designDocsDir).filter(f => f.endsWith('.md') && f !== 'index.md' && f !== 'core-beliefs.md');
+  // Pattern-level: design-docs/patterns/
+  const patternsDir = join(projectRoot, config.paths['design-docs'], 'patterns');
+  if (existsSync(patternsDir)) {
+    const docs = readdirSync(patternsDir).filter(f => f.endsWith('.md'));
     if (docs.length > 0) {
       console.log('');
-      info('Patterns (design docs):');
+      info('Patterns (design-docs/patterns/):');
       for (const doc of docs) {
-        const content = safeReadFile(join(designDocsDir, doc)) ?? '';
+        const content = safeReadFile(join(patternsDir, doc)) ?? '';
         const titleMatch = content.match(/^# (.+)$/m);
         const title = titleMatch?.[1] ?? doc;
-        console.log(`  ○ ${title} (${doc})`);
+        console.log(`  ○ ${title} (patterns/${doc})`);
       }
     }
   }

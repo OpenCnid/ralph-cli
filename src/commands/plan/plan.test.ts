@@ -231,6 +231,73 @@ describe('plan commands', () => {
     expect(content).not.toContain('**P0**');
   });
 
+  it('plan list --all shows completed and abandoned plans', () => {
+    planCreateCommand('Active plan', {});
+    planCreateCommand('Completed plan', {});
+    planCreateCommand('Abandoned plan', {});
+    planCompleteCommand('1');
+    planAbandonCommand('2', { reason: 'No longer needed' });
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+    try {
+      planListCommand({ all: true });
+    } finally {
+      console.log = origLog;
+    }
+
+    // Active section should show the active plan
+    const activeLine = output.find(l => l.includes('Active plan'));
+    expect(activeLine).toBeDefined();
+
+    // Completed/Abandoned section should show both
+    const completedLine = output.find(l => l.includes('Completed plan'));
+    expect(completedLine).toBeDefined();
+    expect(completedLine).toContain('[completed]');
+
+    const abandonedLine = output.find(l => l.includes('Abandoned plan'));
+    expect(abandonedLine).toBeDefined();
+    expect(abandonedLine).toContain('[abandoned]');
+  });
+
+  it('plan list --all --json includes completed plans', () => {
+    planCreateCommand('Active plan', {});
+    planCreateCommand('To complete', {});
+    planCompleteCommand('1');
+
+    const originalLog = console.log;
+    let output = '';
+    console.log = (msg: string) => { output += msg; };
+    planListCommand({ all: true, json: true });
+    console.log = originalLog;
+
+    const result = JSON.parse(output) as { plans: Array<{ title: string; status: string }> };
+    expect(result.plans).toHaveLength(2);
+    const active = result.plans.find(p => p.title === 'Active plan');
+    const completed = result.plans.find(p => p.title === 'To complete');
+    expect(active?.status).toBe('active');
+    expect(completed?.status).toBe('completed');
+  });
+
+  it('plan list without --all shows only active plans', () => {
+    planCreateCommand('Active plan', {});
+    planCreateCommand('To complete', {});
+    planCompleteCommand('1');
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+    try {
+      planListCommand({});
+    } finally {
+      console.log = origLog;
+    }
+
+    expect(output.some(l => l.includes('Active plan'))).toBe(true);
+    expect(output.some(l => l.includes('To complete'))).toBe(false);
+  });
+
   it('generates contextual tasks for "migrate" full plans', () => {
     planCreateCommand('Migrate database to PostgreSQL', { full: true });
 

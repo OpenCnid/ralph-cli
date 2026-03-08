@@ -45,6 +45,7 @@ export function initCommand(options: InitOptions): void {
   // Ensure directories exist
   const dirs = [
     'docs/design-docs',
+    'docs/design-docs/patterns',
     'docs/exec-plans/active',
     'docs/exec-plans/completed',
     'docs/product-specs',

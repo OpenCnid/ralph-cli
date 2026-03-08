@@ -77,7 +77,7 @@ ralph promote pattern "validated-api-call" \
   --description "A wrapper that validates API responses at the boundary"
 ```
 
-Creates a placeholder in `docs/design/patterns/validated-api-call.md` describing the desired pattern, with a task for the agent to implement the actual utility. This is a prompt for the next agent iteration, not auto-generated code.
+Creates a placeholder in `docs/design-docs/patterns/validated-api-call.md` describing the desired pattern, with a task for the agent to implement the actual utility. This is a prompt for the next agent iteration, not auto-generated code.
 
 ### Listing Active Promotions
 

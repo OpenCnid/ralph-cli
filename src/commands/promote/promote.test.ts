@@ -72,10 +72,10 @@ describe('promote commands', () => {
     expect(content).toContain('fix: Use repository pattern');
   });
 
-  it('creates a design doc for a pattern', () => {
+  it('creates a pattern doc in design-docs/patterns/ subdirectory', () => {
     promotePatternCommand('Repository Pattern', { description: 'Abstract data access behind repositories' });
 
-    const filePath = join(tempDir, 'docs', 'design-docs', 'repository-pattern.md');
+    const filePath = join(tempDir, 'docs', 'design-docs', 'patterns', 'repository-pattern.md');
     expect(existsSync(filePath)).toBe(true);
 
     const content = readFileSync(filePath, 'utf-8');
@@ -88,7 +88,7 @@ describe('promote commands', () => {
     promotePatternCommand('Error Boundaries', { description: 'Structured error handling' });
 
     const index = readFileSync(join(tempDir, 'docs', 'design-docs', 'index.md'), 'utf-8');
-    expect(index).toContain('error-boundaries.md');
+    expect(index).toContain('patterns/error-boundaries.md');
   });
 
   it('promote list shows violation counts for lint rules with violations', () => {
