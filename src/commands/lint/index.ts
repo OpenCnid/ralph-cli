@@ -9,6 +9,7 @@ import { createDependencyDirectionRule } from './rules/dependency-direction.js';
 import { createFileSizeRule } from './rules/file-size.js';
 import { createNamingConventionRule } from './rules/naming-convention.js';
 import { loadCustomRules } from './rules/custom-rules.js';
+import { createDomainIsolationRule } from './rules/domain-isolation.js';
 
 interface LintOptions {
   fix?: boolean | undefined;
@@ -27,6 +28,7 @@ export function lintCommand(targetPath: string | undefined, options: LintOptions
   // Build rules list
   const allRules: LintRule[] = [
     createDependencyDirectionRule(config.architecture),
+    createDomainIsolationRule(config.architecture.domains, config.architecture['cross-cutting']),
     createFileSizeRule(config.architecture.files['max-lines']),
     createNamingConventionRule(config.architecture.files.naming),
   ];

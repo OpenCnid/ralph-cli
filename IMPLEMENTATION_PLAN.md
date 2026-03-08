@@ -6,24 +6,24 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 175 tests across 13 files — all passing
+- **Tests**: 181 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 175 tests across 13 files, all passing.
+All 10 commands fully implemented. 181 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
 | P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
-| P2 | Architectural Enforcement | `ralph lint` | 20 | 0.0.2 |
+| P2 | Architectural Enforcement | `ralph lint` | 25 | 0.0.8 |
 | P3 | Quality Grading | `ralph grade` | 25 | 0.0.6 |
-| P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.2 |
+| P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.8 |
 | P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
 | P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
@@ -57,6 +57,20 @@ All 10 commands fully implemented. 175 tests across 13 files, all passing.
 - **CI section validation**: ci section validated as object with known keys.
 - **42 new tests**: Comprehensive test coverage for all validation rules (59 total validate tests, 175 total tests).
 
+### Lint Domain Isolation (0.0.8)
+
+- **Domain boundary enforcement**: New `domain-isolation` rule prevents files in one domain from importing from another domain. Cross-cutting concerns are exempt.
+- **Agent-readable violations**: Each violation includes the source/target domain names and suggests moving shared code to cross-cutting concerns.
+- **Automatic wiring**: Rule is automatically included in `ralph lint` when domains are configured in `.ralph/config.yml`.
+- **6 new tests**: Cross-domain import detection, same-domain allowed, cross-cutting exempt, no-domains graceful, outside-domain files, fix instructions.
+
+### Doctor Enhancements (0.0.8)
+
+- **At least one commit check**: Operational check uses `git rev-list --count HEAD` to verify the repo has commits.
+- **Ralph lint rules configured check**: Backpressure check detects configured layers/domains and custom rules in `.ralph/rules/`.
+- **Category-level status**: Each category header shows ✅ (all pass) or ⚠️ (failures) for quick scanning.
+- **Fix summary section**: After the score, lists all failing checks with numbered fix instructions.
+
 ---
 
 ## Deferred Items
@@ -64,9 +78,7 @@ All 10 commands fully implemented. 175 tests across 13 files, all passing.
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
 - **Per-domain grade scoring** — grade scores entire project, not individual domains per spec
-- **Doctor enhancements** — missing lint rule validation check, at least one commit check, config YAML parse validation, category-level status, fix summary section
 - **GC enhancements** — golden principle violations detection missing, pattern consistency limited, stale docs incomplete, trend tracking missing
-- **Lint domain isolation rules** — domains config loaded but unused; no domain-to-domain import checking
 - **Lint file organization rule** — detect business logic in utils/ (heuristic design needed)
 - **Lint --fix auto-fix** — flag registered but not implemented for any rule
 - **Promote format** — date placement doesn't match spec (date first vs principle first)

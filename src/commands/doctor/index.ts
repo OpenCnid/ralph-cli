@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { success, warn, error, info, heading } from '../../utils/index.js';
@@ -263,6 +264,32 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     fix: hasTypeChecker ? undefined : 'Add a type checker (typescript, mypy)',
   });
 
+  // Ralph lint rules configured
+  const configPath = join(projectRoot, '.ralph', 'config.yml');
+  let hasLintRules = false;
+  if (existsSync(configPath)) {
+    try {
+      const configContent = readFileSync(configPath, 'utf-8');
+      hasLintRules = configContent.includes('layers:') || configContent.includes('domains:');
+    } catch { /* ignore */ }
+  }
+  // Also check for custom rules
+  const rulesDir = join(projectRoot, '.ralph', 'rules');
+  let customRuleCount = 0;
+  if (existsSync(rulesDir)) {
+    try {
+      customRuleCount = readdirSync(rulesDir).filter(f => f.endsWith('.yml') || f.endsWith('.yaml')).length;
+    } catch { /* ignore */ }
+  }
+  const totalRules = (hasLintRules ? 3 : 0) + customRuleCount; // 3 built-in rules when layers configured
+  checks.push({
+    name: 'Ralph lint rules configured',
+    category: 'backpressure',
+    pass: totalRules > 0,
+    detail: totalRules > 0 ? `${totalRules} architectural rule(s) configured` : 'No architectural rules',
+    fix: totalRules === 0 ? 'Add layers or domains to .ralph/config.yml architecture section' : undefined,
+  });
+
   return checks;
 }
 
@@ -278,6 +305,24 @@ function runOperationalChecks(projectRoot: string): Check[] {
     detail: isGitRepo ? 'Initialized' : 'Not a git repo',
     fix: isGitRepo ? undefined : 'Run `git init`',
   });
+
+  // At least one commit
+  if (isGitRepo) {
+    let commitCount = 0;
+    try {
+      const output = execSync('git rev-list --count HEAD', { cwd: projectRoot, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+      commitCount = parseInt(output, 10) || 0;
+    } catch {
+      // No commits yet (empty repo)
+    }
+    checks.push({
+      name: 'At least one commit',
+      category: 'operational',
+      pass: commitCount > 0,
+      detail: commitCount > 0 ? `${commitCount} commits` : 'No commits',
+      fix: commitCount === 0 ? 'Make an initial commit: `git add -A && git commit -m "Initial commit"`' : undefined,
+    });
+  }
 
   // .gitignore exists
   const hasGitignore = existsSync(join(projectRoot, '.gitignore'));
@@ -358,14 +403,19 @@ export function doctorCommand(options: DoctorOptions): void {
     return;
   }
 
-  // Group by category
+  // Group by category with category-level status
   const categories = ['structure', 'content', 'backpressure', 'operational'] as const;
+  const failingChecks: Check[] = [];
+
   for (const cat of categories) {
     const catChecks = checks.filter(c => c.category === cat);
     if (catChecks.length === 0) continue;
 
+    const allPass = catChecks.every(c => c.pass);
+    const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
+
     console.log('');
-    heading(`${cat.charAt(0).toUpperCase() + cat.slice(1)} Checks`);
+    heading(`${allPass ? '\u2705' : '\u26A0\uFE0F '} ${catLabel}`);
     for (const check of catChecks) {
       if (check.pass) {
         success(`${check.name} — ${check.detail}`);
@@ -374,6 +424,7 @@ export function doctorCommand(options: DoctorOptions): void {
         if (check.fix) {
           console.log(`    Fix: ${check.fix}`);
         }
+        failingChecks.push(check);
       }
     }
   }
@@ -381,6 +432,17 @@ export function doctorCommand(options: DoctorOptions): void {
   console.log('');
   const passed = checks.filter(c => c.pass).length;
   info(`Score: ${score}/10 (${scoreLabel(score)}) — ${passed}/${checks.length} checks passed`);
+
+  // Fix summary
+  if (failingChecks.length > 0) {
+    console.log('');
+    info(`Fix ${failingChecks.length} issue(s) to improve score:`);
+    failingChecks.forEach((c, i) => {
+      if (c.fix) {
+        console.log(`  ${i + 1}. ${c.fix}`);
+      }
+    });
+  }
 
   if (options.ci && score < config.doctor['minimum-score']) {
     error(`Score ${score} is below minimum ${config.doctor['minimum-score']}`);

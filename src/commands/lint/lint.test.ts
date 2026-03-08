@@ -9,6 +9,7 @@ import { createNamingConventionRule } from './rules/naming-convention.js';
 import { loadCustomRules } from './rules/custom-rules.js';
 import { collectFiles } from './files.js';
 import { parseImports } from './imports.js';
+import { createDomainIsolationRule } from './rules/domain-isolation.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-lint-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -282,6 +283,147 @@ import os
 
   it('returns empty array for nonexistent file', () => {
     expect(parseImports(join(tempDir, 'nope.ts'))).toEqual([]);
+  });
+});
+
+describe('domain-isolation rule', () => {
+  let tempDir: string;
+
+  beforeEach(() => { tempDir = makeTempDir(); });
+  afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+  it('flags cross-domain imports', () => {
+    // Create domain structure
+    mkdirSync(join(tempDir, 'src', 'domain', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'domain', 'billing'), { recursive: true });
+
+    // Auth file imports from billing (../billing relative to src/domain/auth/)
+    writeFileSync(join(tempDir, 'src', 'domain', 'auth', 'service.ts'),
+      `import { PaymentService } from '../billing/payment.js';\n`
+    );
+    writeFileSync(join(tempDir, 'src', 'domain', 'billing', 'payment.ts'),
+      `export class PaymentService {}\n`
+    );
+
+    const rule = createDomainIsolationRule(
+      [
+        { name: 'auth', path: 'src/domain/auth' },
+        { name: 'billing', path: 'src/domain/billing' },
+      ],
+      [],
+    );
+
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'domain', 'auth', 'service.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.severity).toBe('error');
+    expect(violations[0]!.what).toContain('auth');
+    expect(violations[0]!.what).toContain('billing');
+  });
+
+  it('allows same-domain imports', () => {
+    mkdirSync(join(tempDir, 'src', 'domain', 'auth'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'src', 'domain', 'auth', 'service.ts'),
+      `import { User } from './types.js';\n`
+    );
+    writeFileSync(join(tempDir, 'src', 'domain', 'auth', 'types.ts'),
+      `export interface User {}\n`
+    );
+
+    const rule = createDomainIsolationRule(
+      [{ name: 'auth', path: 'src/domain/auth' }],
+      [],
+    );
+
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'domain', 'auth', 'service.ts')],
+    });
+
+    expect(violations.length).toBe(0);
+  });
+
+  it('allows imports from cross-cutting concerns', () => {
+    mkdirSync(join(tempDir, 'src', 'domain', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'shared'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'src', 'domain', 'auth', 'service.ts'),
+      `import { logger } from '../../../shared/logger.js';\n`
+    );
+    writeFileSync(join(tempDir, 'src', 'shared', 'logger.ts'),
+      `export const logger = {};\n`
+    );
+
+    const rule = createDomainIsolationRule(
+      [{ name: 'auth', path: 'src/domain/auth' }],
+      ['src/shared'],
+    );
+
+    // The resolved import should resolve to src/shared/logger.js which is cross-cutting
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'domain', 'auth', 'service.ts')],
+    });
+
+    expect(violations.length).toBe(0);
+  });
+
+  it('returns no violations when no domains configured', () => {
+    const rule = createDomainIsolationRule(undefined, undefined);
+    const violations = rule.run({ projectRoot: tempDir, files: [] });
+    expect(violations.length).toBe(0);
+  });
+
+  it('returns no violations for files outside domains', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'domain', 'auth'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'src', 'utils', 'helper.ts'),
+      `import { User } from '../domain/auth/types.js';\n`
+    );
+
+    const rule = createDomainIsolationRule(
+      [{ name: 'auth', path: 'src/domain/auth' }],
+      [],
+    );
+
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'helper.ts')],
+    });
+
+    expect(violations.length).toBe(0);
+  });
+
+  it('includes agent-readable fix instructions', () => {
+    mkdirSync(join(tempDir, 'src', 'domain', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'domain', 'billing'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'src', 'domain', 'auth', 'service.ts'),
+      `import { Invoice } from '../billing/invoice.js';\n`
+    );
+
+    const rule = createDomainIsolationRule(
+      [
+        { name: 'auth', path: 'src/domain/auth' },
+        { name: 'billing', path: 'src/domain/billing' },
+      ],
+      ['src/shared'],
+    );
+
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'domain', 'auth', 'service.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.fix).toContain('cross-cutting');
+    expect(violations[0]!.fix).toContain('src/shared');
+    expect(violations[0]!.rule).toContain('isolated');
   });
 });
 
