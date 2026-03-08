@@ -6,6 +6,8 @@ import { dirname, join } from 'node:path';
 import { configValidateCommand } from './commands/config-validate.js';
 import { initCommand } from './commands/init/index.js';
 import { lintCommand } from './commands/lint/index.js';
+import { gradeCommand } from './commands/grade/index.js';
+import { doctorCommand } from './commands/doctor/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,8 +48,8 @@ program
   .description('Score domain quality on five dimensions')
   .option('--ci', 'Exit non-zero if below minimum grade')
   .option('--trend', 'Show last N snapshots')
-  .action(() => {
-    console.log('ralph grade — not yet implemented');
+  .action((domain: string | undefined, options: { ci?: boolean; trend?: boolean }) => {
+    gradeCommand(domain, options);
   });
 
 // ralph gc
@@ -68,8 +70,8 @@ program
   .option('--json', 'Output structured JSON')
   .option('--ci', 'Exit non-zero if below minimum score')
   .option('--fix', 'Auto-fix missing structure')
-  .action(() => {
-    console.log('ralph doctor — not yet implemented');
+  .action((options: { json?: boolean; ci?: boolean; fix?: boolean }) => {
+    doctorCommand(options);
   });
 
 // ralph plan
