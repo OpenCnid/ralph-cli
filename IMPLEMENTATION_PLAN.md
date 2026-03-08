@@ -6,16 +6,16 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 133 tests across 13 files — all passing
+- **Tests**: 175 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 133 tests across 13 files, all passing.
+All 10 commands fully implemented. 175 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
@@ -46,15 +46,31 @@ All 10 commands fully implemented. 133 tests across 13 files, all passing.
 - **Exported parsers**: `parseLcov`, `parseCoberturaXml`, `parseGoCoverage` are exported for direct unit testing.
 - **15 new tests**: Unit tests for each parser (lcov, Cobertura, Go) plus integration tests for `scoreProject` with each format.
 
+### Comprehensive Config Validation (0.0.7)
+
+- **Nested unknown key warnings**: All config sections (project, runner, architecture, architecture.files, architecture.files.naming, quality, quality.coverage, gc, doctor, paths, references, ci) now warn on unknown keys to catch typos.
+- **Type validation for all fields**: project.description, project.framework, naming.schemas, naming.types, coverage.report-path validated as strings.
+- **Array content validation**: architecture.layers, architecture.cross-cutting, gc.exclude, doctor.custom-checks validated for string contents (not just array type).
+- **Domain validation**: architecture.domains entries validated for required name and path fields.
+- **References validation**: max-total-kb and warn-single-file-kb validated as positive numbers.
+- **Paths validation**: All 9 path fields validated as strings.
+- **CI section validation**: ci section validated as object with known keys.
+- **42 new tests**: Comprehensive test coverage for all validation rules (59 total validate tests, 175 total tests).
+
 ---
 
 ## Deferred Items
 
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
-- **`file-organization` lint rule** — needs heuristic design for detecting business logic in utils/
-- **Golden principle violation scanning** in gc — requires NLP-level analysis
-- **`--fix` auto-fix** for lint — flag registered but not implemented
+- **Per-domain grade scoring** — grade scores entire project, not individual domains per spec
+- **Doctor enhancements** — missing lint rule validation check, at least one commit check, config YAML parse validation, category-level status, fix summary section
+- **GC enhancements** — golden principle violations detection missing, pattern consistency limited, stale docs incomplete, trend tracking missing
+- **Lint domain isolation rules** — domains config loaded but unused; no domain-to-domain import checking
+- **Lint file organization rule** — detect business logic in utils/ (heuristic design needed)
+- **Lint --fix auto-fix** — flag registered but not implemented for any rule
+- **Promote format** — date placement doesn't match spec (date first vs principle first)
+- **Ref discover** — scan dependencies for llms.txt files (needs dep parsing)
 
 ## Notes
 
