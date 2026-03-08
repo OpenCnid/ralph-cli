@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 223 tests across 13 files — all passing
+- **Tests**: 227 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns)
 
 ---
 
@@ -114,15 +114,20 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Plan auto-creates tech-debt-tracker.md**: `ralph plan create` now ensures `tech-debt-tracker.md` exists in the plans directory with the standard template (ID/Description/Priority/Discovered/Plan table). Does not overwrite existing trackers.
 - **6 new tests**: Test files exist (TS, Go, Python patterns), missing test files detection, tech-debt-tracker auto-creation, existing tracker preservation.
 
+### Promote Format Fix & User-Defined GC Anti-Patterns (0.0.13)
+
+- **Promote doc format fix**: Changed from `- **DATE** — principle` to spec-compliant `- **principle.** Added DATE.` format. Handles principles already ending with a period (no double periods). GC principle parser updated with backward compatibility for legacy format entries.
+- **User-defined anti-patterns**: GC now loads custom anti-pattern YAML files from `.ralph/gc-patterns/` directory. Each file defines `name`, `pattern` (regex), `keywords` (for principle matching), `description`, `severity`, and `fix`. Custom patterns are merged with the 4 built-in detectors and scanned identically. Malformed files are silently skipped.
+- **Promote list backward compatibility**: `promote list` now recognizes both old (`- **date** — principle`) and new (`- **principle.** Added DATE.`) formats when displaying documented taste rules.
+- **4 new tests**: Spec-compliant promote format, period deduplication, custom anti-pattern loading and enforcement, malformed pattern file resilience, new-format principle matching in GC.
+
 ---
 
 ## Deferred Items
 
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
-- **GC enhancements** — golden principle violations could support user-defined anti-patterns (currently 4 built-in detectors only)
 - **Lint --fix auto-fix** — flag registered but not implemented for any rule
-- **Promote format** — date placement doesn't match spec (date first vs principle first)
 - **Ref discover** — scan dependencies for llms.txt files (needs dep parsing)
 
 ## Notes

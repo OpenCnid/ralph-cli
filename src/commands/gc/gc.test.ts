@@ -319,6 +319,61 @@ describe('gc command', () => {
     expect(result.trend).toBeNull();
   });
 
+  // --- User-defined anti-patterns tests ---
+
+  it('loads and applies custom anti-patterns from .ralph/gc-patterns/', () => {
+    mkdirSync(join(tempDir, '.ralph', 'gc-patterns'), { recursive: true });
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+
+    // Define a custom anti-pattern that detects eval() usage in code
+    writeFileSync(join(tempDir, '.ralph', 'gc-patterns', 'no-eval.yml'),
+      `name: no-eval\npattern: '\\beval\\s*\\('\nkeywords:\n  - security\n  - eval\ndescription: Uses eval() which is a security risk\nseverity: critical\nfix: Replace eval() with a safer alternative like JSON.parse or Function constructor\n`
+    );
+
+    writeFileSync(join(tempDir, 'src', 'unsafe.ts'),
+      `export function run(code: string) {\n  return eval(code);\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('unsafe'));
+    const evalViolation = violations.find(v => v.description.includes('eval()'));
+    expect(evalViolation).toBeDefined();
+    expect(evalViolation!.description).toContain('occurrence');
+  });
+
+  it('ignores malformed custom anti-pattern files', () => {
+    mkdirSync(join(tempDir, '.ralph', 'gc-patterns'), { recursive: true });
+
+    // Missing required 'pattern' field
+    writeFileSync(join(tempDir, '.ralph', 'gc-patterns', 'bad.yml'), `name: bad-rule\n`);
+
+    // Should not crash
+    const result = captureJson(() => gcCommand({ json: true }));
+    expect(result.items).toBeDefined();
+  });
+
+  it('matches new promote format principles in core-beliefs.md', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    mkdirSync(join(tempDir, 'docs', 'design-docs'), { recursive: true });
+
+    // New promote format: - **principle.** Added DATE.
+    writeFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'),
+      `# Core Beliefs\n\n- **Never swallow errors.** Added 2026-03-07.\n`
+    );
+
+    writeFileSync(join(tempDir, 'src', 'swallow.ts'),
+      `export function risky() {\n  try { doStuff(); } catch (e) {}\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; description: string }>).filter(i =>
+      i.category === 'principle-violation');
+    const matched = violations.find(v => v.description.includes('Principle:'));
+    expect(matched).toBeDefined();
+    expect(matched!.description).toContain('swallow');
+  });
+
   it('tracks category counts in history', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/deleted.ts` for details.');

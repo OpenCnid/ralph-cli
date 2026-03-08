@@ -30,12 +30,21 @@ describe('promote commands', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('promotes a principle to core-beliefs.md', () => {
+  it('promotes a principle to core-beliefs.md in spec format', () => {
     promoteDocCommand('Always validate at boundaries', {});
 
     const content = readFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'), 'utf-8');
-    expect(content).toContain('Always validate at boundaries');
-    expect(content).toMatch(/\d{4}-\d{2}-\d{2}/); // has date
+    // Spec format: - **principle.** Added DATE.
+    expect(content).toMatch(/- \*\*Always validate at boundaries\.\*\* Added \d{4}-\d{2}-\d{2}\./);
+  });
+
+  it('handles principle already ending with period', () => {
+    promoteDocCommand('Never swallow errors.', {});
+
+    const content = readFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'), 'utf-8');
+    // Should not double the period
+    expect(content).toMatch(/- \*\*Never swallow errors\.\*\* Added \d{4}-\d{2}-\d{2}\./);
+    expect(content).not.toContain('errors..');
   });
 
   it('promotes to a specific doc with --to', () => {

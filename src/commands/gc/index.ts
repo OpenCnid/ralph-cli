@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync, appendFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { safeWriteFile, safeReadFile } from '../../utils/fs.js';
@@ -81,6 +82,47 @@ const ANTI_PATTERNS: AntiPattern[] = [
   },
 ];
 
+function loadCustomAntiPatterns(projectRoot: string): AntiPattern[] {
+  const patternsDir = join(projectRoot, '.ralph', 'gc-patterns');
+  if (!existsSync(patternsDir)) return [];
+
+  const patterns: AntiPattern[] = [];
+
+  for (const file of readdirSync(patternsDir)) {
+    if (!file.endsWith('.yml') && !file.endsWith('.yaml')) continue;
+
+    const content = safeReadFile(join(patternsDir, file));
+    if (!content) continue;
+
+    try {
+      const parsed = parseYaml(content) as Record<string, unknown>;
+      if (!parsed.name || !parsed.pattern) continue;
+
+      const name = String(parsed.name);
+      const regexStr = String(parsed.pattern);
+      const keywords = Array.isArray(parsed.keywords)
+        ? parsed.keywords.map(String)
+        : [];
+      const description = String(parsed.description ?? name);
+      const severity = (['critical', 'warning', 'info'].includes(String(parsed.severity))
+        ? String(parsed.severity) as Severity
+        : 'warning');
+      const fix = String(parsed.fix ?? `Fix ${name} violation`);
+
+      patterns.push({
+        name,
+        regex: new RegExp(regexStr, 'g'),
+        keywords,
+        description: () => description,
+        severity,
+        fix,
+      });
+    } catch { /* skip malformed files */ }
+  }
+
+  return patterns;
+}
+
 function parsePrinciples(projectRoot: string, config: RalphConfig): string[] {
   const principles: string[] = [];
   const beliefsPath = join(projectRoot, config.paths['design-docs'], 'core-beliefs.md');
@@ -100,7 +142,13 @@ function parsePrinciples(projectRoot: string, config: RalphConfig): string[] {
     const lines = content.split('\n');
     for (const line of lines) {
       const trimmed = line.trim();
-      // Match "- **date** — principle" format from promote doc
+      // Match new promote format: "- **principle.** Added DATE."
+      const newFormatMatch = trimmed.match(/^-\s+\*\*(.+?)\.\*\*\s+Added\s+\d{4}-\d{2}-\d{2}\.?$/);
+      if (newFormatMatch) {
+        principles.push(newFormatMatch[1]!);
+        continue;
+      }
+      // Match legacy format: "- **date** — principle" from older promote doc
       const datedMatch = trimmed.match(/^-\s+\*\*.+\*\*\s*[—–-]\s*(.+)$/);
       if (datedMatch) {
         principles.push(datedMatch[1]!);
@@ -139,6 +187,8 @@ function scanGoldenPrincipleViolations(projectRoot: string, config: RalphConfig)
   const items: DriftItem[] = [];
   const principles = parsePrinciples(projectRoot, config);
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
+  const customPatterns = loadCustomAntiPatterns(projectRoot);
+  const allPatterns = [...ANTI_PATTERNS, ...customPatterns];
 
   for (const file of files) {
     const rel = relative(projectRoot, file).replace(/\\/g, '/');
@@ -152,7 +202,7 @@ function scanGoldenPrincipleViolations(projectRoot: string, config: RalphConfig)
 
     const lines = content.split('\n');
 
-    for (const pattern of ANTI_PATTERNS) {
+    for (const pattern of allPatterns) {
       // Reset regex state
       pattern.regex.lastIndex = 0;
       let match: RegExpExecArray | null;

@@ -27,7 +27,8 @@ export function promoteDocCommand(principle: string, options: { to?: string }): 
     process.exit(1);
   }
 
-  const entry = `\n- **${today()}** — ${principle}\n`;
+  const trimmedPrinciple = principle.endsWith('.') ? principle.slice(0, -1) : principle;
+  const entry = `\n- **${trimmedPrinciple}.** Added ${today()}.\n`;
   appendFileSync(targetPath, entry);
   success(`Promoted to ${targetDoc}: "${principle}"`);
 }
@@ -133,11 +134,14 @@ export function promoteListCommand(): void {
   if (existsSync(beliefsPath)) {
     const content = readFileSync(beliefsPath, 'utf-8');
     const entries = content.match(/^\d+\.\s+.+$/gm) ?? [];
-    const dated = content.match(/^- \*\*.+\*\* — .+$/gm) ?? [];
+    const dated = content.match(/^- \*\*.+?\.\*\*\s+Added\s+\d{4}-\d{2}-\d{2}\.$/gm) ?? [];
+    // Also match legacy format: - **date** — principle
+    const datedLegacy = content.match(/^- \*\*\d{4}-\d{2}-\d{2}\*\* — .+$/gm) ?? [];
     if (entries.length > 0 || dated.length > 0) {
       info('Documentation (core-beliefs.md):');
       for (const e of entries) console.log(`  ○ ${e.trim()}`);
       for (const e of dated) console.log(`  ○ ${e.replace(/^- /, '').trim()}`);
+      for (const e of datedLegacy) console.log(`  ○ ${e.replace(/^- /, '').trim()}`);
     }
   }
 
