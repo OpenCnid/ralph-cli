@@ -170,7 +170,7 @@ Status: active
   success(`Created plan ${id}: ${config.paths.plans}/active/${filename}`);
 }
 
-export function planCompleteCommand(id: string): void {
+export function planCompleteCommand(id: string, options?: { reason?: string | undefined }): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);
   const plansDir = join(projectRoot, config.paths.plans);
@@ -186,7 +186,8 @@ export function planCompleteCommand(id: string): void {
 
   // Update status in file
   const content = readFileSync(join(activeDir, file), 'utf-8');
-  const updated = content.replace(/^Status: active$/m, `Status: completed\nCompleted: ${today()}`);
+  const reasonLine = options?.reason ? `\nReason: ${options.reason}` : '';
+  const updated = content.replace(/^Status: active$/m, `Status: completed\nCompleted: ${today()}${reasonLine}`);
   safeWriteFile(join(completedDir, file), updated);
 
   // Remove from active

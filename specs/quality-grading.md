@@ -29,11 +29,11 @@ Each dimension gets a letter grade (A-F) or a numeric score. The composite grade
 
 Last updated: 2026-03-07
 
-| Domain | Tests | Docs | Architecture | File Health | Overall |
-|--------|-------|------|-------------|-------------|---------|
-| auth   | A     | B    | A           | A           | B       |
-| billing| C     | F    | A           | B           | F       |
-| ui     | B     | B    | C           | D           | D       |
+| Domain | Tests | Docs | Architecture | File Health | Staleness | Overall |
+|--------|-------|------|-------------|-------------|-----------|---------|
+| auth   | A     | B    | A           | A           | A         | B       |
+| billing| C     | F    | A           | B           | B         | F       |
+| ui     | B     | B    | C           | D           | A         | D       |
 
 ## Trends
 

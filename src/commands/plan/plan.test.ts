@@ -84,6 +84,16 @@ describe('plan commands', () => {
     expect(content).toContain('Status: completed');
   });
 
+  it('completes a plan with --reason', () => {
+    planCreateCommand('Plan with reason', {});
+    planCompleteCommand('0', { reason: 'All tasks done and verified' });
+
+    const completedFiles = readdirSync(join(tempDir, 'docs', 'exec-plans', 'completed')).filter(f => f.endsWith('.md'));
+    const content = readFileSync(join(tempDir, 'docs', 'exec-plans', 'completed', completedFiles[0]!), 'utf-8');
+    expect(content).toContain('Status: completed');
+    expect(content).toContain('Reason: All tasks done and verified');
+  });
+
   it('abandons a plan with reason', () => {
     planCreateCommand('Plan to abandon', {});
     planAbandonCommand('0', { reason: 'Descoped from sprint' });

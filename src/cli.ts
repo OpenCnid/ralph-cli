@@ -96,8 +96,9 @@ planCmd
 planCmd
   .command('complete <id>')
   .description('Mark a plan as completed')
-  .action((id: string) => {
-    planCompleteCommand(id);
+  .option('--reason <reason>', 'Reason for completion')
+  .action((id: string, options: { reason?: string }) => {
+    planCompleteCommand(id, options);
   });
 
 planCmd

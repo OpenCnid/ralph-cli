@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain } from './index.js';
+import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain, generateQualityMd } from './index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
 
@@ -481,5 +481,70 @@ describe('scoreDomain', () => {
     const gradeOrder = ['A', 'B', 'C', 'D', 'F'];
     const worstIdx = Math.max(...allGrades.map(g => gradeOrder.indexOf(g)));
     expect(score.overall).toBe(gradeOrder[worstIdx]);
+  });
+});
+
+describe('generateQualityMd', () => {
+  it('uses "Quality Grades" title per spec', () => {
+    const scores = [{
+      domain: 'test',
+      tests: { grade: 'A' as const, detail: '90%' },
+      docs: { grade: 'B' as const, detail: '3/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'B' as const,
+    }];
+    const md = generateQualityMd(scores, []);
+    expect(md).toMatch(/^# Quality Grades\n/);
+  });
+
+  it('includes "Last updated" date', () => {
+    const scores = [{
+      domain: 'test',
+      tests: { grade: 'A' as const, detail: '90%' },
+      docs: { grade: 'A' as const, detail: '5/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'A' as const,
+    }];
+    const md = generateQualityMd(scores, []);
+    expect(md).toMatch(/Last updated: \d{4}-\d{2}-\d{2}/);
+  });
+
+  it('includes Staleness column in output table', () => {
+    const scores = [{
+      domain: 'auth',
+      tests: { grade: 'B' as const, detail: '80%' },
+      docs: { grade: 'C' as const, detail: '2/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'B' as const, detail: 'recent' },
+      overall: 'C' as const,
+    }];
+    const md = generateQualityMd(scores, []);
+    expect(md).toContain('| Staleness |');
+    expect(md).toContain('| B |');
+  });
+
+  it('formats trends as "current (was previous)" per spec', () => {
+    const history = [{
+      timestamp: '2026-03-01T00:00:00Z',
+      scores: [{ domain: 'auth', tests: 'B' as const, docs: 'D' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'D' as const }],
+    }];
+    const scores = [{
+      domain: 'auth',
+      tests: { grade: 'A' as const, detail: '95%' },
+      docs: { grade: 'B' as const, detail: '4/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'A' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Should use spec format: "current (was previous) — improved/degraded"
+    expect(md).toContain('auth/tests: A (was B) — improved');
+    expect(md).toContain('auth/docs: B (was D) — improved');
   });
 });
