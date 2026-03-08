@@ -1,0 +1,84 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { promoteDocCommand, promoteLintCommand, promotePatternCommand } from './index.js';
+
+function makeTempDir(): string {
+  const dir = join(tmpdir(), `ralph-promote-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+describe('promote commands', () => {
+  let tempDir: string;
+  const origCwd = process.cwd();
+
+  beforeEach(() => {
+    tempDir = makeTempDir();
+    mkdirSync(join(tempDir, '.git'), { recursive: true });
+    mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });
+    mkdirSync(join(tempDir, 'docs', 'design-docs'), { recursive: true });
+    writeFileSync(join(tempDir, '.ralph', 'config.yml'), 'project:\n  name: test\n  language: typescript\n');
+    writeFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'), '# Core Beliefs\n\n1. First principle\n');
+    writeFileSync(join(tempDir, 'docs', 'design-docs', 'index.md'), '# Design Docs\n\n| Document | Status | Description |\n|----------|--------|-------------|\n\n## Adding\n\nCreate new docs here.\n');
+    process.chdir(tempDir);
+  });
+
+  afterEach(() => {
+    process.chdir(origCwd);
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('promotes a principle to core-beliefs.md', () => {
+    promoteDocCommand('Always validate at boundaries', {});
+
+    const content = readFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'), 'utf-8');
+    expect(content).toContain('Always validate at boundaries');
+    expect(content).toMatch(/\d{4}-\d{2}-\d{2}/); // has date
+  });
+
+  it('promotes to a specific doc with --to', () => {
+    writeFileSync(join(tempDir, 'docs', 'SECURITY.md'), '# Security\n');
+    promoteDocCommand('Never log credentials', { to: 'SECURITY.md' });
+
+    const content = readFileSync(join(tempDir, 'docs', 'SECURITY.md'), 'utf-8');
+    expect(content).toContain('Never log credentials');
+  });
+
+  it('creates a lint rule YAML file', () => {
+    promoteLintCommand('no-direct-db', {
+      description: 'No direct DB access outside data layer',
+      pattern: 'prisma\\.client',
+      fix: 'Use repository pattern instead of direct Prisma access',
+    });
+
+    const filePath = join(tempDir, '.ralph', 'rules', 'no-direct-db.yml');
+    expect(existsSync(filePath)).toBe(true);
+
+    const content = readFileSync(filePath, 'utf-8');
+    expect(content).toContain('name: no-direct-db');
+    expect(content).toContain('severity: error');
+    expect(content).toContain("pattern: 'prisma\\.client'");
+    expect(content).toContain('fix: Use repository pattern');
+  });
+
+  it('creates a design doc for a pattern', () => {
+    promotePatternCommand('Repository Pattern', { description: 'Abstract data access behind repositories' });
+
+    const filePath = join(tempDir, 'docs', 'design-docs', 'repository-pattern.md');
+    expect(existsSync(filePath)).toBe(true);
+
+    const content = readFileSync(filePath, 'utf-8');
+    expect(content).toContain('# Repository Pattern');
+    expect(content).toContain('## When to Use');
+    expect(content).toContain('Abstract data access');
+  });
+
+  it('updates design-docs/index.md when creating a pattern', () => {
+    promotePatternCommand('Error Boundaries', { description: 'Structured error handling' });
+
+    const index = readFileSync(join(tempDir, 'docs', 'design-docs', 'index.md'), 'utf-8');
+    expect(index).toContain('error-boundaries.md');
+  });
+});

@@ -8,6 +8,9 @@ import { initCommand } from './commands/init/index.js';
 import { lintCommand } from './commands/lint/index.js';
 import { gradeCommand } from './commands/grade/index.js';
 import { doctorCommand } from './commands/doctor/index.js';
+import { planCreateCommand, planCompleteCommand, planAbandonCommand, planLogCommand, planListCommand, planStatusCommand } from './commands/plan/index.js';
+import { promoteDocCommand, promoteLintCommand, promotePatternCommand, promoteListCommand } from './commands/promote/index.js';
+import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand } from './commands/ref/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -83,45 +86,45 @@ planCmd
   .command('create <title>')
   .description('Create a new execution plan')
   .option('--full', 'Create a full structured plan for 4+ tasks')
-  .action(() => {
-    console.log('ralph plan create — not yet implemented');
+  .action((title: string, options: { full?: boolean }) => {
+    planCreateCommand(title, options);
   });
 
 planCmd
   .command('complete <id>')
   .description('Mark a plan as completed')
-  .action(() => {
-    console.log('ralph plan complete — not yet implemented');
+  .action((id: string) => {
+    planCompleteCommand(id);
   });
 
 planCmd
   .command('abandon <id>')
   .description('Abandon a plan')
   .option('--reason <reason>', 'Reason for abandonment')
-  .action(() => {
-    console.log('ralph plan abandon — not yet implemented');
+  .action((id: string, options: { reason?: string }) => {
+    planAbandonCommand(id, options);
   });
 
 planCmd
   .command('log <id> <decision>')
   .description('Log a decision to a plan')
-  .action(() => {
-    console.log('ralph plan log — not yet implemented');
+  .action((id: string, decision: string) => {
+    planLogCommand(id, decision);
   });
 
 planCmd
   .command('list')
   .description('List execution plans')
   .option('--all', 'Include completed and abandoned plans')
-  .action(() => {
-    console.log('ralph plan list — not yet implemented');
+  .action((options: { all?: boolean }) => {
+    planListCommand(options);
   });
 
 planCmd
   .command('status')
   .description('Show plan summary with completion percentage')
   .action(() => {
-    console.log('ralph plan status — not yet implemented');
+    planStatusCommand();
   });
 
 // ralph promote
@@ -133,8 +136,8 @@ promoteCmd
   .command('doc <principle>')
   .description('Promote a principle to documentation')
   .option('--to <doc>', 'Target document (e.g., RELIABILITY.md)')
-  .action(() => {
-    console.log('ralph promote doc — not yet implemented');
+  .action((principle: string, options: { to?: string }) => {
+    promoteDocCommand(principle, options);
   });
 
 promoteCmd
@@ -144,23 +147,23 @@ promoteCmd
   .option('--pattern <pattern>', 'Pattern to match')
   .option('--require <require>', 'Required nearby pattern')
   .option('--fix <fix>', 'Fix suggestion')
-  .action(() => {
-    console.log('ralph promote lint — not yet implemented');
+  .action((ruleName: string, options: { description?: string; pattern?: string; require?: string; fix?: string }) => {
+    promoteLintCommand(ruleName, options);
   });
 
 promoteCmd
   .command('pattern <name>')
   .description('Promote a principle to a design pattern')
   .option('--description <desc>', 'Pattern description')
-  .action(() => {
-    console.log('ralph promote pattern — not yet implemented');
+  .action((name: string, options: { description?: string }) => {
+    promotePatternCommand(name, options);
   });
 
 promoteCmd
   .command('list')
   .description('List all taste rules with enforcement level')
   .action(() => {
-    console.log('ralph promote list — not yet implemented');
+    promoteListCommand();
   });
 
 // ralph ref
@@ -172,8 +175,8 @@ refCmd
   .command('add <url-or-path>')
   .description('Add a reference')
   .option('--name <name>', 'Name for the reference')
-  .action(() => {
-    console.log('ralph ref add — not yet implemented');
+  .action((urlOrPath: string, options: { name?: string }) => {
+    refAddCommand(urlOrPath, options);
   });
 
 refCmd
@@ -187,22 +190,22 @@ refCmd
   .command('list')
   .description('List all references')
   .option('--sizes', 'Show visual size breakdown')
-  .action(() => {
-    console.log('ralph ref list — not yet implemented');
+  .action((options: { sizes?: boolean }) => {
+    refListCommand(options);
   });
 
 refCmd
   .command('update [name]')
   .description('Re-fetch references from source URLs')
-  .action(() => {
-    console.log('ralph ref update — not yet implemented');
+  .action((name?: string) => {
+    refUpdateCommand(name);
   });
 
 refCmd
   .command('remove <name>')
   .description('Remove a reference')
-  .action(() => {
-    console.log('ralph ref remove — not yet implemented');
+  .action((name: string) => {
+    refRemoveCommand(name);
   });
 
 // ralph hooks
