@@ -44,6 +44,24 @@ function getCompletionPercentage(content: string): { checked: number; total: num
   return { checked, total, pct };
 }
 
+function ensureTechDebtTracker(plansDir: string): void {
+  const trackerPath = join(plansDir, 'tech-debt-tracker.md');
+  if (existsSync(trackerPath)) return;
+  const content = `# Tech Debt Tracker
+
+| ID | Description | Priority | Discovered Date | Related Plan |
+|----|-------------|----------|-----------------|--------------|
+
+## Priority Levels
+
+- **P0** — Blocking current work or causing incidents
+- **P1** — Should be addressed soon, increasing friction
+- **P2** — Nice to fix, low impact
+- **P3** — Cosmetic or negligible impact
+`;
+  safeWriteFile(trackerPath, content);
+}
+
 function updateIndex(plansDir: string): void {
   const activeDir = join(plansDir, 'active');
   const completedDir = join(plansDir, 'completed');
@@ -96,6 +114,7 @@ export function planCreateCommand(title: string, options: { full?: boolean }): v
   const activeDir = join(plansDir, 'active');
   ensureDir(activeDir);
   ensureDir(join(plansDir, 'completed'));
+  ensureTechDebtTracker(plansDir);
 
   const id = getNextPlanId(plansDir);
   const slug = slugify(title);

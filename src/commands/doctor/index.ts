@@ -264,6 +264,41 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     fix: hasTypeChecker ? undefined : 'Add a type checker (typescript, mypy)',
   });
 
+  // Test files exist (verifies tests are real, not just a runner configured)
+  let hasTestFiles = false;
+  try {
+    const findTestFiles = (dir: string, depth: number): boolean => {
+      if (depth > 4) return false;
+      if (!existsSync(dir)) return false;
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
+        if (entry.isFile()) {
+          // Match common test file patterns across languages
+          if (/\.(test|spec)\.[jt]sx?$/.test(entry.name) ||
+              /^test_.*\.py$/.test(entry.name) ||
+              /.*_test\.py$/.test(entry.name) ||
+              /.*_test\.go$/.test(entry.name) ||
+              /.*_test\.rs$/.test(entry.name)) {
+            return true;
+          }
+        } else if (entry.isDirectory()) {
+          if (findTestFiles(join(dir, entry.name), depth + 1)) return true;
+        }
+      }
+      return false;
+    };
+    hasTestFiles = findTestFiles(projectRoot, 0);
+  } catch { /* ignore */ }
+
+  checks.push({
+    name: 'Test files exist',
+    category: 'backpressure',
+    pass: hasTestFiles,
+    detail: hasTestFiles ? 'Test files found' : 'No test files found',
+    fix: hasTestFiles ? undefined : 'Add test files (e.g., *.test.ts, *_test.go, test_*.py)',
+  });
+
   // Ralph lint rules configured
   const configPath = join(projectRoot, '.ralph', 'config.yml');
   let hasLintRules = false;
@@ -374,7 +409,7 @@ export function runAllChecks(projectRoot: string, config: RalphConfig): Check[] 
   ];
 }
 
-export function doctorCommand(options: DoctorOptions): void {
+export async function doctorCommand(options: DoctorOptions): Promise<void> {
   const projectRoot = findProjectRoot(process.cwd());
   const { config, warnings } = loadConfig(projectRoot);
 
@@ -454,12 +489,12 @@ export function doctorCommand(options: DoctorOptions): void {
     if (failing.length > 0) {
       console.log('');
       info(`Running ralph init to fix ${failing.length} missing structure issue(s)...`);
-      // Import and run init
-      import('../init/index.js').then(({ initCommand }) => {
+      try {
+        const { initCommand } = await import('../init/index.js');
         initCommand({ defaults: true });
-      }).catch(() => {
+      } catch {
         error('Failed to run ralph init');
-      });
+      }
     }
   }
 }

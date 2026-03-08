@@ -120,6 +120,39 @@ describe('doctor checks', () => {
     }
   });
 
+  it('detects test files exist', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("works", () => {});\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testFilesCheck = checks.find(c => c.name === 'Test files exist');
+    expect(testFilesCheck).toBeDefined();
+    expect(testFilesCheck!.pass).toBe(true);
+  });
+
+  it('fails test files check when no test files present', () => {
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testFilesCheck = checks.find(c => c.name === 'Test files exist');
+    expect(testFilesCheck).toBeDefined();
+    expect(testFilesCheck!.pass).toBe(false);
+    expect(testFilesCheck!.fix).toContain('test files');
+  });
+
+  it('detects Go test files', () => {
+    mkdirSync(join(tempDir, 'pkg'), { recursive: true });
+    writeFileSync(join(tempDir, 'pkg', 'handler_test.go'), 'package pkg\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testFilesCheck = checks.find(c => c.name === 'Test files exist');
+    expect(testFilesCheck!.pass).toBe(true);
+  });
+
+  it('detects Python test files', () => {
+    mkdirSync(join(tempDir, 'tests'), { recursive: true });
+    writeFileSync(join(tempDir, 'tests', 'test_auth.py'), 'def test_login(): pass\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const testFilesCheck = checks.find(c => c.name === 'Test files exist');
+    expect(testFilesCheck!.pass).toBe(true);
+  });
+
   it('fully initialized repo passes most checks', () => {
     // Set up a fully initialized structure
     mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });
@@ -152,6 +185,10 @@ describe('doctor checks', () => {
     writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
       devDependencies: { typescript: '^5.0.0', vitest: '^1.0.0', eslint: '^8.0.0' },
     }));
+
+    // Add a test file so the "test files exist" check passes
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("works", () => {});\n');
 
     const checks = runAllChecks(tempDir, makeConfig());
     const passing = checks.filter(c => c.pass).length;

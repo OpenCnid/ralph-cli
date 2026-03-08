@@ -2,20 +2,20 @@
 
 # Implementation Plan — ralph-cli
 
-## Current State (verified 2026-03-07)
+## Current State (verified 2026-03-08)
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 217 tests across 13 files — all passing
+- **Tests**: 223 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 217 tests across 13 files, all passing.
+All 10 commands fully implemented. 223 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
@@ -23,9 +23,9 @@ All 10 commands fully implemented. 217 tests across 13 files, all passing.
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
 | P2 | Architectural Enforcement | `ralph lint` | 32 | 0.0.10 |
 | P3 | Quality Grading | `ralph grade` | 36 | 0.0.9 |
-| P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.8 |
+| P4 | Repo Diagnostics | `ralph doctor` | 16 | 0.0.12 |
 | P5 | Drift Detection | `ralph gc` | 22 | 0.0.11 |
-| P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
+| P6 | Execution Plans | `ralph plan` | 10 | 0.0.12 |
 | P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
 | P8 | References | `ralph ref` | 4 | 0.0.3 |
 | P9 | Integration | `ralph hooks`, `ralph ci` | 9 | 0.0.4 |
@@ -106,6 +106,13 @@ All 10 commands fully implemented. 217 tests across 13 files, all passing.
 - **Pattern consistency expansion**: Beyond error-handling (try-catch vs .catch()), now also detects export style inconsistency (default-export vs named-export) and null-checking patterns (=== null vs !== null vs nullish coalescing). Reports when dominant pattern is below consistency threshold.
 - **Trend tracking**: Saves drift snapshots to `.ralph/gc-history.jsonl` after each run. Detects rising (entropy accumulating), declining (cleanup outpacing), or stable drift velocity using last 3 runs. Shows trend in both text and JSON output modes.
 - **14 new tests**: Empty catch detection, any type detection, deep optional chaining, principle matching from core-beliefs.md, comment skipping, test file exclusion, export style inconsistency, history persistence, history appending, rising/declining/stable trend detection, trend in text/JSON output, category count tracking.
+
+### Doctor Fixes & Plan Tech-Debt Tracker (0.0.12)
+
+- **Doctor `--fix` async fix**: `doctorCommand` is now async; the dynamic import of `initCommand` is properly awaited instead of using a fire-and-forget `.then()` that could exit before init completes.
+- **Test files exist backpressure check**: New check scans project directories (up to 4 levels deep) for test files matching common patterns across languages (`.test.ts`, `.spec.js`, `_test.go`, `test_*.py`, `_test.rs`). Skips `node_modules`, `.git`, and `dist` directories.
+- **Plan auto-creates tech-debt-tracker.md**: `ralph plan create` now ensures `tech-debt-tracker.md` exists in the plans directory with the standard template (ID/Description/Priority/Discovered/Plan table). Does not overwrite existing trackers.
+- **6 new tests**: Test files exist (TS, Go, Python patterns), missing test files detection, tech-debt-tracker auto-creation, existing tracker preservation.
 
 ---
 

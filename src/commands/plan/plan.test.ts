@@ -106,6 +106,30 @@ describe('plan commands', () => {
     expect(content).toMatch(/\*\*\d{4}-\d{2}-\d{2} \d{2}:\d{2}\*\*/); // timestamp format
   });
 
+  it('auto-creates tech-debt-tracker.md on first plan create', () => {
+    // Remove the tracker if it exists from setup
+    const trackerPath = join(tempDir, 'docs', 'exec-plans', 'tech-debt-tracker.md');
+    expect(existsSync(trackerPath)).toBe(false);
+
+    planCreateCommand('First plan', {});
+
+    expect(existsSync(trackerPath)).toBe(true);
+    const content = readFileSync(trackerPath, 'utf-8');
+    expect(content).toContain('# Tech Debt Tracker');
+    expect(content).toContain('| ID | Description | Priority | Discovered Date | Related Plan |');
+    expect(content).toContain('P0');
+  });
+
+  it('does not overwrite existing tech-debt-tracker.md', () => {
+    const trackerPath = join(tempDir, 'docs', 'exec-plans', 'tech-debt-tracker.md');
+    writeFileSync(trackerPath, '# Tech Debt Tracker\n\n| ID | Description |\n| TD-1 | Fix auth bug |\n');
+
+    planCreateCommand('New plan', {});
+
+    const content = readFileSync(trackerPath, 'utf-8');
+    expect(content).toContain('Fix auth bug');
+  });
+
   it('updates index on complete/abandon', () => {
     planCreateCommand('Active plan', {});
     planCreateCommand('Completed plan', {});
