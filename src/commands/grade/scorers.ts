@@ -7,8 +7,7 @@ import { runRules } from '../lint/engine.js';
 import { createDependencyDirectionRule } from '../lint/rules/dependency-direction.js';
 import { createFileSizeRule } from '../lint/rules/file-size.js';
 import { createNamingConventionRule } from '../lint/rules/naming-convention.js';
-import type { HistoryEntry } from './trends.js';
-import { computeTrends } from './trends.js';
+import { computeTrends, type HistoryEntry } from './trends.js';
 
 export interface DimensionScore {
   grade: Grade;
