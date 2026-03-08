@@ -3,11 +3,30 @@ import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { initCommand } from './index.js';
+import * as prompt from '../../utils/prompt.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-init-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+let originalIsTtyDescriptor: PropertyDescriptor | undefined;
+
+function setStdinIsTty(value: boolean): void {
+  if (originalIsTtyDescriptor === undefined) {
+    originalIsTtyDescriptor = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+  }
+  Object.defineProperty(process.stdin, 'isTTY', {
+    configurable: true,
+    value,
+  });
+}
+
+function restoreStdinIsTty(): void {
+  if (originalIsTtyDescriptor) {
+    Object.defineProperty(process.stdin, 'isTTY', originalIsTtyDescriptor);
+  }
 }
 
 describe('initCommand', () => {
@@ -22,6 +41,8 @@ describe('initCommand', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
+    restoreStdinIsTty();
     process.chdir(origCwd);
     rmSync(tempDir, { recursive: true, force: true });
   });
@@ -199,5 +220,81 @@ describe('initCommand', () => {
     expect(tracker).toContain('| ID |');
     expect(tracker).toContain('| Description |');
     expect(tracker).toContain('Priority');
+  });
+
+  it('interactive mode with accepted defaults matches --defaults output', async () => {
+    const interactiveDir = tempDir;
+    const defaultsDir = makeTempDir();
+    mkdirSync(join(defaultsDir, '.git'), { recursive: true });
+
+    const pkg = JSON.stringify({
+      name: 'test-project',
+      dependencies: { next: '^14.0.0', react: '^18.0.0' },
+      devDependencies: { typescript: '^5.0.0', vitest: '^1.0.0' },
+    });
+    writeFileSync(join(interactiveDir, 'package.json'), pkg);
+    writeFileSync(join(defaultsDir, 'package.json'), pkg);
+
+    setStdinIsTty(true);
+    vi.spyOn(prompt, 'ask').mockImplementation(async (_question: string, defaultValue?: string) => defaultValue ?? '');
+    vi.spyOn(prompt, 'confirm').mockResolvedValue(true);
+    const selectSpy = vi.spyOn(prompt, 'select');
+
+    process.chdir(interactiveDir);
+    await initCommand({});
+
+    process.chdir(defaultsDir);
+    await initCommand({ defaults: true });
+
+    const interactiveAgents = readFileSync(join(interactiveDir, 'AGENTS.md'), 'utf-8');
+    const defaultsAgents = readFileSync(join(defaultsDir, 'AGENTS.md'), 'utf-8');
+    expect(interactiveAgents).toBe(defaultsAgents);
+
+    const interactiveConfig = readFileSync(join(interactiveDir, '.ralph', 'config.yml'), 'utf-8');
+    const defaultsConfig = readFileSync(join(defaultsDir, '.ralph', 'config.yml'), 'utf-8');
+    expect(interactiveConfig).toBe(defaultsConfig);
+
+    expect(selectSpy).not.toHaveBeenCalled();
+    process.chdir(interactiveDir);
+    rmSync(defaultsDir, { recursive: true, force: true });
+  });
+
+  it('falls back to defaults behavior in non-TTY mode', async () => {
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'test-project',
+      devDependencies: { typescript: '^5.0.0' },
+    }));
+
+    setStdinIsTty(false);
+    const askSpy = vi.spyOn(prompt, 'ask');
+    const confirmSpy = vi.spyOn(prompt, 'confirm');
+    const selectSpy = vi.spyOn(prompt, 'select');
+
+    await initCommand({});
+
+    expect(askSpy).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(selectSpy).not.toHaveBeenCalled();
+    expect(existsSync(join(tempDir, 'AGENTS.md'))).toBe(true);
+  });
+
+  it('uses custom project name from interactive prompt in generated files', async () => {
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'test-project',
+      devDependencies: { typescript: '^5.0.0' },
+    }));
+
+    setStdinIsTty(true);
+    vi.spyOn(prompt, 'ask')
+      .mockResolvedValueOnce('custom-app')
+      .mockResolvedValueOnce('');
+    vi.spyOn(prompt, 'confirm').mockResolvedValue(true);
+
+    await initCommand({});
+
+    const agents = readFileSync(join(tempDir, 'AGENTS.md'), 'utf-8');
+    const config = readFileSync(join(tempDir, '.ralph', 'config.yml'), 'utf-8');
+    expect(agents).toContain('# custom-app');
+    expect(config).toContain('name: "custom-app"');
   });
 });

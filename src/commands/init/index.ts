@@ -4,6 +4,7 @@ import { findProjectRoot } from '../../config/loader.js';
 import { ensureDir, safeWriteFile, success, warn, info } from '../../utils/index.js';
 import { detectProject } from './detect.js';
 import * as templates from './templates.js';
+import * as prompt from '../../utils/prompt.js';
 
 interface InitOptions {
   defaults?: boolean | undefined;
@@ -12,6 +13,26 @@ interface InitOptions {
 interface FileEntry {
   path: string;
   content: string;
+}
+
+const LANGUAGE_OPTIONS = ['typescript', 'javascript', 'python', 'go', 'rust'] as const;
+const FRAMEWORK_OPTIONS = ['nextjs', 'express', 'fastify', 'react', 'none'] as const;
+
+function summaryForDetection(
+  detection: ReturnType<typeof detectProject>,
+): string {
+  return `${detection.language}${detection.framework ? ` + ${detection.framework}` : ''}`;
+}
+
+function defaultLanguageIndex(language: string): number {
+  const idx = LANGUAGE_OPTIONS.indexOf(language as (typeof LANGUAGE_OPTIONS)[number]);
+  return idx >= 0 ? idx : 0;
+}
+
+function defaultFrameworkIndex(framework: string | undefined): number {
+  if (!framework) return FRAMEWORK_OPTIONS.indexOf('none');
+  const idx = FRAMEWORK_OPTIONS.indexOf(framework as (typeof FRAMEWORK_OPTIONS)[number]);
+  return idx >= 0 ? idx : FRAMEWORK_OPTIONS.indexOf('none');
 }
 
 function buildFileList(projectName: string, detection: ReturnType<typeof detectProject>): FileEntry[] {
@@ -35,12 +56,36 @@ function buildFileList(projectName: string, detection: ReturnType<typeof detectP
   ];
 }
 
-export function initCommand(options: InitOptions): void {
+export async function initCommand(options: InitOptions): Promise<void> {
   const projectRoot = findProjectRoot(process.cwd());
   const detection = detectProject(projectRoot);
-  const projectName = detection.projectName ?? 'my-project';
+  let projectName = detection.projectName ?? 'my-project';
+  const interactive = !options.defaults && process.stdin.isTTY === true;
 
-  info(`Detected: ${detection.language}${detection.framework ? ` + ${detection.framework}` : ''}`);
+  info(`Detected: ${summaryForDetection(detection)}`);
+
+  if (interactive) {
+    projectName = await prompt.ask('Project name', projectName);
+    const description = await prompt.ask('Description', detection.description ?? '');
+    detection.description = description;
+
+    const acceptedDetected = await prompt.confirm('Accept detected language and framework?', true);
+    if (!acceptedDetected) {
+      const selectedLanguage = await prompt.select(
+        'Language',
+        [...LANGUAGE_OPTIONS],
+        defaultLanguageIndex(detection.language),
+      );
+      const selectedFramework = await prompt.select(
+        'Framework',
+        [...FRAMEWORK_OPTIONS],
+        defaultFrameworkIndex(detection.framework),
+      );
+
+      detection.language = selectedLanguage as (typeof LANGUAGE_OPTIONS)[number];
+      detection.framework = selectedFramework === 'none' ? undefined : selectedFramework;
+    }
+  }
 
   // Ensure directories exist
   const dirs = [

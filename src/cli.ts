@@ -33,8 +33,8 @@ program
   .command('init')
   .description('Scaffold an agent-optimized project structure')
   .option('--defaults', 'Non-interactive mode with sensible defaults')
-  .action((options: { defaults?: boolean }) => {
-    initCommand(options);
+  .action(async (options: { defaults?: boolean }) => {
+    await initCommand(options);
   });
 
 // ralph lint
