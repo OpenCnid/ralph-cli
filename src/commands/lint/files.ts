@@ -10,10 +10,11 @@ const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.next', 'coverage', '.git', '.
 
 export function collectFiles(
   dir: string,
-  options: { exclude?: string[]; extensions?: string[] } = {}
+  options: { exclude?: string[]; extensions?: string[]; includeTests?: boolean } = {}
 ): string[] {
   const exclude = options.exclude ?? DEFAULT_EXCLUDE;
   const extensions = options.extensions ?? DEFAULT_EXTENSIONS;
+  const includeTests = options.includeTests ?? false;
   const files: string[] = [];
 
   function walk(currentDir: string): void {
@@ -38,8 +39,8 @@ export function collectFiles(
       if (stat.isDirectory()) {
         walk(fullPath);
       } else if (stat.isFile() && extensions.some(ext => entry.endsWith(ext))) {
-        // Skip test files for linting
-        if (entry.includes('.test.') || entry.includes('.spec.')) continue;
+        // Skip test files for linting (unless includeTests is set)
+        if (!includeTests && (entry.includes('.test.') || entry.includes('.spec.'))) continue;
         files.push(fullPath);
       }
     }

@@ -10,6 +10,7 @@ import { createFileSizeRule } from './rules/file-size.js';
 import { createNamingConventionRule } from './rules/naming-convention.js';
 import { loadCustomRules } from './rules/custom-rules.js';
 import { createDomainIsolationRule } from './rules/domain-isolation.js';
+import { createFileOrganizationRule } from './rules/file-organization.js';
 
 interface LintOptions {
   fix?: boolean | undefined;
@@ -31,6 +32,7 @@ export function lintCommand(targetPath: string | undefined, options: LintOptions
     createDomainIsolationRule(config.architecture.domains, config.architecture['cross-cutting']),
     createFileSizeRule(config.architecture.files['max-lines']),
     createNamingConventionRule(config.architecture.files.naming),
+    createFileOrganizationRule(config.architecture.domains),
   ];
 
   // Load custom rules

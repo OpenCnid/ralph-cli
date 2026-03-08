@@ -6,25 +6,25 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 192 tests across 13 files — all passing
+- **Tests**: 203 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 192 tests across 13 files, all passing.
+All 10 commands fully implemented. 203 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
 | P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
-| P2 | Architectural Enforcement | `ralph lint` | 25 | 0.0.8 |
+| P2 | Architectural Enforcement | `ralph lint` | 32 | 0.0.10 |
 | P3 | Quality Grading | `ralph grade` | 36 | 0.0.9 |
 | P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.8 |
-| P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
+| P5 | Drift Detection | `ralph gc` | 8 | 0.0.10 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
 | P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
 | P8 | References | `ralph ref` | 4 | 0.0.3 |
@@ -81,14 +81,32 @@ All 10 commands fully implemented. 192 tests across 13 files, all passing.
 - **Shared scoring helpers**: Refactored `scoreArchitectureForFiles()`, `scoreFileHealthForFiles()`, `scoreStalenessForFiles()` used by both project-level and domain-level scoring — single source of truth, no duplication.
 - **11 new tests**: Per-domain lcov/Go coverage filtering, domain file isolation, domain documentation scoring, empty domain handling, domain coverage integration, weakest-link calculation per domain.
 
+### Lint File Organization Rule (0.0.10)
+
+- **Business logic in utils/ detection**: New `file-organization` rule detects domain-specific code misplaced in utils/, helpers/, or util/ directories using three heuristics.
+- **Name-based heuristic**: Flags files whose names start with business-logic verbs (handle, process, manage, execute, create, update, delete, submit, validate, authorize, etc.).
+- **Import-based heuristic**: Detects files in utils/ that import from configured domain paths — strong signal that the file contains domain logic.
+- **Class declaration heuristic**: Flags class declarations in utils/ since utilities should typically be pure functions, not classes.
+- **Domain-aware fix suggestions**: When domain imports are detected, the fix message suggests the specific domain path to move the file to.
+- **Automatic wiring**: Rule is automatically included in `ralph lint` when domains are configured.
+- **7 new tests**: Business logic names, generic utilities allowed, domain imports, class declarations, files outside utils/, no-domains graceful, helpers/ detection.
+
+### GC Dead Code Detection (0.0.10)
+
+- **Exports with no importers**: Completes the previously stubbed import graph analysis. Builds a map of all relative imports across the codebase, then identifies files that export symbols but are never imported by any other file.
+- **Import resolution**: Resolves relative imports to project-relative paths, normalizes extensions, and handles `/index` module resolution.
+- **Entry point exclusion**: Skips CLI entry points and root index files that are legitimate unimported entry points.
+- **Orphaned test file detection**: Fixed by using `collectFiles` with `includeTests: true` — test files were previously excluded from the scan, making orphaned test detection impossible.
+- **`collectFiles` enhancement**: Added `includeTests` option to the shared file collector so GC can scan test files without affecting lint behavior.
+- **4 new tests**: Exports with no importers, imported files not flagged, orphaned test files, fix-descriptions output.
+
 ---
 
 ## Deferred Items
 
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
-- **GC enhancements** — golden principle violations detection missing, pattern consistency limited, stale docs incomplete, trend tracking missing
-- **Lint file organization rule** — detect business logic in utils/ (heuristic design needed)
+- **GC enhancements** — golden principle violations detection missing, pattern consistency limited (only error-handling patterns), trend tracking missing
 - **Lint --fix auto-fix** — flag registered but not implemented for any rule
 - **Promote format** — date placement doesn't match spec (date first vs principle first)
 - **Ref discover** — scan dependencies for llms.txt files (needs dep parsing)

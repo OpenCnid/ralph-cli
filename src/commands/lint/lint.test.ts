@@ -10,6 +10,7 @@ import { loadCustomRules } from './rules/custom-rules.js';
 import { collectFiles } from './files.js';
 import { parseImports } from './imports.js';
 import { createDomainIsolationRule } from './rules/domain-isolation.js';
+import { createFileOrganizationRule } from './rules/file-organization.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-lint-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -463,5 +464,131 @@ describe('collectFiles', () => {
     const files = collectFiles(tempDir);
     expect(files.length).toBe(1);
     expect(files[0]).toContain('app.ts');
+  });
+});
+
+describe('file-organization rule', () => {
+  let tempDir: string;
+
+  beforeEach(() => { tempDir = makeTempDir(); });
+  afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+  it('flags files in utils/ with business logic names', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'utils', 'handlePayment.ts'),
+      `export function handlePayment() { return true; }\n`
+    );
+
+    const rule = createFileOrganizationRule([]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'handlePayment.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.severity).toBe('error');
+    expect(violations[0]!.what).toContain('business logic');
+    expect(violations[0]!.what).toContain('handlePayment.ts');
+  });
+
+  it('allows generic utility files in utils/', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'utils', 'format.ts'),
+      `export function formatDate(d: Date): string { return d.toISOString(); }\n`
+    );
+
+    const rule = createFileOrganizationRule([]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'format.ts')],
+    });
+
+    expect(violations.length).toBe(0);
+  });
+
+  it('flags utils/ files that import from domain paths', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'domain', 'billing'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'src', 'utils', 'pricing.ts'),
+      `import { Product } from '../domain/billing/product.js';\nexport function getPrice(p: any) { return p.price; }\n`
+    );
+    writeFileSync(join(tempDir, 'src', 'domain', 'billing', 'product.ts'),
+      `export interface Product { price: number; }\n`
+    );
+
+    const rule = createFileOrganizationRule([
+      { name: 'billing', path: 'src/domain/billing' },
+    ]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'pricing.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.what).toContain('billing');
+    expect(violations[0]!.fix).toContain('src/domain/billing');
+  });
+
+  it('flags utils/ files with class declarations', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'utils', 'service.ts'),
+      `export class PaymentProcessor {\n  process() {}\n}\n`
+    );
+
+    const rule = createFileOrganizationRule([]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'service.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.what).toContain('class declarations');
+  });
+
+  it('ignores files outside utils/', () => {
+    mkdirSync(join(tempDir, 'src', 'domain'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'domain', 'handlePayment.ts'),
+      `export function handlePayment() { return true; }\n`
+    );
+
+    const rule = createFileOrganizationRule([]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'domain', 'handlePayment.ts')],
+    });
+
+    expect(violations.length).toBe(0);
+  });
+
+  it('works with no domains configured', () => {
+    mkdirSync(join(tempDir, 'src', 'utils'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'utils', 'processOrder.ts'),
+      `export function processOrder() {}\n`
+    );
+
+    const rule = createFileOrganizationRule(undefined);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'utils', 'processOrder.ts')],
+    });
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.fix).toContain('domain module');
+  });
+
+  it('detects helpers/ directory as utils-like', () => {
+    mkdirSync(join(tempDir, 'src', 'helpers'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'helpers', 'manageUsers.ts'),
+      `export function manageUsers() {}\n`
+    );
+
+    const rule = createFileOrganizationRule([]);
+    const violations = rule.run({
+      projectRoot: tempDir,
+      files: [join(tempDir, 'src', 'helpers', 'manageUsers.ts')],
+    });
+
+    expect(violations.length).toBe(1);
   });
 });

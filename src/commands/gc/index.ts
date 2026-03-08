@@ -29,39 +29,66 @@ function scanDeadCode(projectRoot: string, config: RalphConfig): DriftItem[] {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
 
   // Build an import graph to find exports with no importers
-  const allImports = new Map<string, Set<string>>();
-  const exportedSymbols = new Map<string, string[]>();
+  // importTargets: maps each file to the set of resolved relative paths it imports
+  const importTargets = new Map<string, Set<string>>();
+  const exportingFiles = new Set<string>();
 
   for (const file of files) {
+    const rel = relative(projectRoot, file).replace(/\\/g, '/');
     const imports = parseImports(file);
+
     for (const imp of imports) {
       if (!imp.source.startsWith('.')) continue;
-      const rel = relative(projectRoot, file).replace(/\\/g, '/');
-      if (!allImports.has(rel)) allImports.set(rel, new Set());
-      allImports.get(rel)!.add(imp.source);
+      // Resolve relative import to a project-relative path
+      const fileDir = relative(projectRoot, join(file, '..'));
+      const resolved = join(fileDir, imp.source).replace(/\\/g, '/');
+      // Normalize: strip extensions for matching
+      const normalized = resolved.replace(/\.[^./]+$/, '');
+      if (!importTargets.has(rel)) importTargets.set(rel, new Set());
+      importTargets.get(rel)!.add(normalized);
     }
 
-    // Find exports
+    // Find files that export symbols
     try {
       const content = readFileSync(file, 'utf-8');
-      const rel = relative(projectRoot, file).replace(/\\/g, '/');
-      const exports: string[] = [];
-      const lines = content.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]!;
-        const exportMatch = line.match(/^export\s+(?:const|function|class|type|interface|enum)\s+(\w+)/);
-        if (exportMatch?.[1]) {
-          exports.push(exportMatch[1]);
-        }
-      }
-      if (exports.length > 0) {
-        exportedSymbols.set(rel, exports);
+      if (/^export\s+(?:const|function|class|type|interface|enum|default)\s+/m.test(content)) {
+        exportingFiles.add(rel);
       }
     } catch { /* ignore */ }
   }
 
-  // Find test files with no corresponding source
-  for (const file of files) {
+  // Build set of all imported paths (normalized, no extension)
+  const allImportedPaths = new Set<string>();
+  for (const targets of importTargets.values()) {
+    for (const target of targets) {
+      allImportedPaths.add(target);
+      // Also add with /index since `import './foo'` may resolve to `foo/index`
+      allImportedPaths.add(target + '/index');
+    }
+  }
+
+  // Find exporting files with no importers
+  for (const exportingFile of exportingFiles) {
+    const normalized = exportingFile.replace(/\.[^./]+$/, '');
+    // Skip entry points (index files at project root, CLI entry points)
+    if (normalized === 'index' || exportingFile.match(/cli\.[^.]+$/)) continue;
+    // Skip test files
+    if (exportingFile.includes('.test.') || exportingFile.includes('.spec.')) continue;
+
+    if (!allImportedPaths.has(normalized)) {
+      items.push({
+        category: 'dead-code',
+        file: exportingFile,
+        description: `File exports symbols but is not imported by any other file`,
+        severity: 'info',
+        fix: `Delete ${exportingFile} if no longer needed, or document why it is retained`,
+      });
+    }
+  }
+
+  // Find test files with no corresponding source (need to include test files for this scan)
+  const allFiles = collectFiles(projectRoot, { exclude: config.gc.exclude, includeTests: true });
+  for (const file of allFiles) {
     const rel = relative(projectRoot, file).replace(/\\/g, '/');
     if (rel.includes('.test.') || rel.includes('.spec.')) {
       const sourceFile = rel.replace(/\.test\./, '.').replace(/\.spec\./, '.');
