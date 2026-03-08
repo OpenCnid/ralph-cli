@@ -80,12 +80,10 @@ architecture:
     - feature-flags
   
   rules:
-    max-file-lines: 500
+    max-lines: 500
     naming:
       schemas: "*Schema"
       types: "*Type"
-    custom:
-      - .ralph/rules/no-yolo-data-access.yml
 ```
 
 ### Running

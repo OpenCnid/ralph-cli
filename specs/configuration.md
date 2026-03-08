@@ -45,8 +45,11 @@ architecture:
     - src/providers
     - src/shared
 
-  # File constraints
-  files:
+  # Dependency direction
+  direction: forward-only      # each layer can only import from layers above it
+
+  # File and naming rules
+  rules:
     max-lines: 500
     naming:
       schemas: "*Schema"
