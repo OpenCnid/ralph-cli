@@ -11,6 +11,9 @@ import { doctorCommand } from './commands/doctor/index.js';
 import { planCreateCommand, planCompleteCommand, planAbandonCommand, planLogCommand, planListCommand, planStatusCommand } from './commands/plan/index.js';
 import { promoteDocCommand, promoteLintCommand, promotePatternCommand, promoteListCommand } from './commands/promote/index.js';
 import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand } from './commands/ref/index.js';
+import { gcCommand } from './commands/gc/index.js';
+import { hooksInstallCommand, hooksUninstallCommand } from './commands/hooks/index.js';
+import { ciGenerateCommand } from './commands/ci/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,8 +65,8 @@ program
   .option('--json', 'Output structured JSON')
   .option('--fix-descriptions', 'Markdown with one fix task per drift item')
   .option('--severity <level>', 'Filter by severity (critical, warning, info)')
-  .action(() => {
-    console.log('ralph gc — not yet implemented');
+  .action((options: { json?: boolean; fixDescriptions?: boolean; severity?: string }) => {
+    gcCommand(options);
   });
 
 // ralph doctor
@@ -218,15 +221,15 @@ hooksCmd
   .description('Install ralph git hooks')
   .option('--all', 'Install all hooks')
   .option('--hooks <list>', 'Comma-separated list of hooks to install')
-  .action(() => {
-    console.log('ralph hooks install — not yet implemented');
+  .action((options: { all?: boolean; hooks?: string }) => {
+    hooksInstallCommand(options);
   });
 
 hooksCmd
   .command('uninstall')
   .description('Remove ralph git hooks')
   .action(() => {
-    console.log('ralph hooks uninstall — not yet implemented');
+    hooksUninstallCommand();
   });
 
 // ralph ci
@@ -238,8 +241,8 @@ ciCmd
   .command('generate')
   .description('Generate CI configuration')
   .option('--platform <platform>', 'CI platform (github, gitlab, generic)')
-  .action(() => {
-    console.log('ralph ci generate — not yet implemented');
+  .action((options: { platform?: string }) => {
+    ciGenerateCommand(options);
   });
 
 // ralph config

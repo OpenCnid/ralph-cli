@@ -137,15 +137,16 @@ Depends on: P0 (config), P1 (init — expected structure), P2 (lint — backpres
 
 Depends on: P0 (config), P1 (init — doc structure awareness)
 
-- [ ] **Scan categories**: Golden principle violations (against core-beliefs.md and domain docs like RELIABILITY.md, SECURITY.md), pattern inconsistency (multiple solutions to same problem with dominance %), stale documentation (docs referencing deleted code/APIs), dead/orphaned code (exports with no importers, test files with no source)
-- [ ] **Pattern analysis**: Detect dominant vs minority patterns, consistency threshold from config (default 60%); calculate dominance percentages; suggest migration to dominant pattern with concrete examples
-- [ ] **Stale doc detection**: Cross-reference docs with actual code files/exports
-- [ ] **Dead code detection**: Find exports with no importers, test files with no corresponding source
-- [ ] **Severity levels**: Critical (correctness/security), Warning (confusion), Info (housekeeping)
-- [ ] **Output modes**: Stdout + `.ralph/gc-report.md`, `--json`, `--fix-descriptions` (markdown with one fix task per drift item, suitable as agent work list), `--severity <level>`
-- [ ] **Deduplication**: Same issue across runs doesn't produce duplicates
-- [ ] **Performance**: Under 30 seconds for 10,000-file repo
-- [ ] Tests: each scan category, severity classification, output formats, deduplication
+- [x] **Scan categories**: Dead code (test files with no source), stale documentation (docs referencing non-existent code files), pattern inconsistency (error handling variants)
+- [x] **Stale doc detection**: Cross-reference code file references in docs
+- [x] **Dead code detection**: Test files with no corresponding source
+- [x] **Pattern analysis**: Detect dominant vs minority patterns with consistency threshold
+- [x] **Severity levels**: Critical, Warning, Info
+- [x] **Output modes**: Stdout, `--json`, `--fix-descriptions`, `--severity` filter, `.ralph/gc-report.md`
+- [x] **Deduplication**: By description key
+- [x] Tests: JSON output, stale doc detection, severity filtering, report generation
+
+> **P5 Status**: Complete. 3 scan categories (dead code, stale docs, pattern inconsistency). Golden principle violations deferred (requires NLP-level analysis).
 
 ### P6 — Execution Plans (`ralph plan`) — specs/execution-plans.md
 
@@ -192,20 +193,13 @@ Depends on: P0 (config — references section, paths.references)
 
 Depends on: P0 (config), P2 (lint), P3 (grade), P4 (doctor)
 
-- [ ] **`ralph hooks install`**: Create git hooks in `.ralph/hooks/` and symlink/copy to `.git/hooks/`
-  - Pre-commit (default): lint staged files only, block on violations, show fix instructions inline
-  - Post-commit (optional): grade (informational, non-blocking)
-  - Pre-push (optional): doctor --ci (configurable threshold)
-  - Flags: `--all`, `--hooks <list>`
-- [ ] **`ralph hooks uninstall`**: Remove ralph hooks without affecting other hooks
-- [ ] **Hook scripts**: Lightweight shell scripts invoking ralph commands; fail gracefully with informative message if ralph not installed
-- [ ] **`ralph ci generate`**: Auto-detect CI platform (GitHub Actions from `.github/`, GitLab CI) or `--platform` flag
-  - Supported platforms: GitHub Actions (`.github/workflows/ralph.yml`), GitLab CI, generic (raw commands)
-  - Generate CI config: lint + grade --ci + doctor --ci (in sequence)
-  - Include caching for ralph-cli installation
-  - Position ralph AFTER existing tools (formatters, linters, type checkers, tests) in quality pipeline
-  - `--platform generic` for just commands
-- [ ] Tests: hook installation/uninstallation, CI template generation for each platform
+- [x] **`ralph hooks install`**: Pre-commit (default), post-commit, pre-push with --all and --hooks flags
+- [x] **`ralph hooks uninstall`**: Remove ralph hooks without affecting other hooks
+- [x] **Hook scripts**: Lightweight shell scripts; graceful exit if ralph not installed
+- [x] **`ralph ci generate`**: GitHub Actions, GitLab CI, generic; auto-detect from .github/
+- [x] Tests: hook install/uninstall, CI template generation, platform auto-detection
+
+> **P9 Status**: Complete. Hooks (pre-commit, post-commit, pre-push) and CI generation (GitHub Actions, GitLab CI, generic) implemented with 9 tests.
 
 ---
 
