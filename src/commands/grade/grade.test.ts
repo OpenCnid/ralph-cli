@@ -569,6 +569,66 @@ describe('generateQualityMd', () => {
     expect(md).toContain('auth/overall: A (stable)');
   });
 
+  it('detects per-dimension sustained degradation', () => {
+    const history = [
+      {
+        timestamp: '2026-03-01T00:00:00Z',
+        scores: [{ domain: 'auth', tests: 'A' as const, docs: 'A' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'A' as const }],
+      },
+      {
+        timestamp: '2026-03-02T00:00:00Z',
+        scores: [{ domain: 'auth', tests: 'B' as const, docs: 'A' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'B' as const }],
+      },
+      {
+        timestamp: '2026-03-03T00:00:00Z',
+        scores: [{ domain: 'auth', tests: 'C' as const, docs: 'A' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'C' as const }],
+      },
+    ];
+    // Current score continues the drop in tests
+    const scores = [{
+      domain: 'auth',
+      tests: { grade: 'D' as const, detail: '35%' },
+      docs: { grade: 'A' as const, detail: '5/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'D' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Should detect per-dimension sustained degradation for tests
+    expect(md).toContain('auth/tests: sustained degradation');
+  });
+
+  it('detects per-dimension sustained improvement', () => {
+    const history = [
+      {
+        timestamp: '2026-03-01T00:00:00Z',
+        scores: [{ domain: 'billing', tests: 'D' as const, docs: 'F' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'F' as const }],
+      },
+      {
+        timestamp: '2026-03-02T00:00:00Z',
+        scores: [{ domain: 'billing', tests: 'C' as const, docs: 'D' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'D' as const }],
+      },
+      {
+        timestamp: '2026-03-03T00:00:00Z',
+        scores: [{ domain: 'billing', tests: 'B' as const, docs: 'C' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'C' as const }],
+      },
+    ];
+    const scores = [{
+      domain: 'billing',
+      tests: { grade: 'A' as const, detail: '95%' },
+      docs: { grade: 'B' as const, detail: '4/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'A' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Should detect per-dimension sustained improvement for tests and docs
+    expect(md).toContain('billing/tests: sustained improvement');
+    expect(md).toContain('billing/docs: sustained improvement');
+  });
+
   it('generates action items for non-A domains with specific details', () => {
     const scores = [{
       domain: 'billing',

@@ -142,6 +142,36 @@ export const UserSchema = z.object({ name: z.string() });
     const violations = rule.run({ projectRoot: tempDir, files: [file] });
     expect(violations.length).toBe(0);
   });
+
+  it('flags exported types that do not match type naming pattern', () => {
+    const file = join(tempDir, 'models.ts');
+    writeFileSync(file, `
+export type UserProfile = { name: string; };
+export interface OrderDetails { id: number; }
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const violations = rule.run({ projectRoot: tempDir, files: [file] });
+    expect(violations.length).toBe(2);
+    expect(violations[0]!.what).toContain('UserProfile');
+    expect(violations[0]!.what).toContain('type naming convention');
+    expect(violations[0]!.severity).toBe('warning');
+    expect(violations[0]!.fix).toContain('UserProfileType');
+    expect(violations[1]!.what).toContain('OrderDetails');
+    expect(violations[1]!.fix).toContain('OrderDetailsType');
+  });
+
+  it('passes correctly named types', () => {
+    const file = join(tempDir, 'types.ts');
+    writeFileSync(file, `
+export type UserType = { name: string; };
+export interface OrderType { id: number; }
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const violations = rule.run({ projectRoot: tempDir, files: [file] });
+    expect(violations.length).toBe(0);
+  });
 });
 
 describe('custom rules', () => {

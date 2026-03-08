@@ -570,46 +570,53 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
       }
     }
 
-    // Detect sustained degradation: 3+ consecutive drops in overall grade
+    // Detect sustained degradation/improvement per dimension (including overall)
+    // This checks each dimension individually for 3+ consecutive drops or improvements
     if (domainHistory.length >= 2) {
-      let consecutiveDrops = 0;
-      for (let i = domainHistory.length - 1; i >= 1; i--) {
-        const curr = GRADE_ORDER.indexOf(domainHistory[i]!.overall);
-        const prev = GRADE_ORDER.indexOf(domainHistory[i - 1]!.overall);
-        if (curr > prev) {
-          consecutiveDrops++;
-        } else {
-          break;
+      for (const dim of dimensions) {
+        // Collect historical grades for this dimension
+        const dimHistory = domainHistory.map(h => h[dim] as Grade | undefined).filter((g): g is Grade => g != null);
+        if (dimHistory.length < 2) continue;
+
+        const currentGrade = dim === 'overall' ? score.overall
+          : dim === 'staleness' ? score.staleness.grade
+          : score[dim].grade;
+
+        // Check for sustained drops
+        let consecutiveDrops = 0;
+        for (let i = dimHistory.length - 1; i >= 1; i--) {
+          const curr = GRADE_ORDER.indexOf(dimHistory[i]!);
+          const prev = GRADE_ORDER.indexOf(dimHistory[i - 1]!);
+          if (curr > prev) {
+            consecutiveDrops++;
+          } else {
+            break;
+          }
         }
-      }
-      // Check if current score continues the drop
-      const lastHistoryIdx = GRADE_ORDER.indexOf(domainHistory[domainHistory.length - 1]!.overall);
-      const currentIdx = GRADE_ORDER.indexOf(score.overall);
-      if (currentIdx > lastHistoryIdx) consecutiveDrops++;
+        const lastIdx = GRADE_ORDER.indexOf(dimHistory[dimHistory.length - 1]!);
+        const curIdx = GRADE_ORDER.indexOf(currentGrade);
+        if (curIdx > lastIdx) consecutiveDrops++;
 
-      if (consecutiveDrops >= 3) {
-        trends.push(`${score.domain}: sustained degradation (${consecutiveDrops} consecutive drops)`);
-      }
-    }
-
-    // Detect sustained improvement: 3+ consecutive improvements
-    if (domainHistory.length >= 2) {
-      let consecutiveImproves = 0;
-      for (let i = domainHistory.length - 1; i >= 1; i--) {
-        const curr = GRADE_ORDER.indexOf(domainHistory[i]!.overall);
-        const prev = GRADE_ORDER.indexOf(domainHistory[i - 1]!.overall);
-        if (curr < prev) {
-          consecutiveImproves++;
-        } else {
-          break;
+        if (consecutiveDrops >= 3) {
+          trends.push(`${score.domain}/${dim}: sustained degradation (${consecutiveDrops} consecutive drops)`);
         }
-      }
-      const lastHistoryIdx = GRADE_ORDER.indexOf(domainHistory[domainHistory.length - 1]!.overall);
-      const currentIdx = GRADE_ORDER.indexOf(score.overall);
-      if (currentIdx < lastHistoryIdx) consecutiveImproves++;
 
-      if (consecutiveImproves >= 3) {
-        trends.push(`${score.domain}: sustained improvement (${consecutiveImproves} consecutive improvements)`);
+        // Check for sustained improvements
+        let consecutiveImproves = 0;
+        for (let i = dimHistory.length - 1; i >= 1; i--) {
+          const curr = GRADE_ORDER.indexOf(dimHistory[i]!);
+          const prev = GRADE_ORDER.indexOf(dimHistory[i - 1]!);
+          if (curr < prev) {
+            consecutiveImproves++;
+          } else {
+            break;
+          }
+        }
+        if (curIdx < lastIdx) consecutiveImproves++;
+
+        if (consecutiveImproves >= 3) {
+          trends.push(`${score.domain}/${dim}: sustained improvement (${consecutiveImproves} consecutive improvements)`);
+        }
       }
     }
   }

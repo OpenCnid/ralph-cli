@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 276 tests across 13 files — all passing
+- **Tests**: 283 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix), 0.0.23 (doctor spec compliance: LLM line numbers, spec file count, domain count, target score label), 0.0.24 (CI environment auto-detection, CI config overrides wiring), 0.0.25 (GC category validation, grade stable trends, plan spec compliance)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix), 0.0.23 (doctor spec compliance: LLM line numbers, spec file count, domain count, target score label), 0.0.24 (CI environment auto-detection, CI config overrides wiring), 0.0.25 (GC category validation, grade stable trends, plan spec compliance), 0.0.26 (doctor Python/Go linter detection, grade per-dimension trends, lint type naming)
 
 ---
 
@@ -205,17 +205,22 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - **Exported `detectCiEnvironment()`**: New function exported from config module for reuse by other commands or user code.
 - **7 new tests**: CI auto-detection from env vars (CI, GITHUB_ACTIONS), non-CI env detection, explicit isCi=true/false through loadConfig, env-var-based config override application, env isolation in tests.
 
+### Doctor Python/Go Linter Detection, Grade Per-Dimension Trends, Lint Type Naming (0.0.26)
+
+- **Doctor Python/Go linter detection**: Doctor backpressure checks now detect Python linters (ruff, pylint, flake8) from `pyproject.toml` and Go linters (golangci-lint) from config files (`.golangci.yml`, `.golangci.yaml`, `.golangci.toml`, `.golangci.json`). Previously only checked JS/TS tools (eslint, biome). Why: Python and Go users got false "No linter found" warnings.
+- **Grade per-dimension sustained degradation/improvement**: `computeTrends()` now detects 3+ consecutive drops or improvements per individual dimension (tests, docs, architecture, fileHealth, staleness), not just overall grade. Each dimension is tracked independently in the history. Why: the spec requires granular trend detection, and overall-only tracking missed dimension-specific degradation patterns.
+- **Lint type naming convention enforcement**: The naming-convention rule now fully enforces the configured type naming pattern (e.g., `*Type`) on exported `type` and `interface` declarations. Previously stubbed with an empty if-block. Violations are reported as warnings with computed fix suggestions (e.g., "Rename UserProfile to UserProfileType"). Why: the spec requires type naming enforcement, and having a stubbed check wastes future effort rediscovering the gap.
+- **7 new tests**: Python linter detection from pyproject.toml, Go linter detection from golangci-lint config, Go project without linter, per-dimension sustained degradation, per-dimension sustained improvement, type naming violation flagging, correctly-named type passing.
+
 ---
 
 ## Discovered Spec Gaps (for future work)
 
 #### Doctor Command
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
-- Linter detection only covers JS/TS tools (eslint, biome); missing Python (ruff, pylint) and Go (golangci-lint) detection
 
 #### Grade Command
 - Trend output lacks temporal context (spec shows "last week") and detailed reasons (spec shows "design doc deleted, not replaced")
-- No per-dimension sustained degradation detection (only overall grade tracked for 3+ drops)
 
 #### GC Command
 - No git history context for dead code (spec shows "Last imported: removed in commit abc123")
@@ -225,7 +230,6 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 #### Lint Command
 - Config schema uses `architecture.files` instead of spec's `architecture.rules`
 - Missing `direction` field in ArchitectureConfig (forward-only hardcoded)
-- Type naming convention check is stubbed (doesn't report violations)
 - Custom rule scripts not supported (YAML only)
 
 #### Ref Command

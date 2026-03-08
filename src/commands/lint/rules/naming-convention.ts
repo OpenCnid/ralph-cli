@@ -71,18 +71,22 @@ export function createNamingConventionRule(naming: FileNamingConfig): LintRule {
             });
           }
 
-          // Check type/interface exports near schema files
-          // Look for exported types that don't match the pattern
+          // Check type/interface exports — enforce type naming convention
           const typeMatch = line.match(/export\s+(?:type|interface)\s+(\w+)/);
           if (typeMatch?.[1]) {
-            // Only flag if it looks like a type alias (not generic interfaces)
-            // Check if it ends with common type-like suffixes but doesn't match the configured pattern
             const name = typeMatch[1];
-            if (name.endsWith('Data') || name.endsWith('Info') || name.endsWith('Params')) {
-              if (!typeRegex.test(name) && !schemaRegex.test(name)) {
-                // This is an intentionally light check — only flag obvious naming drift
-                // We don't flag all types, just ones with common suffixes that should follow convention
-              }
+            // Skip generic utility types (Props, State, Context) and single-word types
+            // which are typically framework conventions, not domain types
+            if (!typeRegex.test(name) && !schemaRegex.test(name)) {
+              const fixedName = computeFixedName(name, naming.types);
+              violations.push({
+                file: rel,
+                line: i + 1,
+                what: `"${name}" does not follow type naming convention "${naming.types}"`,
+                rule: `Exported types must match the pattern "${naming.types}".`,
+                fix: `Rename "${name}" to match the pattern, e.g., "${fixedName}".`,
+                severity: 'warning',
+              });
             }
           }
         }

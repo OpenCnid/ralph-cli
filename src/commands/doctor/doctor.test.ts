@@ -218,6 +218,31 @@ describe('doctor checks', () => {
     expect(archCheck!.detail).toContain('3 domain(s)/section(s)');
   });
 
+  it('detects Python linter from pyproject.toml', () => {
+    writeFileSync(join(tempDir, 'pyproject.toml'), '[tool.ruff]\nline-length = 88\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const lintCheck = checks.find(c => c.name === 'Linter configured');
+    expect(lintCheck).toBeDefined();
+    expect(lintCheck!.pass).toBe(true);
+  });
+
+  it('detects Go linter from golangci-lint config', () => {
+    writeFileSync(join(tempDir, 'go.mod'), 'module example.com/test\ngo 1.21\n');
+    writeFileSync(join(tempDir, '.golangci.yml'), 'linters:\n  enable:\n    - govet\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const lintCheck = checks.find(c => c.name === 'Linter configured');
+    expect(lintCheck).toBeDefined();
+    expect(lintCheck!.pass).toBe(true);
+  });
+
+  it('reports no linter for Go project without golangci-lint config', () => {
+    writeFileSync(join(tempDir, 'go.mod'), 'module example.com/test\ngo 1.21\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const lintCheck = checks.find(c => c.name === 'Linter configured');
+    expect(lintCheck).toBeDefined();
+    expect(lintCheck!.pass).toBe(false);
+  });
+
   it('fully initialized repo passes most checks', () => {
     // Set up a fully initialized structure
     mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });

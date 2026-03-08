@@ -262,15 +262,33 @@ function runBackpressureChecks(projectRoot: string): Check[] {
   }
 
   // Python
-  if (existsSync(join(projectRoot, 'pyproject.toml'))) {
+  const pyprojectPath = join(projectRoot, 'pyproject.toml');
+  if (existsSync(pyprojectPath)) {
     hasTestRunner = true; // pytest is standard
     hasTypeChecker = true; // mypy common
+    // Check for Python linters in pyproject.toml
+    if (!hasLinter) {
+      try {
+        const pyContent = readFileSync(pyprojectPath, 'utf-8');
+        hasLinter = !!(
+          pyContent.includes('[tool.ruff') ||
+          pyContent.includes('ruff') ||
+          pyContent.includes('pylint') ||
+          pyContent.includes('flake8')
+        );
+      } catch { /* ignore */ }
+    }
   }
 
   // Go
   if (existsSync(join(projectRoot, 'go.mod'))) {
     hasTestRunner = true; // go test built-in
     hasTypeChecker = true; // go compiler
+    // Check for Go linter (golangci-lint config or in go.sum)
+    if (!hasLinter) {
+      const golangciConfigs = ['.golangci.yml', '.golangci.yaml', '.golangci.toml', '.golangci.json'];
+      hasLinter = golangciConfigs.some(f => existsSync(join(projectRoot, f)));
+    }
   }
 
   checks.push({
