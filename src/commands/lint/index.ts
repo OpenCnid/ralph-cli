@@ -30,8 +30,8 @@ export function lintCommand(targetPath: string | undefined, options: LintOptions
   const allRules: LintRule[] = [
     createDependencyDirectionRule(config.architecture),
     createDomainIsolationRule(config.architecture.domains, config.architecture['cross-cutting']),
-    createFileSizeRule(config.architecture.files['max-lines']),
-    createNamingConventionRule(config.architecture.files.naming),
+    createFileSizeRule(config.architecture.rules['max-lines']),
+    createNamingConventionRule(config.architecture.rules.naming),
     createFileOrganizationRule(config.architecture.domains),
   ];
 

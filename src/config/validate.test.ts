@@ -18,7 +18,7 @@ describe('validate', () => {
         layers: ['types', 'data', 'service'],
         domains: [{ name: 'auth', path: 'src/auth' }],
         'cross-cutting': ['src/shared'],
-        files: { 'max-lines': 300, naming: { schemas: '*Schema', types: '*Type' } },
+        rules: { 'max-lines': 300, naming: { schemas: '*Schema', types: '*Type' } },
       },
       quality: { 'minimum-grade': 'B', coverage: { tool: 'pytest', 'report-path': 'coverage.xml' } },
       gc: { 'consistency-threshold': 70, exclude: ['node_modules'] },
@@ -103,6 +103,24 @@ describe('validate', () => {
     expect(result.warnings[0]).toContain('architecture.unknown_arch');
   });
 
+  it('accepts valid architecture.direction', () => {
+    const result = validate({
+      ...MINIMAL,
+      architecture: { direction: 'forward-only' },
+    });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('errors on invalid architecture.direction', () => {
+    const result = validate({
+      ...MINIMAL,
+      architecture: { direction: 'backward-only' },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('architecture.direction');
+    expect(result.errors[0]).toContain('forward-only');
+  });
+
   it('warns on unknown nested keys in quality', () => {
     const result = validate({
       ...MINIMAL,
@@ -173,24 +191,24 @@ describe('validate', () => {
     expect(result.warnings[0]).toContain('runner.extra');
   });
 
-  it('warns on unknown nested keys in architecture.files', () => {
+  it('warns on unknown nested keys in architecture.rules', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { 'max-lines': 500, extra: true } },
+      architecture: { rules: { 'max-lines': 500, extra: true } },
     });
     expect(result.errors).toEqual([]);
     expect(result.warnings.length).toBe(1);
-    expect(result.warnings[0]).toContain('architecture.files.extra');
+    expect(result.warnings[0]).toContain('architecture.rules.extra');
   });
 
-  it('warns on unknown nested keys in architecture.files.naming', () => {
+  it('warns on unknown nested keys in architecture.rules.naming', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { naming: { schemas: '*Schema', extra: true } } },
+      architecture: { rules: { naming: { schemas: '*Schema', extra: true } } },
     });
     expect(result.errors).toEqual([]);
     expect(result.warnings.length).toBe(1);
-    expect(result.warnings[0]).toContain('architecture.files.naming.extra');
+    expect(result.warnings[0]).toContain('architecture.rules.naming.extra');
   });
 
   it('warns on unknown nested keys in quality.coverage', () => {
@@ -287,20 +305,20 @@ describe('validate', () => {
     expect(result.errors[0]).toContain('architecture.cross-cutting[1]');
   });
 
-  // architecture.files.naming validation
-  it('errors on non-object architecture.files.naming', () => {
+  // architecture.rules.naming validation
+  it('errors on non-object architecture.rules.naming', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { naming: 'bad' } },
+      architecture: { rules: { naming: 'bad' } },
     });
     expect(result.errors.length).toBe(1);
-    expect(result.errors[0]).toContain('architecture.files.naming');
+    expect(result.errors[0]).toContain('architecture.rules.naming');
   });
 
   it('errors on non-string naming.schemas', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { naming: { schemas: 42 } } },
+      architecture: { rules: { naming: { schemas: 42 } } },
     });
     expect(result.errors.length).toBe(1);
     expect(result.errors[0]).toContain('naming.schemas');
@@ -309,19 +327,19 @@ describe('validate', () => {
   it('errors on non-string naming.types', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { naming: { types: true } } },
+      architecture: { rules: { naming: { types: true } } },
     });
     expect(result.errors.length).toBe(1);
     expect(result.errors[0]).toContain('naming.types');
   });
 
-  it('errors on non-object architecture.files', () => {
+  it('errors on non-object architecture.rules', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: 'bad' },
+      architecture: { rules: 'bad' },
     });
     expect(result.errors.length).toBe(1);
-    expect(result.errors[0]).toContain('architecture.files');
+    expect(result.errors[0]).toContain('architecture.rules');
   });
 
   // quality validation
@@ -503,7 +521,7 @@ describe('validate', () => {
   it('errors on invalid files.max-lines', () => {
     const result = validate({
       ...MINIMAL,
-      architecture: { files: { 'max-lines': -1 } },
+      architecture: { rules: { 'max-lines': -1 } },
     });
     expect(result.errors.length).toBe(1);
     expect(result.errors[0]).toContain('max-lines');

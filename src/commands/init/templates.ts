@@ -283,7 +283,8 @@ architecture:
     - data
     - service
     - ui
-  files:
+  direction: forward-only
+  rules:
     max-lines: 500
     naming:
       schemas: "*Schema"

@@ -19,7 +19,8 @@ export type {
   CoverageTool,
   Grade,
   DomainConfig,
-  FilesConfig,
+  RulesConfig,
+  DirectionMode,
   FileNamingConfig,
   CoverageConfig,
 } from './schema.js';
@@ -31,5 +32,6 @@ export {
   DEFAULT_QUALITY,
   DEFAULT_REFERENCES,
   DEFAULT_LAYERS,
-  DEFAULT_FILES,
+  DEFAULT_DIRECTION,
+  DEFAULT_RULES,
 } from './defaults.js';

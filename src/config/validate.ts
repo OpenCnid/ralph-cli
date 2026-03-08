@@ -11,8 +11,9 @@ const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci'];
 const KNOWN_PROJECT_KEYS = ['name', 'language', 'description', 'framework'];
 const KNOWN_RUNNER_KEYS = ['cli'];
-const KNOWN_ARCHITECTURE_KEYS = ['layers', 'domains', 'cross-cutting', 'files'];
-const KNOWN_FILES_KEYS = ['max-lines', 'naming'];
+const KNOWN_ARCHITECTURE_KEYS = ['layers', 'direction', 'domains', 'cross-cutting', 'rules'];
+const VALID_DIRECTIONS = ['forward-only'];
+const KNOWN_RULES_KEYS = ['max-lines', 'naming'];
 const KNOWN_NAMING_KEYS = ['schemas', 'types'];
 const KNOWN_QUALITY_KEYS = ['minimum-grade', 'coverage'];
 const KNOWN_COVERAGE_KEYS = ['tool', 'report-path'];
@@ -147,30 +148,37 @@ export function validate(raw: unknown): ValidationResult {
         validateStringArray(arch['cross-cutting'], 'architecture.cross-cutting', errors);
       }
 
-      // files
-      if (arch['files'] !== undefined) {
-        if (typeof arch['files'] !== 'object' || arch['files'] === null) {
-          errors.push('"architecture.files" must be an object.');
-        } else {
-          const files = arch['files'] as Record<string, unknown>;
-          warnUnknownKeys(files, KNOWN_FILES_KEYS, 'architecture.files.', warnings);
+      // direction
+      if (arch['direction'] !== undefined) {
+        if (typeof arch['direction'] !== 'string' || !VALID_DIRECTIONS.includes(arch['direction'])) {
+          errors.push(`Invalid "architecture.direction": "${arch['direction']}". Valid values: ${VALID_DIRECTIONS.join(', ')}.`);
+        }
+      }
 
-          if (files['max-lines'] !== undefined && (typeof files['max-lines'] !== 'number' || files['max-lines'] < 1)) {
-            errors.push('"architecture.files.max-lines" must be a positive number.');
+      // rules
+      if (arch['rules'] !== undefined) {
+        if (typeof arch['rules'] !== 'object' || arch['rules'] === null) {
+          errors.push('"architecture.rules" must be an object.');
+        } else {
+          const rules = arch['rules'] as Record<string, unknown>;
+          warnUnknownKeys(rules, KNOWN_RULES_KEYS, 'architecture.rules.', warnings);
+
+          if (rules['max-lines'] !== undefined && (typeof rules['max-lines'] !== 'number' || rules['max-lines'] < 1)) {
+            errors.push('"architecture.rules.max-lines" must be a positive number.');
           }
 
           // naming
-          if (files['naming'] !== undefined) {
-            if (typeof files['naming'] !== 'object' || files['naming'] === null) {
-              errors.push('"architecture.files.naming" must be an object.');
+          if (rules['naming'] !== undefined) {
+            if (typeof rules['naming'] !== 'object' || rules['naming'] === null) {
+              errors.push('"architecture.rules.naming" must be an object.');
             } else {
-              const naming = files['naming'] as Record<string, unknown>;
-              warnUnknownKeys(naming, KNOWN_NAMING_KEYS, 'architecture.files.naming.', warnings);
+              const naming = rules['naming'] as Record<string, unknown>;
+              warnUnknownKeys(naming, KNOWN_NAMING_KEYS, 'architecture.rules.naming.', warnings);
               if (naming['schemas'] !== undefined && typeof naming['schemas'] !== 'string') {
-                errors.push('"architecture.files.naming.schemas" must be a string pattern (e.g. "*Schema").');
+                errors.push('"architecture.rules.naming.schemas" must be a string pattern (e.g. "*Schema").');
               }
               if (naming['types'] !== undefined && typeof naming['types'] !== 'string') {
-                errors.push('"architecture.files.naming.types" must be a string pattern (e.g. "*Type").');
+                errors.push('"architecture.rules.naming.types" must be a string pattern (e.g. "*Type").');
               }
             }
           }

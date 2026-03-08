@@ -219,6 +219,14 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - **Grade trend temporal context**: Trend labels now include temporal labels relative to the previous snapshot (e.g., "was B yesterday", "was D last week", "was C 3 days ago"). Uses `formatTemporalLabel()` helper with labels: today, yesterday, N days ago, last week, N weeks ago, last month, N months ago. Why: the spec shows "was D last week" — temporal context tells developers when degradation happened.
 - **5 new tests**: Item fingerprints stored in history, persistent items flagged across runs, persistent count in JSON summary, persistent tag in text output, temporal context in grade trend labels.
 
+### GC Dead Code Git Context, Config Schema Alignment (0.0.28)
+
+- **GC dead code git history context**: Dead code (orphaned export) items now include git context showing the last commit that referenced the file (e.g., "last referenced in commit abc123, 2026-03-01"). Uses `git log -S` to find the most recent commit that added or removed a reference to the file's base name. Why: the spec example shows "Last imported: removed in commit abc123 (DATE)" — temporal context helps agents prioritize which orphaned files to address.
+- **Config schema `files` → `rules` rename**: Renamed `architecture.files` to `architecture.rules` across the entire config system (schema, defaults, loader, validator, init template, lint, grade). `FilesConfig` → `RulesConfig`, `DEFAULT_FILES` → `DEFAULT_RULES`. Why: the spec (`specs/architectural-enforcement.md`) defines the config key as `architecture.rules`, not `architecture.files`.
+- **`direction` field in ArchitectureConfig**: Added `direction: DirectionMode` field to `ArchitectureConfig` with `'forward-only'` as the only valid value and default. The dependency-direction lint rule now reads direction from config instead of hardcoding. Config validator enforces valid direction values. Init template generates `direction: forward-only`. Why: the spec shows `direction: forward-only` as a config field controlling dependency flow direction.
+- **3 new tests**: GC dead code git context, direction validation (valid + invalid), loader direction default.
+- **291 total tests** across 13 files.
+
 ---
 
 ## Discovered Spec Gaps (for future work)
@@ -229,12 +237,7 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 #### Grade Command
 - Temporal labels now implemented (e.g., "was D last week"), but detailed reasons (e.g., "design doc deleted, not replaced") remain unimplemented
 
-#### GC Command
-- No git history context for dead code (spec shows "Last imported: removed in commit abc123")
-
 #### Lint Command
-- Config schema uses `architecture.files` instead of spec's `architecture.rules`
-- Missing `direction` field in ArchitectureConfig (forward-only hardcoded)
 - Custom rule scripts not supported (YAML only)
 
 #### Ref Command

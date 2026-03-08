@@ -69,13 +69,14 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
     runner: raw.runner,
     architecture: {
       layers: raw.architecture?.layers ?? DEFAULT_ARCHITECTURE.layers,
+      direction: raw.architecture?.direction ?? DEFAULT_ARCHITECTURE.direction,
       ...(raw.architecture?.domains !== undefined ? { domains: raw.architecture.domains } : {}),
       ...(raw.architecture?.['cross-cutting'] !== undefined ? { 'cross-cutting': raw.architecture['cross-cutting'] } : {}),
-      files: {
-        'max-lines': raw.architecture?.files?.['max-lines'] ?? DEFAULT_ARCHITECTURE.files['max-lines'],
+      rules: {
+        'max-lines': raw.architecture?.rules?.['max-lines'] ?? DEFAULT_ARCHITECTURE.rules['max-lines'],
         naming: {
-          schemas: raw.architecture?.files?.naming?.schemas ?? DEFAULT_ARCHITECTURE.files.naming.schemas,
-          types: raw.architecture?.files?.naming?.types ?? DEFAULT_ARCHITECTURE.files.naming.types,
+          schemas: raw.architecture?.rules?.naming?.schemas ?? DEFAULT_ARCHITECTURE.rules.naming.schemas,
+          types: raw.architecture?.rules?.naming?.types ?? DEFAULT_ARCHITECTURE.rules.naming.types,
         },
       },
     },

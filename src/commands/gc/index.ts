@@ -303,10 +303,31 @@ function scanDeadCode(projectRoot: string, config: RalphConfig): DriftItem[] {
     if (exportingFile.includes('.test.') || exportingFile.includes('.spec.')) continue;
 
     if (!allImportedPaths.has(normalized)) {
+      // Try to find when the file was last imported (removed from imports) using git
+      let gitContext = '';
+      try {
+        // Search git log for the last commit that changed a reference to this file's base name
+        const baseName = exportingFile.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+        const gitOutput = execSync(
+          `git log -1 --format="%h %at" -S "${baseName}" -- "*.ts" "*.tsx" "*.js" "*.jsx"`,
+          { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+        ).trim();
+        if (gitOutput) {
+          const parts = gitOutput.split(' ');
+          const commitHash = parts[0];
+          const timestamp = parseInt(parts[1] ?? '0', 10) * 1000;
+          if (timestamp > 0) {
+            const date = new Date(timestamp);
+            const dateStr = date.toISOString().split('T')[0];
+            gitContext = ` (last referenced in commit ${commitHash}, ${dateStr})`;
+          }
+        }
+      } catch { /* git not available or no history */ }
+
       items.push({
         category: 'dead-code',
         file: exportingFile,
-        description: `File exports symbols but is not imported by any other file`,
+        description: `File exports symbols but is not imported by any other file${gitContext}`,
         severity: 'info',
         fix: `Delete ${exportingFile} if no longer needed, or document why it is retained`,
       });

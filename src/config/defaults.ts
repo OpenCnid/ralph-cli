@@ -1,8 +1,10 @@
-import type { ArchitectureConfig, CoverageConfig, DoctorConfig, FilesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig } from './schema.js';
+import type { ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
-export const DEFAULT_FILES: FilesConfig = {
+export const DEFAULT_DIRECTION: DirectionMode = 'forward-only';
+
+export const DEFAULT_RULES: RulesConfig = {
   'max-lines': 500,
   naming: {
     schemas: '*Schema',
@@ -12,7 +14,8 @@ export const DEFAULT_FILES: FilesConfig = {
 
 export const DEFAULT_ARCHITECTURE: Omit<ArchitectureConfig, 'domains' | 'cross-cutting'> = {
   layers: DEFAULT_LAYERS,
-  files: DEFAULT_FILES,
+  direction: DEFAULT_DIRECTION,
+  rules: DEFAULT_RULES,
 };
 
 export const DEFAULT_COVERAGE: CoverageConfig = {

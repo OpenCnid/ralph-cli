@@ -37,9 +37,10 @@ function isInCrossCutting(filePath: string, crossCutting: string[], projectRoot:
 }
 
 export function createDependencyDirectionRule(architecture: ArchitectureConfig): LintRule {
+  const direction = architecture.direction;
   return {
     name: 'dependency-direction',
-    description: 'Enforces forward-only layer imports: each layer can only import from layers above it.',
+    description: `Enforces ${direction} layer imports: each layer can only import from layers above it.`,
 
     run(context: LintContext): LintViolation[] {
       const violations: LintViolation[] = [];
@@ -73,7 +74,7 @@ export function createDependencyDirectionRule(architecture: ArchitectureConfig):
               file: rel,
               line: imp.line,
               what: `${rel} (${sourceLayerName} layer) imports from ${imp.source} (${targetLayerName} layer)`,
-              rule: `Layer "${sourceLayerName}" cannot import from "${targetLayerName}". Dependency direction is forward-only: ${layers.join(' → ')}.`,
+              rule: `Layer "${sourceLayerName}" cannot import from "${targetLayerName}". Dependency direction is ${direction}: ${layers.join(' → ')}.`,
               fix: `Move the imported code to the "${sourceLayerName}" layer or a higher layer, or mark the import source as cross-cutting in config.`,
               severity: 'error',
             });

@@ -88,9 +88,10 @@ describe('mergeWithDefaults', () => {
     expect(config.project.name).toBe('test');
     expect(config.project.language).toBe('typescript');
     expect(config.architecture.layers).toEqual(['types', 'config', 'data', 'service', 'ui']);
-    expect(config.architecture.files['max-lines']).toBe(500);
-    expect(config.architecture.files.naming.schemas).toBe('*Schema');
-    expect(config.architecture.files.naming.types).toBe('*Type');
+    expect(config.architecture.direction).toBe('forward-only');
+    expect(config.architecture.rules['max-lines']).toBe(500);
+    expect(config.architecture.rules.naming.schemas).toBe('*Schema');
+    expect(config.architecture.rules.naming.types).toBe('*Type');
     expect(config.quality['minimum-grade']).toBe('D');
     expect(config.quality.coverage.tool).toBe('none');
     expect(config.quality.coverage['report-path']).toBe('coverage/lcov.info');

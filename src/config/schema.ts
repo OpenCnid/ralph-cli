@@ -31,16 +31,19 @@ export interface FileNamingConfig {
   types: string;
 }
 
-export interface FilesConfig {
+export interface RulesConfig {
   'max-lines': number;
   naming: FileNamingConfig;
 }
 
+export type DirectionMode = 'forward-only';
+
 export interface ArchitectureConfig {
   layers: string[];
+  direction: DirectionMode;
   domains?: DomainConfig[] | undefined;
   'cross-cutting'?: string[] | undefined;
-  files: FilesConfig;
+  rules: RulesConfig;
 }
 
 export interface CoverageConfig {
@@ -110,9 +113,10 @@ export interface RawRalphConfig {
   runner?: Partial<RunnerConfig>;
   architecture?: Partial<{
     layers: string[];
+    direction: DirectionMode;
     domains: DomainConfig[];
     'cross-cutting': string[];
-    files: Partial<{
+    rules: Partial<{
       'max-lines': number;
       naming: Partial<FileNamingConfig>;
     }>;

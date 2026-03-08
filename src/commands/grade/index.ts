@@ -239,8 +239,8 @@ function scoreDomainDocumentation(projectRoot: string, config: RalphConfig, doma
 function scoreArchitectureForFiles(projectRoot: string, config: RalphConfig, files: string[]): DimensionScore {
   const rules = [
     createDependencyDirectionRule(config.architecture),
-    createFileSizeRule(config.architecture.files['max-lines']),
-    createNamingConventionRule(config.architecture.files.naming),
+    createFileSizeRule(config.architecture.rules['max-lines']),
+    createNamingConventionRule(config.architecture.rules.naming),
   ];
   const result = runRules(rules, { projectRoot, files });
   const errors = result.violations.filter(v => v.severity === 'error');
@@ -354,7 +354,7 @@ export function scoreDomain(projectRoot: string, config: RalphConfig, domain: Do
     ? scoreArchitectureForFiles(projectRoot, config, domainFiles)
     : { grade: 'A' as Grade, detail: 'No source files in domain' };
   const fileHealth = domainFiles.length > 0
-    ? scoreFileHealthForFiles(domainFiles, config.architecture.files['max-lines'])
+    ? scoreFileHealthForFiles(domainFiles, config.architecture.rules['max-lines'])
     : { grade: 'A' as Grade, detail: 'No source files in domain' };
   const staleness = scoreStalenessForFiles(projectRoot, domainFiles);
   const overall = worstGrade(tests.grade, docs.grade, architecture.grade, fileHealth.grade, staleness.grade);
@@ -422,7 +422,7 @@ function scoreArchitecture(projectRoot: string, config: RalphConfig): DimensionS
 
 function scoreFileHealth(projectRoot: string, config: RalphConfig): DimensionScore {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
-  return scoreFileHealthForFiles(files, config.architecture.files['max-lines']);
+  return scoreFileHealthForFiles(files, config.architecture.rules['max-lines']);
 }
 
 /**
