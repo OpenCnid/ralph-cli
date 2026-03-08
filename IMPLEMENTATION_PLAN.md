@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 246 tests across 13 files — all passing
+- **Tests**: 251 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching)
 
 ---
 
@@ -161,6 +161,13 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Contextual task generation**: `ralph plan create` now generates context-aware task suggestions based on the plan title instead of generic "Task 1, Task 2" placeholders. Detects action keywords (fix, migrate, refactor, remove, upgrade, add/implement/create) and generates appropriate tasks. For example, "Fix login crash" generates reproduce/root-cause/fix/regression-test tasks; "Migrate to PostgreSQL" generates research/design/implement/verify tasks.
 - **Six action categories**: fix/bug, migrate/move/convert, refactor/restructure, remove/delete/deprecate, upgrade/update, add/implement/create. Falls back to generic-but-actionable tasks (analyze/implement/test/document) for unrecognized patterns.
 - **3 new tests**: Contextual tasks for "add" plans, "fix" plans, and "migrate" full plans (verifying 4-task count).
+
+### Complete Config.yml, Ref -llms.md, CI Caching (0.0.20)
+
+- **Complete config.yml generation**: `ralph init` now generates a full `.ralph/config.yml` with all default sections: architecture (layers, files, naming), quality (minimum-grade, coverage), gc (consistency-threshold, exclude), doctor (minimum-score), paths (all 9 path fields), and references (max-total-kb, warn-single-file-kb). Previously only generated project and coverage sections.
+- **Ref `-llms.md` support**: `ralph ref add` now preserves the source file's extension — markdown sources (`.md`) get `-llms.md` suffix, text sources get `-llms.txt`. `ralph ref update` now scans both `.txt` and `.md` reference files for re-fetching. Per spec: "References are plain text or markdown files with a `-llms.txt` or `-llms.md` suffix."
+- **CI caching**: GitHub Actions template now includes `actions/cache@v4` step caching `~/.npm` for faster ralph-cli installation. GitLab CI template includes `cache:` directive for the ralph-cli global install path.
+- **4 new tests**: Complete config.yml sections, -llms.md suffix for .md sources, -llms.txt suffix for .txt sources, GitHub cache step, GitLab cache config.
 
 ---
 
