@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { success, warn, error, info, heading } from '../../utils/index.js';
+import * as prompt from '../../utils/prompt.js';
 
 interface DoctorOptions {
   json?: boolean | undefined;
@@ -588,15 +589,25 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
   }
 
   if (options.fix) {
-    const failing = checks.filter(c => !c.pass && c.fix?.includes('ralph init'));
-    if (failing.length > 0) {
+    const fixable = checks.filter(c => !c.pass && c.fix?.includes('ralph init'));
+    if (fixable.length > 0) {
       console.log('');
-      info(`Running ralph init to fix ${failing.length} missing structure issue(s)...`);
-      try {
-        const { initCommand } = await import('../init/index.js');
-        initCommand({ defaults: true });
-      } catch {
-        error('Failed to run ralph init');
+      info('Fixable issues:');
+      for (const check of fixable) {
+        console.log(`  • ${check.name}`);
+      }
+
+      const proceed = process.stdin.isTTY === true
+        ? await prompt.confirm(`Fix ${fixable.length} issue(s)?`, true)
+        : true;
+
+      if (proceed) {
+        try {
+          const { initCommand } = await import('../init/index.js');
+          await initCommand({ defaults: true });
+        } catch {
+          error('Failed to run ralph init');
+        }
       }
     }
   }

@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { runAllChecks } from './index.js';
+import { runAllChecks, doctorCommand } from './index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
+import * as initModule from '../init/index.js';
+import * as prompt from '../../utils/prompt.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-doctor-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -18,6 +20,24 @@ function makeConfig(): RalphConfig {
   });
 }
 
+let originalIsTtyDescriptor: PropertyDescriptor | undefined;
+
+function setStdinIsTty(value: boolean): void {
+  if (originalIsTtyDescriptor === undefined) {
+    originalIsTtyDescriptor = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+  }
+  Object.defineProperty(process.stdin, 'isTTY', {
+    configurable: true,
+    value,
+  });
+}
+
+function restoreStdinIsTty(): void {
+  if (originalIsTtyDescriptor) {
+    Object.defineProperty(process.stdin, 'isTTY', originalIsTtyDescriptor);
+  }
+}
+
 describe('doctor checks', () => {
   let tempDir: string;
 
@@ -27,6 +47,8 @@ describe('doctor checks', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
+    restoreStdinIsTty();
     rmSync(tempDir, { recursive: true, force: true });
   });
 
@@ -285,5 +307,50 @@ describe('doctor checks', () => {
     const total = checks.length;
     // Expect high pass rate for fully initialized repo
     expect(passing / total).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('doctor --fix auto-proceeds in non-TTY mode', async () => {
+    const origCwd = process.cwd();
+    process.chdir(tempDir);
+    setStdinIsTty(false);
+
+    const initSpy = vi.spyOn(initModule, 'initCommand').mockResolvedValue();
+
+    try {
+      await doctorCommand({ fix: true });
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    expect(initSpy).toHaveBeenCalledWith({ defaults: true });
+  });
+
+  it('doctor --fix lists fixable issues before confirmation', async () => {
+    const origCwd = process.cwd();
+    process.chdir(tempDir);
+    setStdinIsTty(true);
+
+    let output = '';
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += `${args.map(a => String(a)).join(' ')}\n`;
+    };
+
+    const initSpy = vi.spyOn(initModule, 'initCommand').mockResolvedValue();
+    const confirmSpy = vi.spyOn(prompt, 'confirm').mockImplementation(async () => {
+      expect(output).toContain('Fixable issues:');
+      return false;
+    });
+
+    try {
+      await doctorCommand({ fix: true });
+    } finally {
+      console.log = origLog;
+      process.chdir(origCwd);
+    }
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(output).toContain('Fixable issues:');
+    expect(initSpy).not.toHaveBeenCalled();
   });
 });
