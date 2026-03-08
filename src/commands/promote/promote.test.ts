@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { promoteDocCommand, promoteLintCommand, promotePatternCommand } from './index.js';
+import { promoteDocCommand, promoteLintCommand, promotePatternCommand, promoteListCommand } from './index.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-promote-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -89,5 +89,55 @@ describe('promote commands', () => {
 
     const index = readFileSync(join(tempDir, 'docs', 'design-docs', 'index.md'), 'utf-8');
     expect(index).toContain('error-boundaries.md');
+  });
+
+  it('promote list shows violation counts for lint rules with violations', () => {
+    // Create a lint rule that matches console.log
+    writeFileSync(join(tempDir, '.ralph', 'rules', 'no-console.yml'),
+      "name: no-console\ndescription: No console.log in production code\nseverity: warning\nmatch:\n  pattern: 'console\\.log'\nfix: Use a proper logging library instead\n"
+    );
+
+    // Create a source file with console.log violations
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'app.ts'), 'console.log("hello");\nconsole.log("world");\n');
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+    try {
+      promoteListCommand();
+    } finally {
+      console.log = origLog;
+    }
+
+    const lintLine = output.find(l => l.includes('no-console'));
+    expect(lintLine).toBeDefined();
+    expect(lintLine).toContain('○'); // has violations
+    expect(lintLine).toContain('2 violation(s) remaining');
+  });
+
+  it('promote list shows checkmark for lint rules with zero violations', () => {
+    // Create a lint rule that won't match anything
+    writeFileSync(join(tempDir, '.ralph', 'rules', 'no-yolo.yml'),
+      "name: no-yolo\ndescription: No YOLO in code\nseverity: error\nmatch:\n  pattern: 'YOLO_ACCESS'\nfix: Use proper data access patterns\n"
+    );
+
+    // Create a source file with no violations
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'clean.ts'), 'const x = 1;\n');
+
+    const output: string[] = [];
+    const origLog = console.log;
+    console.log = (msg: string) => output.push(msg);
+    try {
+      promoteListCommand();
+    } finally {
+      console.log = origLog;
+    }
+
+    const lintLine = output.find(l => l.includes('no-yolo'));
+    expect(lintLine).toBeDefined();
+    expect(lintLine).toContain('✓'); // no violations
+    expect(lintLine).not.toContain('violation');
   });
 });

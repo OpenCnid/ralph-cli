@@ -3,6 +3,10 @@ import { join, relative } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { ensureDir, safeWriteFile, safeReadFile } from '../../utils/fs.js';
 import { success, warn, error, info } from '../../utils/index.js';
+import { runRules } from '../lint/engine.js';
+import type { LintContext } from '../lint/engine.js';
+import { loadCustomRules } from '../lint/rules/custom-rules.js';
+import { collectFiles } from '../lint/files.js';
 
 function today(): string {
   return new Date().toISOString().split('T')[0]!;
@@ -122,6 +126,39 @@ ${options.description ?? 'Describe the pattern and when to use it.'}
   }
 }
 
+function countCustomRuleViolations(projectRoot: string, rulesDir: string, exclude: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  try {
+    const customRules = loadCustomRules(rulesDir);
+    if (customRules.length === 0) return counts;
+
+    const files = collectFiles(projectRoot, { exclude });
+    const context: LintContext = { projectRoot, files };
+    const result = runRules(customRules, context);
+
+    for (const v of result.violations) {
+      counts.set(v.rule, (counts.get(v.rule) ?? 0) + 1);
+    }
+
+    // Map back from description (used as rule field in violations) to rule name
+    // Custom rules use description as the rule field in violations
+    const nameToDesc = new Map<string, string>();
+    for (const r of customRules) {
+      nameToDesc.set(r.description || r.name, r.name);
+    }
+
+    const byName = new Map<string, number>();
+    for (const [key, count] of counts) {
+      const name = nameToDesc.get(key) ?? key;
+      byName.set(name, (byName.get(name) ?? 0) + count);
+    }
+
+    return byName;
+  } catch {
+    return counts;
+  }
+}
+
 export function promoteListCommand(): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);
@@ -137,7 +174,7 @@ export function promoteListCommand(): void {
     const dated = content.match(/^- \*\*.+?\.\*\*\s+Added\s+\d{4}-\d{2}-\d{2}\.$/gm) ?? [];
     // Also match legacy format: - **date** — principle
     const datedLegacy = content.match(/^- \*\*\d{4}-\d{2}-\d{2}\*\* — .+$/gm) ?? [];
-    if (entries.length > 0 || dated.length > 0) {
+    if (entries.length > 0 || dated.length > 0 || datedLegacy.length > 0) {
       info('Documentation (core-beliefs.md):');
       for (const e of entries) console.log(`  ○ ${e.trim()}`);
       for (const e of dated) console.log(`  ○ ${e.replace(/^- /, '').trim()}`);
@@ -150,6 +187,9 @@ export function promoteListCommand(): void {
   if (existsSync(rulesDir)) {
     const ruleFiles = readdirSync(rulesDir).filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
     if (ruleFiles.length > 0) {
+      // Count violations per custom rule by running them against the codebase
+      const violationCounts = countCustomRuleViolations(projectRoot, rulesDir, config.gc.exclude);
+
       console.log('');
       info('Lint Rules (.ralph/rules/):');
       for (const file of ruleFiles) {
@@ -158,7 +198,10 @@ export function promoteListCommand(): void {
         const descMatch = content.match(/^description:\s*(.+)$/m);
         const name = nameMatch?.[1] ?? file;
         const desc = descMatch?.[1] ?? '';
-        console.log(`  ✓ ${name} — ${desc} (${file})`);
+        const count = violationCounts.get(name) ?? 0;
+        const marker = count === 0 ? '✓' : '○';
+        const suffix = count > 0 ? ` — ${count} violation(s) remaining` : '';
+        console.log(`  ${marker} ${name} — ${desc} (${file})${suffix}`);
       }
     }
   }
