@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { configValidateCommand } from './commands/config-validate.js';
 import { initCommand } from './commands/init/index.js';
+import { lintCommand } from './commands/lint/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,8 +36,8 @@ program
   .option('--fix', 'Auto-fix violations where possible')
   .option('--json', 'Output structured JSON')
   .option('--rule <name>', 'Run a specific rule')
-  .action(() => {
-    console.log('ralph lint — not yet implemented');
+  .action((path: string | undefined, options: { fix?: boolean; json?: boolean; rule?: string }) => {
+    lintCommand(path, options);
   });
 
 // ralph grade
