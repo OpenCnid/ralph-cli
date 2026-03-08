@@ -23,6 +23,7 @@ interface GcOptions {
   json?: boolean | undefined;
   fixDescriptions?: boolean | undefined;
   severity?: string | undefined;
+  category?: string | undefined;
 }
 
 interface HistoryEntry {
@@ -553,6 +554,11 @@ export function gcCommand(options: GcOptions): void {
     items = items.filter(i => i.severity === options.severity);
   }
 
+  // Filter by category
+  if (options.category) {
+    items = items.filter(i => i.category === options.category);
+  }
+
   // Deduplication by description
   const seen = new Set<string>();
   items = items.filter(item => {
@@ -594,11 +600,13 @@ export function gcCommand(options: GcOptions): void {
       trend: trend ? { direction: trend.direction, message: trend.message } : null,
     }, null, 2));
   } else if (options.fixDescriptions) {
-    let md = `# Drift Report — Fix Descriptions\n\n`;
+    let md = `# Drift Report — Fix Descriptions\n\nGenerated: ${new Date().toISOString()}\n\n`;
     for (const item of items) {
       md += `- [ ] **${item.file}**: ${item.description}\n  Fix: ${item.fix}\n\n`;
     }
-    console.log(md);
+    const fixPath = join(projectRoot, '.ralph', 'gc-fix-descriptions.md');
+    safeWriteFile(fixPath, md);
+    success(`Generated fix descriptions: .ralph/gc-fix-descriptions.md (${items.length} items)`);
   } else {
     if (items.length === 0) {
       success('No drift detected');

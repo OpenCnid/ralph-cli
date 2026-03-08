@@ -76,6 +76,20 @@ describe('gc command', () => {
     }
   });
 
+  it('filters by category', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone/file.ts` for details.');
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'orphan.ts'), 'export function unused() { return 42; }\n');
+
+    const result = captureJson(() => gcCommand({ json: true, category: 'stale-documentation' }));
+    const items = result.items as Array<{ category: string }>;
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.category).toBe('stale-documentation');
+    }
+  });
+
   it('detects exports with no importers', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
     writeFileSync(join(tempDir, 'src', 'orphan.ts'),
@@ -119,14 +133,17 @@ describe('gc command', () => {
     expect(deadItems[0]!.description).toContain('no corresponding source');
   });
 
-  it('produces fix-descriptions markdown output', () => {
+  it('produces fix-descriptions markdown file', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone/file.ts` for details.');
 
     const output = captureText(() => gcCommand({ fixDescriptions: true }));
-    expect(output).toContain('Fix Descriptions');
-    expect(output).toContain('- [ ]');
-    expect(output).toContain('Fix:');
+    expect(output).toContain('Generated fix descriptions');
+
+    const fixFile = readFileSync(join(tempDir, '.ralph', 'gc-fix-descriptions.md'), 'utf-8');
+    expect(fixFile).toContain('Fix Descriptions');
+    expect(fixFile).toContain('- [ ]');
+    expect(fixFile).toContain('Fix:');
   });
 
   // --- Golden principle violations tests ---

@@ -150,4 +150,36 @@ describe('plan commands', () => {
     expect(index).toContain('active');
     expect(index).toContain('completed');
   });
+
+  it('plan list --json outputs structured JSON', () => {
+    planCreateCommand('JSON test plan', {});
+    planCreateCommand('Another plan', {});
+
+    const originalLog = console.log;
+    let output = '';
+    console.log = (msg: string) => { output += msg; };
+    planListCommand({ json: true });
+    console.log = originalLog;
+
+    const result = JSON.parse(output) as { plans: Array<{ id: string; title: string; status: string; completion: { pct: number } }> };
+    expect(result.plans).toHaveLength(2);
+    expect(result.plans[0]!.title).toBe('JSON test plan');
+    expect(result.plans[0]!.status).toBe('active');
+    expect(result.plans[0]!.completion.pct).toBe(0);
+  });
+
+  it('plan status --json outputs structured JSON', () => {
+    planCreateCommand('Status JSON plan', {});
+
+    const originalLog = console.log;
+    let output = '';
+    console.log = (msg: string) => { output += msg; };
+    planStatusCommand({ json: true });
+    console.log = originalLog;
+
+    const result = JSON.parse(output) as { active: Array<{ id: string; title: string }>; total: number };
+    expect(result.total).toBe(1);
+    expect(result.active).toHaveLength(1);
+    expect(result.active[0]!.title).toBe('Status JSON plan');
+  });
 });

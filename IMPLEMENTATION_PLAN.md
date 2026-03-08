@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 232 tests across 13 files — all passing
+- **Tests**: 236 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details)
 
 ---
 
@@ -130,13 +130,20 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Spec fix**: Updated quality-grading.md table example to include Staleness column (was listed as dimension but missing from table).
 - **5 new tests**: Quality Grades title, Last updated date, Staleness column presence, trend format verification, plan complete with reason.
 
+### GC Category Filter, Fix-Descriptions File, Plan JSON, Grade Action Details (0.0.15)
+
+- **GC `--category` filter**: New `--category <category>` flag filters drift items by category (principle-violation, dead-code, stale-documentation, pattern-inconsistency). Works alongside existing `--severity` filter for precise drift queries.
+- **GC `--fix-descriptions` writes to file**: Changed from printing to stdout to writing `.ralph/gc-fix-descriptions.md` per spec requirement ("generates a markdown file"). Includes timestamp header and item count in success message.
+- **Plan `--json` output**: `ralph plan list --json` and `ralph plan status --json` now output structured JSON with plan metadata (id, title, status, created date, completion percentage). Enables CI/agent consumption of plan data.
+- **Grade action items with specific details**: Action items in `docs/QUALITY_SCORE.md` now include file names for architectural violations (e.g., "4 violation(s) in billing.ts, api.ts") and specific oversized file names with line counts (e.g., "routes.ts (847), handler.ts (600)"). Action items now generated for all non-A domains (not just D/F), with severity-appropriate language.
+- **Grade file health detail**: `scoreFileHealthForFiles` now tracks and reports specific oversized files sorted by size, showing top 3 offenders with line counts.
+- **4 new tests**: GC category filter, GC fix-descriptions file output, plan list --json, plan status --json, grade action items with details.
+
 ---
 
 ## Discovered Spec Gaps (for future work)
 
 #### GC Command
-- `--category` filter flag not implemented (only `--severity` exists)
-- `--fix-descriptions` outputs to stdout, spec says "generates a markdown file"
 - Pattern inconsistency missing specific line numbers in output
 
 #### Doctor Command
@@ -145,7 +152,6 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 
 #### Plan Command
 - Lightweight/full plan templates use generic placeholder tasks instead of contextual suggestions
-- JSON output not implemented for any plan subcommand
 
 #### Promote Command
 - Escalation path tracking not implemented (no provenance between doc → lint → pattern)
@@ -153,9 +159,6 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 
 #### Lint Command
 - `--fix` flag registered but no auto-fix logic implemented in any rule
-
-#### Grade Command
-- Action items lack specific violation details (file names, line counts, violation counts)
 
 ---
 

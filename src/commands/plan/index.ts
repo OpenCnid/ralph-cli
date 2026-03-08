@@ -44,6 +44,30 @@ function getCompletionPercentage(content: string): { checked: number; total: num
   return { checked, total, pct };
 }
 
+interface PlanInfo {
+  id: string;
+  title: string;
+  status: string;
+  created: string;
+  completion: { checked: number; total: number; pct: number };
+  file: string;
+}
+
+function parsePlanInfo(dir: string, filename: string): PlanInfo {
+  const content = safeReadFile(join(dir, filename)) ?? '';
+  const titleMatch = content.match(/^# Plan: (.+)$/m);
+  const statusMatch = content.match(/^Status: (.+)$/m);
+  const dateMatch = content.match(/^Created: (.+)$/m);
+  return {
+    id: filename.match(/^(\d+)/)?.[1] ?? '',
+    title: titleMatch?.[1] ?? filename.replace('.md', ''),
+    status: statusMatch?.[1] ?? 'active',
+    created: dateMatch?.[1] ?? '',
+    completion: getCompletionPercentage(content),
+    file: filename,
+  };
+}
+
 function ensureTechDebtTracker(plansDir: string): void {
   const trackerPath = join(plansDir, 'tech-debt-tracker.md');
   if (existsSync(trackerPath)) return;
@@ -260,12 +284,28 @@ export function planLogCommand(id: string, decision: string): void {
   success(`Logged decision to plan ${id}`);
 }
 
-export function planListCommand(options: { all?: boolean }): void {
+export function planListCommand(options: { all?: boolean; json?: boolean }): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);
   const plansDir = join(projectRoot, config.paths.plans);
   const activeDir = join(plansDir, 'active');
   const completedDir = join(plansDir, 'completed');
+
+  if (options.json) {
+    const plans: PlanInfo[] = [];
+    if (existsSync(activeDir)) {
+      for (const file of readdirSync(activeDir).filter(f => f.endsWith('.md')).sort()) {
+        plans.push(parsePlanInfo(activeDir, file));
+      }
+    }
+    if (options.all && existsSync(completedDir)) {
+      for (const file of readdirSync(completedDir).filter(f => f.endsWith('.md')).sort()) {
+        plans.push(parsePlanInfo(completedDir, file));
+      }
+    }
+    console.log(JSON.stringify({ plans }, null, 2));
+    return;
+  }
 
   info('Active Plans:');
   if (existsSync(activeDir)) {
@@ -274,12 +314,8 @@ export function planListCommand(options: { all?: boolean }): void {
       console.log('  (none)');
     }
     for (const file of files) {
-      const content = safeReadFile(join(activeDir, file)) ?? '';
-      const titleMatch = content.match(/^# Plan: (.+)$/m);
-      const title = titleMatch?.[1] ?? file;
-      const { pct } = getCompletionPercentage(content);
-      const id = file.match(/^(\d+)/)?.[1] ?? '';
-      console.log(`  ${id}: ${title} (${pct}% complete)`);
+      const p = parsePlanInfo(activeDir, file);
+      console.log(`  ${p.id}: ${p.title} (${p.completion.pct}% complete)`);
     }
   } else {
     console.log('  (none)');
@@ -293,43 +329,48 @@ export function planListCommand(options: { all?: boolean }): void {
       console.log('  (none)');
     }
     for (const file of files) {
-      const content = safeReadFile(join(completedDir, file)) ?? '';
-      const titleMatch = content.match(/^# Plan: (.+)$/m);
-      const statusMatch = content.match(/^Status: (.+)$/m);
-      const title = titleMatch?.[1] ?? file;
-      const status = statusMatch?.[1] ?? 'completed';
-      const id = file.match(/^(\d+)/)?.[1] ?? '';
-      console.log(`  ${id}: ${title} [${status}]`);
+      const p = parsePlanInfo(completedDir, file);
+      console.log(`  ${p.id}: ${p.title} [${p.status}]`);
     }
   }
 }
 
-export function planStatusCommand(): void {
+export function planStatusCommand(options?: { json?: boolean }): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config } = loadConfig(projectRoot);
   const plansDir = join(projectRoot, config.paths.plans);
   const activeDir = join(plansDir, 'active');
 
   if (!existsSync(activeDir)) {
-    info('No active plans.');
+    if (options?.json) {
+      console.log(JSON.stringify({ active: [], total: 0 }, null, 2));
+    } else {
+      info('No active plans.');
+    }
     return;
   }
 
   const files = readdirSync(activeDir).filter(f => f.endsWith('.md')).sort();
   if (files.length === 0) {
-    info('No active plans.');
+    if (options?.json) {
+      console.log(JSON.stringify({ active: [], total: 0 }, null, 2));
+    } else {
+      info('No active plans.');
+    }
+    return;
+  }
+
+  const plans = files.map(file => parsePlanInfo(activeDir, file));
+
+  if (options?.json) {
+    console.log(JSON.stringify({ active: plans, total: plans.length }, null, 2));
     return;
   }
 
   info(`${files.length} active plan(s):`);
-  for (const file of files) {
-    const content = safeReadFile(join(activeDir, file)) ?? '';
-    const titleMatch = content.match(/^# Plan: (.+)$/m);
-    const title = titleMatch?.[1] ?? file;
-    const { checked, total, pct } = getCompletionPercentage(content);
-    const id = file.match(/^(\d+)/)?.[1] ?? '';
-    console.log(`  ${id}: ${title}`);
-    console.log(`      ${checked}/${total} tasks (${pct}% complete)`);
+  for (const p of plans) {
+    console.log(`  ${p.id}: ${p.title}`);
+    console.log(`      ${p.completion.checked}/${p.completion.total} tasks (${p.completion.pct}% complete)`);
   }
 }
 

@@ -65,7 +65,8 @@ program
   .option('--json', 'Output structured JSON')
   .option('--fix-descriptions', 'Markdown with one fix task per drift item')
   .option('--severity <level>', 'Filter by severity (critical, warning, info)')
-  .action((options: { json?: boolean; fixDescriptions?: boolean; severity?: string }) => {
+  .option('--category <category>', 'Filter by category (principle-violation, dead-code, stale-documentation, pattern-inconsistency)')
+  .action((options: { json?: boolean; fixDescriptions?: boolean; severity?: string; category?: string }) => {
     gcCommand(options);
   });
 
@@ -120,15 +121,17 @@ planCmd
   .command('list')
   .description('List execution plans')
   .option('--all', 'Include completed and abandoned plans')
-  .action((options: { all?: boolean }) => {
+  .option('--json', 'Output structured JSON')
+  .action((options: { all?: boolean; json?: boolean }) => {
     planListCommand(options);
   });
 
 planCmd
   .command('status')
   .description('Show plan summary with completion percentage')
-  .action(() => {
-    planStatusCommand();
+  .option('--json', 'Output structured JSON')
+  .action((options: { json?: boolean }) => {
+    planStatusCommand(options);
   });
 
 // ralph promote

@@ -547,4 +547,23 @@ describe('generateQualityMd', () => {
     expect(md).toContain('auth/tests: A (was B) — improved');
     expect(md).toContain('auth/docs: B (was D) — improved');
   });
+
+  it('generates action items for non-A domains with specific details', () => {
+    const scores = [{
+      domain: 'billing',
+      tests: { grade: 'F' as const, detail: '10% line coverage' },
+      docs: { grade: 'D' as const, detail: '1/5 documentation files present' },
+      architecture: { grade: 'C' as const, detail: '4 violation(s) in billing.ts, api.ts' },
+      fileHealth: { grade: 'D' as const, detail: 'Avg 300 lines, 5 oversized: routes.ts (847), handler.ts (600)' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'F' as const,
+    }];
+    const md = generateQualityMd(scores, []);
+    expect(md).toContain('## Action Items');
+    expect(md).toContain('billing: Improve test coverage');
+    expect(md).toContain('10% line coverage');
+    expect(md).toContain('billing: Add missing documentation');
+    expect(md).toContain('billing: Reduce architectural violations');
+    expect(md).toContain('billing: Split oversized files');
+  });
 });

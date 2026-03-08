@@ -243,36 +243,63 @@ function scoreArchitectureForFiles(projectRoot: string, config: RalphConfig, fil
     createNamingConventionRule(config.architecture.files.naming),
   ];
   const result = runRules(rules, { projectRoot, files });
-  const errorCount = result.violations.filter(v => v.severity === 'error').length;
+  const errors = result.violations.filter(v => v.severity === 'error');
+  const errorCount = errors.length;
 
-  if (errorCount === 0) return { grade: 'A', detail: 'No architectural violations' };
-  if (errorCount <= 2) return { grade: 'B', detail: `${errorCount} violation(s)` };
-  if (errorCount <= 5) return { grade: 'C', detail: `${errorCount} violations` };
-  if (errorCount <= 10) return { grade: 'D', detail: `${errorCount} violations` };
-  return { grade: 'F', detail: `${errorCount} violations` };
+  // Build detail with specific file names for actionability
+  let detail: string;
+  if (errorCount === 0) {
+    detail = 'No architectural violations';
+  } else {
+    const affectedFiles = [...new Set(errors.map(v => v.file))];
+    const fileList = affectedFiles.length <= 3
+      ? affectedFiles.join(', ')
+      : `${affectedFiles.slice(0, 3).join(', ')} +${affectedFiles.length - 3} more`;
+    detail = `${errorCount} violation(s) in ${fileList}`;
+  }
+
+  if (errorCount === 0) return { grade: 'A', detail };
+  if (errorCount <= 2) return { grade: 'B', detail };
+  if (errorCount <= 5) return { grade: 'C', detail };
+  if (errorCount <= 10) return { grade: 'D', detail };
+  return { grade: 'F', detail };
 }
 
 function scoreFileHealthForFiles(files: string[], maxLines: number): DimensionScore {
   let oversized = 0;
   let totalLines = 0;
+  const oversizedFiles: { file: string; lines: number }[] = [];
 
   for (const file of files) {
     try {
       const content = readFileSync(file, 'utf-8');
       const lines = content.split('\n').length;
       totalLines += lines;
-      if (lines > maxLines) oversized++;
+      if (lines > maxLines) {
+        oversized++;
+        oversizedFiles.push({ file: file.replace(/.*[/\\]/, ''), lines });
+      }
     } catch { /* ignore */ }
   }
 
   const avgLines = files.length > 0 ? Math.round(totalLines / files.length) : 0;
   const oversizedPct = files.length > 0 ? (oversized / files.length) * 100 : 0;
 
-  if (oversizedPct === 0) return { grade: 'A', detail: `Avg ${avgLines} lines, no oversized files` };
-  if (oversizedPct < 5) return { grade: 'B', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  if (oversizedPct < 15) return { grade: 'C', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  if (oversizedPct < 30) return { grade: 'D', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  return { grade: 'F', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+  let detail: string;
+  if (oversizedPct === 0) {
+    detail = `Avg ${avgLines} lines, no oversized files`;
+  } else {
+    oversizedFiles.sort((a, b) => b.lines - a.lines);
+    const topFiles = oversizedFiles.slice(0, 3).map(f => `${f.file} (${f.lines})`);
+    const extra = oversizedFiles.length > 3 ? ` +${oversizedFiles.length - 3} more` : '';
+    detail = `Avg ${avgLines} lines, ${oversized} oversized: ${topFiles.join(', ')}${extra}`;
+  }
+
+  if (oversizedPct === 0) return { grade: 'A', detail };
+  if (oversizedPct < 5) return { grade: 'B', detail };
+  if (oversizedPct < 15) return { grade: 'C', detail };
+  if (oversizedPct < 30) return { grade: 'D', detail };
+  return { grade: 'F', detail };
 }
 
 function scoreStalenessForFiles(projectRoot: string, files: string[]): DimensionScore {
@@ -461,25 +488,29 @@ export function generateQualityMd(scores: DomainScore[], history: HistoryEntry[]
     md += '\n';
   }
 
-  // Action items
-  const failing = scores.filter(s => s.overall === 'D' || s.overall === 'F');
-  if (failing.length > 0) {
+  // Action items — include specific details for agent-actionable output
+  const actionable = scores.filter(s => s.overall !== 'A');
+  if (actionable.length > 0) {
     md += `## Action Items\n\n`;
-    for (const s of failing) {
+    for (const s of actionable) {
       if (s.tests.grade === 'D' || s.tests.grade === 'F') {
-        md += `- [ ] Improve test coverage for ${s.domain} (currently: ${s.tests.detail})\n`;
+        md += `- [ ] ${s.domain}: Improve test coverage (currently ${s.tests.detail})\n`;
       }
       if (s.docs.grade === 'D' || s.docs.grade === 'F') {
-        md += `- [ ] Add missing documentation for ${s.domain} (currently: ${s.docs.detail})\n`;
+        md += `- [ ] ${s.domain}: Add missing documentation (${s.docs.detail})\n`;
       }
       if (s.architecture.grade === 'D' || s.architecture.grade === 'F') {
-        md += `- [ ] Fix architectural violations in ${s.domain} (${s.architecture.detail})\n`;
+        md += `- [ ] ${s.domain}: Fix architectural violations — ${s.architecture.detail}\n`;
+      } else if (s.architecture.grade === 'B' || s.architecture.grade === 'C') {
+        md += `- [ ] ${s.domain}: Reduce architectural violations — ${s.architecture.detail}\n`;
       }
       if (s.fileHealth.grade === 'D' || s.fileHealth.grade === 'F') {
-        md += `- [ ] Reduce file sizes in ${s.domain} (${s.fileHealth.detail})\n`;
+        md += `- [ ] ${s.domain}: Split oversized files — ${s.fileHealth.detail}\n`;
+      } else if (s.fileHealth.grade === 'C') {
+        md += `- [ ] ${s.domain}: Consider splitting large files — ${s.fileHealth.detail}\n`;
       }
       if (s.staleness.grade === 'D' || s.staleness.grade === 'F') {
-        md += `- [ ] Review stale code in ${s.domain} (${s.staleness.detail})\n`;
+        md += `- [ ] ${s.domain}: Review stale code — ${s.staleness.detail}\n`;
       }
     }
   }
