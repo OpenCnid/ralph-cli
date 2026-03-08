@@ -1,0 +1,48 @@
+project:
+  name: "ralph-cli"
+  language: typescript
+
+architecture:
+  layers:
+    - types
+    - config
+    - data
+    - service
+    - ui
+  direction: forward-only
+  rules:
+    max-lines: 500
+    naming:
+      schemas: "*Schema"
+      types: "*Type"
+
+quality:
+  minimum-grade: D
+  coverage:
+    tool: vitest
+
+gc:
+  consistency-threshold: 60
+  exclude:
+    - node_modules
+    - dist
+    - .next
+    - coverage
+
+doctor:
+  minimum-score: 7
+
+paths:
+  agents-md: AGENTS.md
+  architecture-md: ARCHITECTURE.md
+  docs: docs
+  specs: docs/product-specs
+  plans: docs/exec-plans
+  design-docs: docs/design-docs
+  references: docs/references
+  generated: docs/generated
+  quality: docs/QUALITY_SCORE.md
+
+references:
+  max-total-kb: 200
+  warn-single-file-kb: 80
