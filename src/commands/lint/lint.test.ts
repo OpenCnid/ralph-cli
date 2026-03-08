@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runRules, formatViolation, formatJson } from './engine.js';
@@ -590,5 +590,125 @@ describe('file-organization rule', () => {
     });
 
     expect(violations.length).toBe(1);
+  });
+});
+
+describe('naming-convention autofix', () => {
+  let tempDir: string;
+
+  beforeEach(() => { tempDir = makeTempDir(); });
+  afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+  it('renames non-conforming Zod schema exports in-place', () => {
+    const file = join(tempDir, 'user.ts');
+    writeFileSync(file, `import { z } from 'zod';
+export const UserData = z.object({ name: z.string() });
+export type User = z.infer<typeof UserData>;
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const fixes = rule.autofix!({ projectRoot: tempDir, files: [file] });
+
+    expect(fixes.length).toBeGreaterThanOrEqual(1);
+    expect(fixes[0]!.description).toContain('UserData');
+    expect(fixes[0]!.description).toContain('UserDataSchema');
+
+    // Verify file was actually renamed
+    const content = readFileSync(file, 'utf-8');
+    expect(content).toContain('export const UserDataSchema = z.object');
+    expect(content).toContain('typeof UserDataSchema');
+    expect(content).not.toContain('UserData =');
+  });
+
+  it('updates references in importing files', () => {
+    const schemaFile = join(tempDir, 'schema.ts');
+    const consumerFile = join(tempDir, 'consumer.ts');
+
+    writeFileSync(schemaFile, `import { z } from 'zod';
+export const UserData = z.object({ name: z.string() });
+`);
+    writeFileSync(consumerFile, `import { UserData } from './schema.js';
+const parsed = UserData.parse({ name: 'test' });
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const fixes = rule.autofix!({
+      projectRoot: tempDir,
+      files: [schemaFile, consumerFile],
+    });
+
+    expect(fixes.length).toBe(2); // declaring file + importing file
+
+    const schemaContent = readFileSync(schemaFile, 'utf-8');
+    expect(schemaContent).toContain('UserDataSchema');
+
+    const consumerContent = readFileSync(consumerFile, 'utf-8');
+    expect(consumerContent).toContain('import { UserDataSchema }');
+    expect(consumerContent).toContain('UserDataSchema.parse');
+  });
+
+  it('returns empty array when no violations exist', () => {
+    const file = join(tempDir, 'user.ts');
+    writeFileSync(file, `import { z } from 'zod';
+export const UserSchema = z.object({ name: z.string() });
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const fixes = rule.autofix!({ projectRoot: tempDir, files: [file] });
+    expect(fixes.length).toBe(0);
+  });
+
+  it('produces no violations after autofix is applied', () => {
+    const file = join(tempDir, 'order.ts');
+    writeFileSync(file, `import { z } from 'zod';
+export const OrderInfo = z.object({ id: z.number() });
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+
+    // Verify violation exists before fix
+    const beforeViolations = rule.run({ projectRoot: tempDir, files: [file] });
+    expect(beforeViolations.length).toBe(1);
+
+    // Apply fix
+    rule.autofix!({ projectRoot: tempDir, files: [file] });
+
+    // Verify no violations after fix
+    const afterViolations = rule.run({ projectRoot: tempDir, files: [file] });
+    expect(afterViolations.length).toBe(0);
+  });
+
+  it('fix suggestion uses computed name from pattern', () => {
+    const file = join(tempDir, 'item.ts');
+    writeFileSync(file, `import { z } from 'zod';
+export const ItemData = z.object({ name: z.string() });
+`);
+
+    const rule = createNamingConventionRule({ schemas: '*Schema', types: '*Type' });
+    const violations = rule.run({ projectRoot: tempDir, files: [file] });
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.fix).toContain('ItemDataSchema');
+  });
+});
+
+describe('formatJson with fixes', () => {
+  it('includes fixes in JSON output when provided', () => {
+    const result = {
+      violations: [],
+      rulesRun: ['naming-convention'],
+    };
+    const fixes = [{ file: 'user.ts', description: 'Renamed UserData to UserDataSchema' }];
+    const json = JSON.parse(formatJson(result, fixes));
+    expect(json.fixes).toHaveLength(1);
+    expect(json.fixes[0].file).toBe('user.ts');
+  });
+
+  it('omits fixes from JSON when none applied', () => {
+    const result = {
+      violations: [],
+      rulesRun: ['naming-convention'],
+    };
+    const json = JSON.parse(formatJson(result));
+    expect(json.fixes).toBeUndefined();
   });
 });

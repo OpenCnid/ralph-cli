@@ -23,10 +23,16 @@ export interface LintContext {
   files: string[];
 }
 
+export interface LintFixResult {
+  file: string;
+  description: string;
+}
+
 export interface LintRule {
   name: string;
   description: string;
   run(context: LintContext): LintViolation[];
+  autofix?(context: LintContext): LintFixResult[];
 }
 
 export interface LintResult {
@@ -53,8 +59,8 @@ export function formatViolation(v: LintViolation): string {
   return `${prefix}: ${location}\n  What: ${v.what}\n  Rule: ${v.rule}\n  Fix: ${v.fix}`;
 }
 
-export function formatJson(result: LintResult): string {
-  return JSON.stringify({
+export function formatJson(result: LintResult, fixes?: LintFixResult[] | undefined): string {
+  const output: Record<string, unknown> = {
     violations: result.violations,
     summary: {
       total: result.violations.length,
@@ -62,5 +68,9 @@ export function formatJson(result: LintResult): string {
       warnings: result.violations.filter(v => v.severity === 'warning').length,
       rulesRun: result.rulesRun,
     },
-  }, null, 2);
+  };
+  if (fixes && fixes.length > 0) {
+    output.fixes = fixes;
+  }
+  return JSON.stringify(output, null, 2);
 }

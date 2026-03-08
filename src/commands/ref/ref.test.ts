@@ -97,7 +97,7 @@ describe('ref commands', () => {
     // The info() function uses console.log internally
   });
 
-  it('discover extracts dependencies from package.json', async () => {
+  it('discover extracts dependencies from package.json', { timeout: 30000 }, async () => {
     writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
       name: 'test-project',
       dependencies: { 'express': '^4.0.0', 'lodash': '^4.0.0' },
