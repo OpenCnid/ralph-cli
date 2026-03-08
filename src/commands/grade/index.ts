@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { readFileSync, existsSync, appendFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
-import type { RalphConfig, Grade } from '../../config/schema.js';
+import type { RalphConfig, DomainConfig, Grade } from '../../config/schema.js';
 import { success, warn, error, info } from '../../utils/index.js';
 import { safeWriteFile } from '../../utils/fs.js';
 import { collectFiles } from '../lint/files.js';
@@ -128,6 +128,213 @@ export function parseGoCoverage(content: string): number | null {
   return totalStatements > 0 ? Math.round((coveredStatements / totalStatements) * 100) : 0;
 }
 
+/**
+ * Parse lcov format filtered to files matching a domain path prefix.
+ * Only includes records whose SF: path contains the domain path.
+ */
+export function parseLcovForDomain(content: string, domainPath: string): number | null {
+  const records = content.split('end_of_record');
+  let totalFound = 0;
+  let totalHit = 0;
+
+  for (const record of records) {
+    const sfMatch = record.match(/SF:(.+)/);
+    if (!sfMatch?.[1]) continue;
+    // Match if the source file path contains the domain path
+    const sf = sfMatch[1].trim();
+    if (!sf.includes(domainPath)) continue;
+
+    const lf = record.match(/LF:(\d+)/);
+    const lh = record.match(/LH:(\d+)/);
+    if (lf?.[1] && lh?.[1]) {
+      totalFound += parseInt(lf[1], 10);
+      totalHit += parseInt(lh[1], 10);
+    }
+  }
+
+  return totalFound > 0 ? Math.round((totalHit / totalFound) * 100) : null;
+}
+
+/**
+ * Parse Go coverage profile filtered to files matching a domain path prefix.
+ */
+export function parseGoCoverageForDomain(content: string, domainPath: string): number | null {
+  const lines = content.trim().split('\n');
+  if (lines.length === 0 || !lines[0]!.startsWith('mode:')) return null;
+
+  let totalStatements = 0;
+  let coveredStatements = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+    if (!line) continue;
+    // Format: file:start,end numStatements count
+    const filePart = line.split(':')[0] ?? '';
+    if (!filePart.includes(domainPath)) continue;
+
+    const parts = line.split(/\s+/);
+    if (parts.length < 3) continue;
+    const numStatements = parseInt(parts[1]!, 10);
+    const count = parseInt(parts[2]!, 10);
+    if (isNaN(numStatements) || isNaN(count)) continue;
+    totalStatements += numStatements;
+    if (count > 0) coveredStatements += numStatements;
+  }
+
+  return totalStatements > 0 ? Math.round((coveredStatements / totalStatements) * 100) : null;
+}
+
+function scoreTestCoverageForDomain(projectRoot: string, config: RalphConfig, domainPath: string): DimensionScore {
+  if (config.quality.coverage.tool === 'none') {
+    return { grade: 'C', detail: 'No coverage tool configured' };
+  }
+
+  const reportPath = join(projectRoot, config.quality.coverage['report-path']);
+  if (!existsSync(reportPath)) {
+    return { grade: 'D', detail: `Coverage report not found: ${config.quality.coverage['report-path']}` };
+  }
+
+  try {
+    const content = readFileSync(reportPath, 'utf-8');
+    let pct: number | null = null;
+
+    const tool = config.quality.coverage.tool;
+    if (tool === 'vitest' || tool === 'jest') {
+      pct = parseLcovForDomain(content, domainPath);
+    } else if (tool === 'pytest') {
+      // Cobertura XML doesn't have per-file granularity at root level — fall back to project
+      pct = parseLcovForDomain(content, domainPath);
+    } else if (tool === 'go-test') {
+      pct = parseGoCoverageForDomain(content, domainPath);
+    }
+
+    // Auto-detect fallback
+    if (pct === null) {
+      pct = parseLcovForDomain(content, domainPath) ?? parseGoCoverageForDomain(content, domainPath);
+    }
+
+    if (pct !== null) {
+      return { grade: gradeFromPercentage(pct), detail: `${pct}% line coverage` };
+    }
+  } catch { /* ignore */ }
+
+  // No domain-specific coverage data — degrade gracefully
+  return { grade: 'C', detail: `No coverage data for domain path ${domainPath}` };
+}
+
+function scoreDomainDocumentation(projectRoot: string, config: RalphConfig, domain: DomainConfig): DimensionScore {
+  let score = 0;
+  const total = 3;
+
+  // Domain-specific design doc
+  if (existsSync(join(projectRoot, domain.path, 'DESIGN.md'))) score++;
+  if (existsSync(join(projectRoot, config.paths['design-docs'], `${domain.name}.md`))) score++;
+  // Domain-level docs in design-docs subdirectory
+  if (existsSync(join(projectRoot, config.paths['design-docs'], domain.name, 'DESIGN.md'))) score++;
+
+  const pct = Math.round((score / total) * 100);
+  return { grade: gradeFromPercentage(pct), detail: `${score}/${total} domain documentation files present` };
+}
+
+function scoreArchitectureForFiles(projectRoot: string, config: RalphConfig, files: string[]): DimensionScore {
+  const rules = [
+    createDependencyDirectionRule(config.architecture),
+    createFileSizeRule(config.architecture.files['max-lines']),
+    createNamingConventionRule(config.architecture.files.naming),
+  ];
+  const result = runRules(rules, { projectRoot, files });
+  const errorCount = result.violations.filter(v => v.severity === 'error').length;
+
+  if (errorCount === 0) return { grade: 'A', detail: 'No architectural violations' };
+  if (errorCount <= 2) return { grade: 'B', detail: `${errorCount} violation(s)` };
+  if (errorCount <= 5) return { grade: 'C', detail: `${errorCount} violations` };
+  if (errorCount <= 10) return { grade: 'D', detail: `${errorCount} violations` };
+  return { grade: 'F', detail: `${errorCount} violations` };
+}
+
+function scoreFileHealthForFiles(files: string[], maxLines: number): DimensionScore {
+  let oversized = 0;
+  let totalLines = 0;
+
+  for (const file of files) {
+    try {
+      const content = readFileSync(file, 'utf-8');
+      const lines = content.split('\n').length;
+      totalLines += lines;
+      if (lines > maxLines) oversized++;
+    } catch { /* ignore */ }
+  }
+
+  const avgLines = files.length > 0 ? Math.round(totalLines / files.length) : 0;
+  const oversizedPct = files.length > 0 ? (oversized / files.length) * 100 : 0;
+
+  if (oversizedPct === 0) return { grade: 'A', detail: `Avg ${avgLines} lines, no oversized files` };
+  if (oversizedPct < 5) return { grade: 'B', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+  if (oversizedPct < 15) return { grade: 'C', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+  if (oversizedPct < 30) return { grade: 'D', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+  return { grade: 'F', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+}
+
+function scoreStalenessForFiles(projectRoot: string, files: string[]): DimensionScore {
+  if (files.length === 0) {
+    return { grade: 'A', detail: 'No source files to evaluate' };
+  }
+
+  const now = Date.now();
+  const daysSinceChange: number[] = [];
+
+  for (const file of files) {
+    try {
+      const lastCommit = execSync(
+        `git log -1 --format=%at -- "${file}"`,
+        { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+      ).trim();
+      if (lastCommit) {
+        const lastChangeMs = parseInt(lastCommit, 10) * 1000;
+        const days = Math.floor((now - lastChangeMs) / (1000 * 60 * 60 * 24));
+        daysSinceChange.push(days);
+      }
+    } catch {
+      // Not in git or git not available — skip file
+    }
+  }
+
+  if (daysSinceChange.length === 0) {
+    return { grade: 'C', detail: 'No git history available' };
+  }
+
+  daysSinceChange.sort((a, b) => a - b);
+  const median = daysSinceChange[Math.floor(daysSinceChange.length / 2)]!;
+
+  if (median <= 30) return { grade: 'A', detail: `Median ${median}d since last change` };
+  if (median <= 90) return { grade: 'B', detail: `Median ${median}d since last change` };
+  if (median <= 180) return { grade: 'C', detail: `Median ${median}d since last change` };
+  if (median <= 365) return { grade: 'D', detail: `Median ${median}d since last change` };
+  return { grade: 'F', detail: `Median ${median}d since last change` };
+}
+
+/**
+ * Score a single configured domain by filtering files to its path.
+ */
+export function scoreDomain(projectRoot: string, config: RalphConfig, domain: DomainConfig): DomainScore {
+  const domainDir = join(projectRoot, domain.path);
+  const allFiles = collectFiles(projectRoot, { exclude: config.gc.exclude });
+  const domainFiles = allFiles.filter(f => f.startsWith(domainDir + '/') || f.startsWith(domainDir + '\\'));
+
+  const tests = scoreTestCoverageForDomain(projectRoot, config, domain.path);
+  const docs = scoreDomainDocumentation(projectRoot, config, domain);
+  const architecture = domainFiles.length > 0
+    ? scoreArchitectureForFiles(projectRoot, config, domainFiles)
+    : { grade: 'A' as Grade, detail: 'No source files in domain' };
+  const fileHealth = domainFiles.length > 0
+    ? scoreFileHealthForFiles(domainFiles, config.architecture.files['max-lines'])
+    : { grade: 'A' as Grade, detail: 'No source files in domain' };
+  const staleness = scoreStalenessForFiles(projectRoot, domainFiles);
+  const overall = worstGrade(tests.grade, docs.grade, architecture.grade, fileHealth.grade, staleness.grade);
+
+  return { domain: domain.name, tests, docs, architecture, fileHealth, staleness, overall };
+}
+
 function scoreTestCoverage(projectRoot: string, config: RalphConfig): DimensionScore {
   if (config.quality.coverage.tool === 'none') {
     return { grade: 'C', detail: 'No coverage tool configured' };
@@ -183,44 +390,12 @@ function scoreDocumentation(projectRoot: string, config: RalphConfig): Dimension
 
 function scoreArchitecture(projectRoot: string, config: RalphConfig): DimensionScore {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
-  const rules = [
-    createDependencyDirectionRule(config.architecture),
-    createFileSizeRule(config.architecture.files['max-lines']),
-    createNamingConventionRule(config.architecture.files.naming),
-  ];
-  const result = runRules(rules, { projectRoot, files });
-  const errorCount = result.violations.filter(v => v.severity === 'error').length;
-
-  if (errorCount === 0) return { grade: 'A', detail: 'No architectural violations' };
-  if (errorCount <= 2) return { grade: 'B', detail: `${errorCount} violation(s)` };
-  if (errorCount <= 5) return { grade: 'C', detail: `${errorCount} violations` };
-  if (errorCount <= 10) return { grade: 'D', detail: `${errorCount} violations` };
-  return { grade: 'F', detail: `${errorCount} violations` };
+  return scoreArchitectureForFiles(projectRoot, config, files);
 }
 
 function scoreFileHealth(projectRoot: string, config: RalphConfig): DimensionScore {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
-  const maxLines = config.architecture.files['max-lines'];
-  let oversized = 0;
-  let totalLines = 0;
-
-  for (const file of files) {
-    try {
-      const content = readFileSync(file, 'utf-8');
-      const lines = content.split('\n').length;
-      totalLines += lines;
-      if (lines > maxLines) oversized++;
-    } catch { /* ignore */ }
-  }
-
-  const avgLines = files.length > 0 ? Math.round(totalLines / files.length) : 0;
-  const oversizedPct = files.length > 0 ? (oversized / files.length) * 100 : 0;
-
-  if (oversizedPct === 0) return { grade: 'A', detail: `Avg ${avgLines} lines, no oversized files` };
-  if (oversizedPct < 5) return { grade: 'B', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  if (oversizedPct < 15) return { grade: 'C', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  if (oversizedPct < 30) return { grade: 'D', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
-  return { grade: 'F', detail: `Avg ${avgLines} lines, ${oversized} oversized` };
+  return scoreFileHealthForFiles(files, config.architecture.files['max-lines']);
 }
 
 /**
@@ -233,42 +408,7 @@ function scoreFileHealth(projectRoot: string, config: RalphConfig): DimensionSco
  */
 function scoreStaleness(projectRoot: string, config: RalphConfig): DimensionScore {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
-  if (files.length === 0) {
-    return { grade: 'A', detail: 'No source files to evaluate' };
-  }
-
-  const now = Date.now();
-  const daysSinceChange: number[] = [];
-
-  for (const file of files) {
-    try {
-      const lastCommit = execSync(
-        `git log -1 --format=%at -- "${file}"`,
-        { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
-      ).trim();
-      if (lastCommit) {
-        const lastChangeMs = parseInt(lastCommit, 10) * 1000;
-        const days = Math.floor((now - lastChangeMs) / (1000 * 60 * 60 * 24));
-        daysSinceChange.push(days);
-      }
-    } catch {
-      // Not in git or git not available — skip file
-    }
-  }
-
-  if (daysSinceChange.length === 0) {
-    // No git history available — can't evaluate staleness
-    return { grade: 'C', detail: 'No git history available' };
-  }
-
-  daysSinceChange.sort((a, b) => a - b);
-  const median = daysSinceChange[Math.floor(daysSinceChange.length / 2)]!;
-
-  if (median <= 30) return { grade: 'A', detail: `Median ${median}d since last change` };
-  if (median <= 90) return { grade: 'B', detail: `Median ${median}d since last change` };
-  if (median <= 180) return { grade: 'C', detail: `Median ${median}d since last change` };
-  if (median <= 365) return { grade: 'D', detail: `Median ${median}d since last change` };
-  return { grade: 'F', detail: `Median ${median}d since last change` };
+  return scoreStalenessForFiles(projectRoot, files);
 }
 
 export function scoreProject(projectRoot: string, config: RalphConfig): DomainScore {
@@ -509,17 +649,29 @@ export function gradeCommand(domain: string | undefined, options: GradeOptions):
     return;
   }
 
-  const scores = [scoreProject(projectRoot, config)];
+  let scores: DomainScore[];
+  const configuredDomains = config.architecture.domains ?? [];
 
-  // If domain specified, filter to only that domain (currently single-project scoring)
   if (domain) {
-    // Check if domain matches project name or a configured domain
-    const matchedDomain = config.architecture.domains?.find(d => d.name === domain);
+    // Score a specific domain
+    const matchedDomain = configuredDomains.find(d => d.name === domain);
     if (matchedDomain) {
       info(`Scoring domain: ${domain} (path: ${matchedDomain.path})`);
-    } else if (domain !== config.project.name) {
+      scores = [scoreDomain(projectRoot, config, matchedDomain)];
+    } else if (domain === config.project.name) {
+      scores = [scoreProject(projectRoot, config)];
+    } else {
       warn(`Domain "${domain}" not found in config. Scoring entire project.`);
+      scores = [scoreProject(projectRoot, config)];
     }
+  } else if (configuredDomains.length > 0) {
+    // Score each configured domain individually
+    scores = configuredDomains.map(d => scoreDomain(projectRoot, config, d));
+    // Also include overall project score
+    scores.push(scoreProject(projectRoot, config));
+  } else {
+    // No domains configured — single project score
+    scores = [scoreProject(projectRoot, config)];
   }
 
   // Generate quality markdown with history for trend section

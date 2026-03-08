@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { scoreProject, parseLcov, parseCoberturaXml, parseGoCoverage } from './index.js';
+import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain } from './index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
 
@@ -310,5 +310,176 @@ describe('DomainScore structure', () => {
     expect(score).toHaveProperty('fileHealth');
     expect(score).toHaveProperty('staleness');
     expect(score).toHaveProperty('overall');
+  });
+});
+
+describe('parseLcovForDomain', () => {
+  it('filters lcov records to a specific domain path', () => {
+    const lcov = `SF:src/auth/login.ts
+DA:1,1
+DA:2,1
+LF:2
+LH:2
+end_of_record
+SF:src/billing/charge.ts
+DA:1,1
+DA:2,0
+LF:2
+LH:1
+end_of_record`;
+    // Only auth records: 2/2 = 100%
+    expect(parseLcovForDomain(lcov, 'src/auth')).toBe(100);
+    // Only billing records: 1/2 = 50%
+    expect(parseLcovForDomain(lcov, 'src/billing')).toBe(50);
+  });
+
+  it('returns null when no records match domain path', () => {
+    const lcov = `SF:src/auth/login.ts
+LF:2
+LH:2
+end_of_record`;
+    expect(parseLcovForDomain(lcov, 'src/billing')).toBeNull();
+  });
+
+  it('handles multiple records in same domain', () => {
+    const lcov = `SF:src/auth/login.ts
+LF:10
+LH:9
+end_of_record
+SF:src/auth/register.ts
+LF:10
+LH:7
+end_of_record`;
+    // 16/20 = 80%
+    expect(parseLcovForDomain(lcov, 'src/auth')).toBe(80);
+  });
+});
+
+describe('parseGoCoverageForDomain', () => {
+  it('filters Go coverage to a specific domain path', () => {
+    const profile = `mode: set
+github.com/user/repo/auth/handler.go:1.1,5.2 5 1
+github.com/user/repo/billing/charge.go:1.1,5.2 5 0
+github.com/user/repo/auth/middleware.go:1.1,3.2 5 1`;
+    // auth: 10/10 = 100%
+    expect(parseGoCoverageForDomain(profile, 'auth')).toBe(100);
+    // billing: 0/5 = 0%
+    expect(parseGoCoverageForDomain(profile, 'billing')).toBe(0);
+  });
+
+  it('returns null when no lines match domain', () => {
+    const profile = `mode: set
+github.com/user/repo/auth/handler.go:1.1,5.2 5 1`;
+    expect(parseGoCoverageForDomain(profile, 'billing')).toBeNull();
+  });
+});
+
+describe('scoreDomain', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir();
+    mkdirSync(join(tempDir, '.git'), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('scores files only within the domain path', () => {
+    // Create files in two domains
+    mkdirSync(join(tempDir, 'src', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'src', 'billing'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'auth', 'login.ts'), 'export const login = () => {};\n');
+    // billing has an oversized file
+    writeFileSync(join(tempDir, 'src', 'billing', 'charge.ts'), Array(600).fill('// line').join('\n'));
+
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' as const },
+      architecture: {
+        domains: [
+          { name: 'auth', path: 'src/auth' },
+          { name: 'billing', path: 'src/billing' },
+        ],
+      },
+    });
+
+    const authScore = scoreDomain(tempDir, config, { name: 'auth', path: 'src/auth' });
+    const billingScore = scoreDomain(tempDir, config, { name: 'billing', path: 'src/billing' });
+
+    expect(authScore.domain).toBe('auth');
+    expect(authScore.fileHealth.grade).toBe('A'); // small file
+    expect(billingScore.domain).toBe('billing');
+    // billing has an oversized file (600 lines > 500 default max)
+    expect(['D', 'F']).toContain(billingScore.fileHealth.grade);
+  });
+
+  it('uses domain name in the score', () => {
+    mkdirSync(join(tempDir, 'src', 'auth'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'auth', 'index.ts'), 'export const x = 1;\n');
+
+    const config = makeConfig();
+    const score = scoreDomain(tempDir, config, { name: 'auth', path: 'src/auth' });
+
+    expect(score.domain).toBe('auth');
+  });
+
+  it('scores domain documentation from domain-specific files', () => {
+    mkdirSync(join(tempDir, 'src', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'docs', 'design-docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'auth', 'index.ts'), 'export const x = 1;\n');
+    // Create domain-specific design doc
+    writeFileSync(join(tempDir, 'src', 'auth', 'DESIGN.md'), '# Auth Design\n');
+    writeFileSync(join(tempDir, 'docs', 'design-docs', 'auth.md'), '# Auth\n');
+
+    const config = makeConfig();
+    const score = scoreDomain(tempDir, config, { name: 'auth', path: 'src/auth' });
+
+    // 2 of 3 domain docs present = 67% = C
+    expect(score.docs.grade).toBe('C');
+    expect(score.docs.detail).toContain('2/3');
+  });
+
+  it('returns A grades for empty domain directory', () => {
+    mkdirSync(join(tempDir, 'src', 'empty'), { recursive: true });
+
+    const config = makeConfig();
+    const score = scoreDomain(tempDir, config, { name: 'empty', path: 'src/empty' });
+
+    expect(score.domain).toBe('empty');
+    expect(score.architecture.grade).toBe('A');
+    expect(score.fileHealth.grade).toBe('A');
+    expect(score.staleness.grade).toBe('A');
+  });
+
+  it('scores domain coverage from lcov filtered by domain path', () => {
+    mkdirSync(join(tempDir, 'src', 'auth'), { recursive: true });
+    mkdirSync(join(tempDir, 'coverage'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'auth', 'login.ts'), 'export const x = 1;\n');
+    writeFileSync(join(tempDir, 'coverage', 'lcov.info'),
+      `SF:src/auth/login.ts\nLF:10\nLH:9\nend_of_record\nSF:src/billing/charge.ts\nLF:10\nLH:3\nend_of_record\n`);
+
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' as const },
+      quality: { coverage: { tool: 'vitest' as const, 'report-path': 'coverage/lcov.info' } },
+    });
+
+    const score = scoreDomain(tempDir, config, { name: 'auth', path: 'src/auth' });
+    expect(score.tests.grade).toBe('A'); // 90% for auth only
+    expect(score.tests.detail).toContain('90%');
+  });
+
+  it('overall grade for domain is weakest dimension', () => {
+    mkdirSync(join(tempDir, 'src', 'auth'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'auth', 'index.ts'), 'export const x = 1;\n');
+
+    const config = makeConfig();
+    const score = scoreDomain(tempDir, config, { name: 'auth', path: 'src/auth' });
+
+    // Overall should be the worst of all dimensions
+    const allGrades = [score.tests.grade, score.docs.grade, score.architecture.grade, score.fileHealth.grade, score.staleness.grade];
+    const gradeOrder = ['A', 'B', 'C', 'D', 'F'];
+    const worstIdx = Math.max(...allGrades.map(g => gradeOrder.indexOf(g)));
+    expect(score.overall).toBe(gradeOrder[worstIdx]);
   });
 });

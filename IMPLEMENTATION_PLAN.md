@@ -6,23 +6,23 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 181 tests across 13 files — all passing
+- **Tests**: 192 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 181 tests across 13 files, all passing.
+All 10 commands fully implemented. 192 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
 | P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
 | P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
 | P2 | Architectural Enforcement | `ralph lint` | 25 | 0.0.8 |
-| P3 | Quality Grading | `ralph grade` | 25 | 0.0.6 |
+| P3 | Quality Grading | `ralph grade` | 36 | 0.0.9 |
 | P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.8 |
 | P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
@@ -71,13 +71,22 @@ All 10 commands fully implemented. 181 tests across 13 files, all passing.
 - **Category-level status**: Each category header shows ✅ (all pass) or ⚠️ (failures) for quick scanning.
 - **Fix summary section**: After the score, lists all failing checks with numbered fix instructions.
 
+### Per-Domain Grade Scoring (0.0.9)
+
+- **Domain-scoped file filtering**: When domains are configured in `architecture.domains`, each domain is scored independently by filtering source files to the domain's path prefix.
+- **Per-domain coverage parsing**: `parseLcovForDomain()` filters lcov records by source file path matching domain prefix. `parseGoCoverageForDomain()` filters Go coverage profiles similarly. Degrades gracefully when no domain-specific coverage data exists.
+- **Domain-specific documentation scoring**: Checks for domain-level design docs: `<domain-path>/DESIGN.md`, `docs/design-docs/<domain-name>.md`, `docs/design-docs/<domain-name>/DESIGN.md`.
+- **Multi-domain output**: `ralph grade` with configured domains produces per-domain rows plus an overall project row in `docs/QUALITY_SCORE.md`.
+- **Single domain scoring**: `ralph grade <domain>` scores only the specified domain.
+- **Shared scoring helpers**: Refactored `scoreArchitectureForFiles()`, `scoreFileHealthForFiles()`, `scoreStalenessForFiles()` used by both project-level and domain-level scoring — single source of truth, no duplication.
+- **11 new tests**: Per-domain lcov/Go coverage filtering, domain file isolation, domain documentation scoring, empty domain handling, domain coverage integration, weakest-link calculation per domain.
+
 ---
 
 ## Deferred Items
 
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
-- **Per-domain grade scoring** — grade scores entire project, not individual domains per spec
 - **GC enhancements** — golden principle violations detection missing, pattern consistency limited, stale docs incomplete, trend tracking missing
 - **Lint file organization rule** — detect business logic in utils/ (heuristic design needed)
 - **Lint --fix auto-fix** — flag registered but not implemented for any rule
