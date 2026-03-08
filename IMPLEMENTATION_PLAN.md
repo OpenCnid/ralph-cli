@@ -2,212 +2,49 @@
 
 # Implementation Plan — ralph-cli
 
-## Current State (verified 2026-03-08)
+## Current State (verified 2026-03-07)
 
-- **Source**: `src/cli.ts` (commander-based CLI router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/init/` (detect, templates, init), `src/commands/config-validate.ts`
-- **Tests**: 47 tests across 4 files (config validate, config loader, init detect, init command) — all passing
-- **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (fixed: no jsx, types: [node])
+- **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
+- **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
+- **Tests**: 113 tests across 13 files — all passing
+- **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **All 10 specs exist** and are complete — no spec gaps
-- **`.gitignore`**: Fixed — selective .ralph/ ignoring (tracks config.yml and rules/)
-- **package.json**: `"type": "module"` (ESM), `"bin": { "ralph": "./dist/cli.js" }`
-- **Known issue**: `exactOptionalPropertyTypes` requires `| undefined` on optional interface properties
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9)
 
 ---
 
-## Priority-Ordered Implementation Tasks
+## Completed Implementation (P0–P9)
 
-### P0 — Foundation (must be done first; everything depends on these)
+All 10 commands fully implemented. 113 tests across 13 files, all passing.
 
-- [x] **tsconfig.json cleanup**: Remove `"jsx": "react-jsx"`, change `"types": []` to `"types": ["node"]`
-- [x] **`.gitignore` fix**: Replace blanket `.ralph/` ignore with selective ignores (keep `config.yml` and `rules/` tracked, ignore generated files like `gc-report.md`, `grade-history.jsonl`, `hooks/`)
-- [x] **Add runtime dependencies**:
-  - CLI framework: `commander` (lightweight, ESM-friendly, good TypeScript support)
-  - YAML parser: `yaml` (YAML 1.2 compliant, TypeScript types included)
-  - Colored output: `picocolors` (already in node_modules as vitest transitive dep, zero-dep, fast)
-  - Interactive prompts: `@inquirer/prompts` (modular, ESM-native)
-- [x] **CLI entry point & command router** (`src/cli.ts`):
-  - Replace placeholder with commander setup
-  - Register all commands: `init`, `lint`, `grade`, `gc`, `doctor`, `plan`, `promote`, `ref`, `hooks`, `ci`, `config validate`
-  - Wire `--help`, `--version` flags
-  - Ensure `#!/usr/bin/env node` shebang works with ESM build
-- [x] **Configuration system** (`src/config/`):
-  - [x] TypeScript types/interfaces for full config schema (`src/config/schema.ts`):
-    - `project`: `name` (required), `description` (optional), `language` (required: typescript|javascript|python|go|rust|multi), `framework` (optional)
-    - `runner`: `cli` (optional, informational: codex|claude|amp|aider|cursor|other)
-    - `architecture`: `layers` (default: [types, config, data, service, ui]), `domains` (optional: name+path), `cross-cutting` (optional), `files.max-lines` (default: 500), `files.naming.schemas` (default: "*Schema"), `files.naming.types` (default: "*Type")
-    - `quality`: `minimum-grade` (default: D), `coverage.tool` (default: none; vitest|jest|pytest|go-test|none), `coverage.report-path` (optional, default: coverage/lcov.info)
-    - `gc`: `consistency-threshold` (default: 60), `exclude` (default: [node_modules, dist, .next, coverage])
-    - `doctor`: `minimum-score` (default: 7), `custom-checks` (default: [])
-    - `paths`: `agents-md` (AGENTS.md), `architecture-md` (ARCHITECTURE.md), `docs` (docs), `specs` (docs/product-specs), `plans` (docs/exec-plans), `design-docs` (docs/design-docs), `references` (docs/references), `generated` (docs/generated), `quality` (docs/QUALITY_SCORE.md)
-    - `references`: `max-total-kb` (default: 200), `warn-single-file-kb` (default: 80)
-    - `ci`: environment-specific overrides (deep-merges over base config; e.g., stricter `quality.minimum-grade` and `doctor.minimum-score` in CI)
-  - [x] Config loader: find `.ralph/config.yml` walking up from cwd, parse YAML, merge with defaults (`src/config/loader.ts`)
-  - [x] Default values for every config field as specified in `specs/configuration.md`
-  - [x] Config validation: syntax errors, unknown keys (warn), invalid values (error with fix suggestions); must be under 100ms
-  - [x] Environment-specific overrides (`ci:` section deep-merging over base config)
-  - [x] `ralph config validate` subcommand
-  - [x] Tests: config loading, defaults, validation, merging, missing file graceful handling
-- [x] **Shared utilities** (`src/utils/`):
-  - File system helpers (ensureDir, safe readFile/writeFile)
-  - Project root resolution (walk up to find `.ralph/config.yml` or `.git`)
-  - Markdown generation helpers (tables, headers, checklists)
-  - JSON/YAML output formatters (for `--json` flag support)
-  - Colored console output wrappers
-
-> **P0 Status**: Complete. Runtime dep `@inquirer/prompts` deferred to P1 (only needed for `ralph init` interactive mode). `picocolors` installed (was already a vitest transitive dep). `exactOptionalPropertyTypes` in tsconfig requires `| undefined` on optional interface properties — all types updated accordingly.
-
-### P1 — Repo Scaffolding (`ralph init`) — specs/repo-scaffolding.md
-
-Depends on: P0 (config system, shared utilities)
-
-- [x] **Project detection** (`src/commands/init/detect.ts`):
-  - Detect language from package.json / pyproject.toml / go.mod / Cargo.toml
-  - Detect framework from dependencies (e.g., nextjs, express, django, gin)
-  - Detect existing test runner and linter
-- [ ] **Interactive mode**: Prompt for project name, description, tech stack, preferred agent runner (deferred — requires `@inquirer/prompts`)
-- [x] **`--defaults` flag**: Non-interactive mode with sensible defaults from detection
-- [x] **File generation** (`src/commands/init/templates.ts`): Generate all scaffolded files:
-  - [x] `AGENTS.md` — table of contents, under 100 lines, `<!-- Generated by ralph-cli. Edit freely. -->` header; includes pointer to `docs/references/` for agents
-  - [x] `ARCHITECTURE.md` — skeleton with placeholder sections for domains, layers, dependency rules
-  - [x] `docs/` directory structure: `design-docs/`, `exec-plans/active/`, `exec-plans/completed/`, `generated/`, `product-specs/`, `references/`
-  - [x] `docs/design-docs/index.md` and `docs/design-docs/core-beliefs.md` (5 agent-first principles)
-  - [x] `docs/product-specs/index.md` (catalog with one-topic-per-file convention)
-  - [x] `docs/exec-plans/tech-debt-tracker.md` (table: ID | Description | Priority | Discovered Date | Related Plan) and `docs/exec-plans/index.md`
-  - [x] `docs/DESIGN.md`, `docs/RELIABILITY.md`, `docs/SECURITY.md` (universal defaults, extensible per-project)
-  - [x] `docs/PLANS.md`, `docs/QUALITY_SCORE.md`
-  - [x] `.gitkeep` files in `generated/` and `references/`
-  - [x] `.ralph/config.yml` — generated from detected project info (minimum: project name + language)
-  - [x] `.ralph/rules/` directory (empty, with `.gitkeep`)
-- [x] **Idempotency**: Skip files that already exist, report created vs skipped counts
-- [x] **LLM-agnostic enforcement**: Zero references to specific LLM providers, model names, or context window sizes in any generated file
-- [x] Tests: init in empty repo, init with existing files, generated content validation, idempotency
-
-> **P1 Status**: Complete except interactive mode (deferred — needs `@inquirer/prompts` dependency). `--defaults` flag works. All 16 files generated. 15 tests cover detection, file creation, idempotency, LLM-agnostic checks, and content validation.
-
-### P2 — Architectural Enforcement (`ralph lint`) — specs/architectural-enforcement.md
-
-Depends on: P0 (config system, especially `architecture` section)
-
-- [x] **Rule engine** (`src/commands/lint/engine.ts`): Framework for defining, loading, and executing rules
-- [x] **Built-in rules** (`src/commands/lint/rules/`):
-  - [x] `dependency-direction` — layer ordering violations from config; forward-only direction; cross-cutting concerns exempt
-  - [x] `file-size` — max-lines from config (default 500)
-  - [x] `naming-convention` — schemas/types naming from config (e.g., `*Schema`, `*Type`)
-  - [ ] `file-organization` — business logic in utils/, etc. (deferred — needs heuristic design)
-- [x] **Custom rules**: Load `.ralph/rules/*.yml` declarative rule files (YAML format with `name`, `description`, `severity`, `match.pattern`, `match.require-nearby`, `match.within-lines`, `fix`)
-- [x] **Import parser** (`src/commands/lint/imports.ts`): Parse TS/JS/Python imports; cross-cutting concerns exempt
-- [x] **Error message format**: Every error includes `what`, `rule`, and `fix` fields
-- [x] **CLI flags**: `--json` (structured output), `--rule <name>` (specific rule), `path/to/file` (target). `--fix` registered but not yet implemented.
-- [x] **Exit codes**: 0 clean, non-zero on violations
-- [x] **Performance**: Fast — file collection + rule execution
-- [x] **Out of scope**: code style/formatting, type checking, security scanning, test coverage
-- [x] Tests: each rule type, custom rules (with YAML single-quote patterns for regex), error format, import parsing, file collection
-
-> **P2 Status**: Complete. 3 built-in rules (dependency-direction, file-size, naming-convention) + custom YAML rules. `file-organization` deferred. `--fix` flag registered but auto-fix not implemented. Note: YAML 1.2 requires single quotes for regex patterns with backslashes in custom rule files.
-
-### P3 — Quality Grading (`ralph grade`) — specs/quality-grading.md
-
-Depends on: P0 (config), P2 (lint — architecture compliance dimension)
-
-- [x] **Grading dimensions**: Test coverage, documentation, architecture compliance (from lint), file health. Staleness deferred.
-- [x] **Composite grading**: Letter grades A-F per dimension, overall = weakest link
-- [x] **Output**: Generate/update `docs/QUALITY_SCORE.md` with table and action items
-- [x] **Trend tracking**: Append snapshots to `.ralph/grade-history.jsonl`
-- [x] **Coverage integration**: Read lcov format; degrades gracefully when unavailable
-- [x] **CLI flags**: `ralph grade <domain>`, `--ci`, `--trend` (registered)
-- [x] Tests: grading logic, scoring dimensions
-
-> **P3 Status**: Complete. 4 dimensions scored (test coverage, docs, architecture, file health). Staleness dimension deferred. Trend tracking appends to JSONL. QUALITY_SCORE.md generated with per-domain table and action items.
-
-### P4 — Repo Diagnostics (`ralph doctor`) — specs/repo-diagnostics.md
-
-Depends on: P0 (config), P1 (init — expected structure), P2 (lint — backpressure checks)
-
-- [x] **Check categories**: Structure (13 checks), Content (6 checks), Backpressure (3 checks), Operational (3 checks)
-- [x] **Scoring**: 0-10 scale based on check pass rate
-- [x] **Output format**: Categorized ✓/✗ checklist with fix recommendations
-- [x] **CLI flags**: `--json`, `--ci`, `--fix` (runs ralph init)
-- [x] **Every failing check has an actionable fix recommendation**
-- [x] Tests: each check category, scoring logic, fully initialized repo test
-
-> **P4 Status**: Complete. 20+ checks across 4 categories. JSON output, CI mode, and --fix implemented. Each failing check includes specific fix instructions.
-
-### P5 — Drift Detection (`ralph gc`) — specs/drift-detection.md
-
-Depends on: P0 (config), P1 (init — doc structure awareness)
-
-- [x] **Scan categories**: Dead code (test files with no source), stale documentation (docs referencing non-existent code files), pattern inconsistency (error handling variants)
-- [x] **Stale doc detection**: Cross-reference code file references in docs
-- [x] **Dead code detection**: Test files with no corresponding source
-- [x] **Pattern analysis**: Detect dominant vs minority patterns with consistency threshold
-- [x] **Severity levels**: Critical, Warning, Info
-- [x] **Output modes**: Stdout, `--json`, `--fix-descriptions`, `--severity` filter, `.ralph/gc-report.md`
-- [x] **Deduplication**: By description key
-- [x] Tests: JSON output, stale doc detection, severity filtering, report generation
-
-> **P5 Status**: Complete. 3 scan categories (dead code, stale docs, pattern inconsistency). Golden principle violations deferred (requires NLP-level analysis).
-
-### P6 — Execution Plans (`ralph plan`) — specs/execution-plans.md
-
-Depends on: P0 (config — paths.plans)
-
-- [x] **Plan creation**: lightweight + full (--full) with context/decisions/dependencies/risks
-- [x] **Plan numbering**: Auto-increment IDs (000, 001, ...)
-- [x] **Plan lifecycle**: complete, abandon (with reason)
-- [x] **Decision logging**: Timestamped entries appended to Decisions section
-- [x] **Listing**: `ralph plan list` (active), `--all` (including completed)
-- [x] **Status**: Completion percentage from checkbox count
-- [x] **Index management**: Auto-update index.md on create/complete/abandon
-- [x] Tests: plan CRUD, decision logging, index sync, auto-increment IDs
-
-> **P6 Status**: Complete. All plan subcommands implemented with 8 tests.
-
-### P7 — Taste Escalation (`ralph promote`) — specs/taste-escalation.md
-
-Depends on: P0 (config), P2 (lint — for rule creation)
-
-- [x] **Promote to doc**: Append to core-beliefs.md or --to specific doc with timestamp
-- [x] **Promote to lint**: Create .ralph/rules/<name>.yml with pattern/require/fix
-- [x] **Promote to pattern**: Create design doc in design-docs/ and update index
-- [x] **Listing**: Show doc principles, lint rules, and patterns
-- [x] Tests: each promotion level, rule file generation
-
-> **P7 Status**: Complete. All 4 promote subcommands implemented with 5 tests.
-
-### P8 — References (`ralph ref`) — specs/references.md
-
-Depends on: P0 (config — references section, paths.references)
-
-- [x] **Add reference**: Local file or URL with metadata comment and auto-naming
-- [ ] **Discover references**: `ralph ref discover` (deferred — needs interactive prompts)
-- [x] **List references**: With sizes, dates, sources; --sizes for visual breakdown
-- [x] **Update references**: Re-fetch from source URLs stored in metadata
-- [x] **Remove references**: Delete from docs/references/
-- [x] **Size management**: Warn on total > max-total-kb and single > warn-single-file-kb
-- [x] Tests: add local, remove, metadata parsing
-
-> **P8 Status**: Complete except `ref discover` (needs interactive prompts). 4 tests.
-
-### P9 — Integration (`ralph hooks` + `ralph ci`) — specs/integration.md
-
-Depends on: P0 (config), P2 (lint), P3 (grade), P4 (doctor)
-
-- [x] **`ralph hooks install`**: Pre-commit (default), post-commit, pre-push with --all and --hooks flags
-- [x] **`ralph hooks uninstall`**: Remove ralph hooks without affecting other hooks
-- [x] **Hook scripts**: Lightweight shell scripts; graceful exit if ralph not installed
-- [x] **`ralph ci generate`**: GitHub Actions, GitLab CI, generic; auto-detect from .github/
-- [x] Tests: hook install/uninstall, CI template generation, platform auto-detection
-
-> **P9 Status**: Complete. Hooks (pre-commit, post-commit, pre-push) and CI generation (GitHub Actions, GitLab CI, generic) implemented with 9 tests.
+| Priority | Feature | Command | Tests | Tag |
+|----------|---------|---------|-------|-----|
+| P0 | Foundation (config, CLI router, utils) | `config validate` | 27 | 0.0.1 |
+| P1 | Repo Scaffolding | `ralph init` | 15 | 0.0.1 |
+| P2 | Architectural Enforcement | `ralph lint` | 20 | 0.0.2 |
+| P3 | Quality Grading | `ralph grade` | 10 | 0.0.2 |
+| P4 | Repo Diagnostics | `ralph doctor` | 11 | 0.0.2 |
+| P5 | Drift Detection | `ralph gc` | 4 | 0.0.4 |
+| P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
+| P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
+| P8 | References | `ralph ref` | 4 | 0.0.3 |
+| P9 | Integration | `ralph hooks`, `ralph ci` | 9 | 0.0.4 |
 
 ---
+
+## Deferred Items
+
+- **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
+- **`ralph ref discover`** — needs interactive prompts
+- **`file-organization` lint rule** — needs heuristic design for detecting business logic in utils/
+- **Staleness grading dimension** — deferred from quality grading
+- **Golden principle violation scanning** in gc — requires NLP-level analysis
+- **`--fix` auto-fix** for lint — flag registered but not implemented
 
 ## Notes
 
-- **LLM-agnostic**: No generated file may reference specific AI providers, model names, or context window sizes. This is a hard constraint across all commands.
-- **Testing strategy**: Each module should have unit tests alongside implementation. Vitest is configured (no vitest.config file yet — uses defaults from package.json `"test": "vitest run"`).
-- **No specs missing**: All 10 commands (`init`, `lint`, `grade`, `gc`, `doctor`, `plan`, `promote`, `ref`, `hooks`, `ci`) plus config have complete specs.
-- **ESM**: Project uses `"type": "module"` — all imports must use `.js` extensions in compiled output (TypeScript `nodenext` module resolution handles this).
-- **Everything is unimplemented**: Only the placeholder shebang and console.log exist in `src/cli.ts`. No source modules, no tests, no config types.
-- **Config validation runs on every command**: Config is validated before execution; missing config doesn't crash (uses defaults + warns).
+- **LLM-agnostic**: No generated file may reference specific AI providers, model names, or context window sizes. Hard constraint across all commands.
+- **ESM**: `"type": "module"` — all imports use `.js` extensions in compiled output (TypeScript `nodenext` module resolution).
+- **`exactOptionalPropertyTypes`**: Requires `| undefined` on optional interface properties in schema.ts.
+- **YAML 1.2**: Single quotes required for regex patterns with backslashes in custom rule `.yml` files.
+- **Config validation runs on every command**: Missing config doesn't crash (uses defaults + warns).

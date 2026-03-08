@@ -19,12 +19,11 @@ Run these after implementing to get immediate feedback:
 
 ## Architecture
 
-- Entry point: `src/cli.ts` — command router using a CLI framework (commander, yargs, or similar)
-- Commands live in `src/commands/` — one file per command (`init.ts`, `lint.ts`, `grade.ts`, etc.)
-- Shared utilities in `src/lib/` — config loading, file operations, markdown parsing, rule engine
-- Templates in `src/templates/` — the files that `ralph init` generates (AGENTS.md, ARCHITECTURE.md, docs structure)
-- Rules in `src/rules/` — built-in architectural rules for `ralph lint`
-- Config schema in `src/lib/config.ts` — validates `.ralph/config.yml`
+- Entry point: `src/cli.ts` — command router using commander
+- Commands: `src/commands/<name>/index.ts` — one directory per command (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/)
+- Config system: `src/config/` — schema.ts (types), loader.ts (find + parse + merge), validate.ts, defaults.ts
+- Shared utilities: `src/utils/` — fs.ts (ensureDir, safeReadFile, safeWriteFile), output.ts (colored console)
+- Lint subsystem: `src/commands/lint/` — engine.ts (rule framework), imports.ts (parser), files.ts (collector), rules/ (built-in + custom)
 
 ## Key Decisions
 
@@ -36,4 +35,9 @@ Run these after implementing to get immediate feedback:
 
 ## Operational Notes
 
-(Updated by Ralph as learnings accumulate)
+- `exactOptionalPropertyTypes` in tsconfig: optional interface properties must use `| undefined` (e.g., `description?: string | undefined`)
+- YAML 1.2 (yaml package): regex patterns with backslashes must use single quotes in `.yml` files (e.g., `pattern: 'console\\.log'`)
+- ESM: never use `require()` — use `import` statements. All `.ts` imports resolve to `.js` in compiled output.
+- `vitest.config.ts` excludes `dist/` to prevent running compiled test copies. `tsconfig.json` has `"include": ["src"]` to exclude vitest.config.ts from compilation.
+- Tests use `process.chdir()` to temp dirs with `.git/` stubs. Always restore `origCwd` in `afterEach`.
+- Config loading walks up directories looking for `.ralph/config.yml`. Falls back to defaults gracefully.
