@@ -4,12 +4,36 @@ project:
 
 architecture:
   layers:
-    - types
     - config
-    - data
-    - service
-    - ui
+    - utils
+    - commands
+    - cli
   direction: forward-only
+  domains:
+    - name: config
+      path: src/config
+    - name: lint
+      path: src/commands/lint
+    - name: grade
+      path: src/commands/grade
+    - name: gc
+      path: src/commands/gc
+    - name: doctor
+      path: src/commands/doctor
+    - name: init
+      path: src/commands/init
+    - name: plan
+      path: src/commands/plan
+    - name: promote
+      path: src/commands/promote
+    - name: ref
+      path: src/commands/ref
+    - name: hooks
+      path: src/commands/hooks
+    - name: ci
+      path: src/commands/ci
+  cross-cutting:
+    - src/utils
   rules:
     max-lines: 500
     naming:
@@ -17,7 +41,7 @@ architecture:
       types: "*Type"
 
 quality:
-  minimum-grade: D
+  minimum-grade: C
   coverage:
     tool: vitest
 
@@ -26,11 +50,10 @@ gc:
   exclude:
     - node_modules
     - dist
-    - .next
     - coverage
 
 doctor:
-  minimum-score: 7
+  minimum-score: 8
 
 paths:
   agents-md: AGENTS.md
