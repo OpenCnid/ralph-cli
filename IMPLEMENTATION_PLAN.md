@@ -219,6 +219,12 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - **Grade trend temporal context**: Trend labels now include temporal labels relative to the previous snapshot (e.g., "was B yesterday", "was D last week", "was C 3 days ago"). Uses `formatTemporalLabel()` helper with labels: today, yesterday, N days ago, last week, N weeks ago, last month, N months ago. Why: the spec shows "was D last week" — temporal context tells developers when degradation happened.
 - **5 new tests**: Item fingerprints stored in history, persistent items flagged across runs, persistent count in JSON summary, persistent tag in text output, temporal context in grade trend labels.
 
+### Lint Custom Rule Scripts (0.0.30)
+
+- **Script-based custom rules**: `.ralph/rules/*.js` files are now supported alongside YAML rules. Scripts are executed with `node` and receive JSON on stdin (`{ "projectRoot": "...", "files": ["..."] }`). They must output JSON to stdout with `{ "name": "...", "violations": [{ "file", "line", "what", "rule", "fix", "severity" }] }`. Scripts have a 30-second timeout. Why: the spec says custom rules can be "declarative YAML or scripts that output structured results" — scripts enable complex custom checks that regex patterns can't express (e.g., AST-based analysis, cross-file consistency checks).
+- **1 new test**: Script-based custom rule loading and execution.
+- **294 total tests** across 13 files.
+
 ### Grade Detailed Trend Reasons (0.0.29)
 
 - **Trend reasons from detail strings**: Trend labels now include contextual reasons explaining the grade, not just "improved/degraded/stable". For example: `billing/docs: F (was D last week) — degraded — 0/5 domain documentation files present` or `auth/architecture: A (stable) — No architectural violations`. The detail string from each dimension's scoring function is appended to the trend label. Why: the spec shows `billing/docs: F (was D last week) — design doc deleted, not replaced` — actionable reasons help agents understand what changed and what to fix.
@@ -240,9 +246,6 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 
 #### Doctor Command
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
-
-#### Lint Command
-- Custom rule scripts not supported (YAML only)
 
 #### Ref Command
 - `ref discover` doesn't prompt to add discovered references (spec says interactive)

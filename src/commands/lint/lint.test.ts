@@ -257,6 +257,53 @@ async function fetchData() {
     const rules = loadCustomRules(join(tempDir, 'nonexistent'));
     expect(rules).toEqual([]);
   });
+
+  it('loads and runs script-based custom rules (.js)', () => {
+    const rulesDir = join(tempDir, '.ralph', 'rules');
+    mkdirSync(rulesDir, { recursive: true });
+
+    // Create a JS script rule that detects "TODO" comments
+    writeFileSync(join(rulesDir, 'no-todos.js'), `
+const input = [];
+process.stdin.on('data', d => input.push(d));
+process.stdin.on('end', () => {
+  const { files } = JSON.parse(input.join(''));
+  const fs = require('fs');
+  const path = require('path');
+  const violations = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf-8');
+    const lines = content.split('\\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('TODO')) {
+        violations.push({
+          file: path.relative(process.cwd(), file),
+          line: i + 1,
+          what: 'TODO comment found',
+          rule: 'no-todos',
+          fix: 'Resolve the TODO',
+          severity: 'warning'
+        });
+      }
+    }
+  }
+  console.log(JSON.stringify({ name: 'no-todos', violations }));
+});
+`);
+
+    const sourceFile = join(tempDir, 'src', 'app.ts');
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(sourceFile, '// TODO: fix this\nconst x = 1;\n');
+
+    const rules = loadCustomRules(rulesDir);
+    const scriptRule = rules.find(r => r.name === 'no-todos');
+    expect(scriptRule).toBeDefined();
+
+    const violations = scriptRule!.run({ projectRoot: tempDir, files: [sourceFile] });
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.what).toContain('TODO');
+    expect(violations[0]!.severity).toBe('warning');
+  });
 });
 
 describe('parseImports', () => {

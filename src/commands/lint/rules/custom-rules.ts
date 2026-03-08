@@ -1,5 +1,6 @@
 /**
- * Custom rules — loads .ralph/rules/*.yml declarative rule files.
+ * Custom rules — loads .ralph/rules/*.yml declarative rule files
+ * and .ralph/rules/*.js script-based rules.
  *
  * YAML format:
  *   name: rule-name
@@ -10,9 +11,18 @@
  *     require-nearby: regex that must appear within N lines
  *     within-lines: 5  (default)
  *   fix: How to fix violations
+ *
+ * Script format (.js):
+ *   Executed with `node <script>`. Receives JSON on stdin:
+ *     { "projectRoot": "...", "files": ["..."] }
+ *   Must output JSON to stdout:
+ *     { "name": "rule-name", "description": "...", "violations": [
+ *       { "file": "...", "line": 1, "what": "...", "rule": "...", "fix": "...", "severity": "error" }
+ *     ]}
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { LintRule, LintViolation, LintContext, Severity } from '../engine.js';
@@ -36,10 +46,60 @@ function isValidSeverity(s: unknown): s is Severity {
 export function loadCustomRules(rulesDir: string): LintRule[] {
   if (!existsSync(rulesDir)) return [];
 
-  const files = readdirSync(rulesDir).filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+  const allFiles = readdirSync(rulesDir);
+  const yamlFiles = allFiles.filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+  const scriptFiles = allFiles.filter(f => f.endsWith('.js') || f.endsWith('.sh'));
   const rules: LintRule[] = [];
 
-  for (const file of files) {
+  // Load script-based rules
+  for (const scriptFile of scriptFiles) {
+    const scriptPath = join(rulesDir, scriptFile);
+    const scriptName = scriptFile.replace(/\.[^.]+$/, '');
+    rules.push({
+      name: scriptName,
+      description: `Custom script rule: ${scriptFile}`,
+      run(context: LintContext): LintViolation[] {
+        try {
+          const input = JSON.stringify({
+            projectRoot: context.projectRoot,
+            files: context.files,
+          });
+          const output = execSync(`node "${scriptPath}"`, {
+            cwd: context.projectRoot,
+            encoding: 'utf-8',
+            input,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 30000,
+          });
+          const result = JSON.parse(output.trim()) as {
+            name?: string;
+            description?: string;
+            violations?: Array<{
+              file: string;
+              line: number;
+              what: string;
+              rule: string;
+              fix: string;
+              severity?: string;
+            }>;
+          };
+          if (!result.violations || !Array.isArray(result.violations)) return [];
+          return result.violations.map(v => ({
+            file: v.file,
+            line: v.line ?? 0,
+            what: v.what ?? 'Script rule violation',
+            rule: v.rule ?? result.name ?? scriptName,
+            fix: v.fix ?? '',
+            severity: (isValidSeverity(v.severity) ? v.severity : 'error') as Severity,
+          }));
+        } catch {
+          return [];
+        }
+      },
+    });
+  }
+
+  for (const file of yamlFiles) {
     const filePath = join(rulesDir, file);
     let content: string;
     try {
