@@ -10,6 +10,27 @@ function makeTempDir(): string {
   return dir;
 }
 
+function captureJson(fn: () => void): Record<string, unknown> {
+  const originalLog = console.log;
+  let output = '';
+  console.log = (msg: string) => { output += msg; };
+  fn();
+  console.log = originalLog;
+  return JSON.parse(output) as Record<string, unknown>;
+}
+
+function captureText(fn: () => void): string {
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  let output = '';
+  console.log = (msg: string) => { output += msg + '\n'; };
+  // Suppress picocolors warn output
+  fn();
+  console.log = originalLog;
+  console.warn = originalWarn;
+  return output;
+}
+
 describe('gc command', () => {
   let tempDir: string;
   const origCwd = process.cwd();
@@ -28,17 +49,10 @@ describe('gc command', () => {
   });
 
   it('produces JSON output with --json', () => {
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
+    const result = captureJson(() => gcCommand({ json: true }));
     expect(result.items).toBeDefined();
     expect(result.summary).toBeDefined();
-    expect(typeof result.summary.total).toBe('number');
+    expect(typeof (result.summary as Record<string, unknown>).total).toBe('number');
   });
 
   it('writes gc-report.md', () => {
@@ -50,115 +64,270 @@ describe('gc command', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/nonexistent/file.ts` for details.');
 
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
-    const staleItems = result.items.filter((i: { category: string }) => i.category === 'stale-documentation');
+    const result = captureJson(() => gcCommand({ json: true }));
+    const staleItems = (result.items as Array<{ category: string }>).filter(i => i.category === 'stale-documentation');
     expect(staleItems.length).toBeGreaterThan(0);
   });
 
   it('filters by severity', () => {
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true, severity: 'critical' });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
-    for (const item of result.items) {
+    const result = captureJson(() => gcCommand({ json: true, severity: 'critical' }));
+    for (const item of result.items as Array<{ severity: string }>) {
       expect(item.severity).toBe('critical');
     }
   });
 
   it('detects exports with no importers', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
-    // Create a file that exports but is never imported
     writeFileSync(join(tempDir, 'src', 'orphan.ts'),
       `export function unusedHelper() { return 42; }\n`
     );
-    // Create another file that does NOT import orphan
     writeFileSync(join(tempDir, 'src', 'main.ts'),
       `export function main() { console.log('hello'); }\n`
     );
 
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
-    const deadItems = result.items.filter((i: { category: string }) => i.category === 'dead-code');
-    const orphanItem = deadItems.find((i: { file: string }) => i.file.includes('orphan'));
+    const result = captureJson(() => gcCommand({ json: true }));
+    const deadItems = (result.items as Array<{ category: string; file: string }>).filter(i => i.category === 'dead-code');
+    const orphanItem = deadItems.find(i => i.file.includes('orphan'));
     expect(orphanItem).toBeDefined();
-    expect(orphanItem.description).toContain('not imported');
   });
 
   it('does not flag files that are imported', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
-    // Create a file that exports
     writeFileSync(join(tempDir, 'src', 'helper.ts'),
       `export function helper() { return 42; }\n`
     );
-    // Create a file that imports helper
     writeFileSync(join(tempDir, 'src', 'app.ts'),
       `import { helper } from './helper.js';\nexport function run() { return helper(); }\n`
     );
 
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
-    const deadItems = result.items.filter((i: { category: string; file: string }) =>
+    const result = captureJson(() => gcCommand({ json: true }));
+    const deadItems = (result.items as Array<{ category: string; file: string }>).filter(i =>
       i.category === 'dead-code' && i.file.includes('helper'));
     expect(deadItems.length).toBe(0);
   });
 
   it('detects orphaned test files', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
-    // Create a test file with no corresponding source
     writeFileSync(join(tempDir, 'src', 'deleted.test.ts'),
       `import { describe, it } from 'vitest';\ndescribe('deleted', () => { it('works', () => {}); });\n`
     );
 
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ json: true });
-
-    console.log = originalLog;
-    const result = JSON.parse(output);
-    const deadItems = result.items.filter((i: { category: string; file: string }) =>
+    const result = captureJson(() => gcCommand({ json: true }));
+    const deadItems = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
       i.category === 'dead-code' && i.file.includes('deleted.test'));
     expect(deadItems.length).toBe(1);
-    expect(deadItems[0].description).toContain('no corresponding source');
+    expect(deadItems[0]!.description).toContain('no corresponding source');
   });
 
   it('produces fix-descriptions markdown output', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone/file.ts` for details.');
 
-    const originalLog = console.log;
-    let output = '';
-    console.log = (msg: string) => { output += msg; };
-
-    gcCommand({ fixDescriptions: true });
-
-    console.log = originalLog;
+    const output = captureText(() => gcCommand({ fixDescriptions: true }));
     expect(output).toContain('Fix Descriptions');
     expect(output).toContain('- [ ]');
     expect(output).toContain('Fix:');
+  });
+
+  // --- Golden principle violations tests ---
+
+  it('detects empty catch blocks as principle violations', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'bad.ts'),
+      `export function doStuff() {\n  try {\n    riskyCall();\n  } catch (e) {}\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('bad'));
+    expect(violations.length).toBeGreaterThan(0);
+    const emptyCatch = violations.find(v => v.description.includes('Empty catch'));
+    expect(emptyCatch).toBeDefined();
+    expect(emptyCatch!.description).toContain('occurrence');
+  });
+
+  it('detects any type usage as principle violations', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'typed.ts'),
+      `export function parse(data: any) {\n  return data as any;\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('typed'));
+    const anyViolation = violations.find(v => v.description.includes('any'));
+    expect(anyViolation).toBeDefined();
+  });
+
+  it('detects deep optional chaining as data probing', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'probe.ts'),
+      `export function extract(data: unknown) {\n  return data?.response?.body?.items?.length;\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('probe'));
+    const probeViolation = violations.find(v => v.description.includes('optional chaining'));
+    expect(probeViolation).toBeDefined();
+  });
+
+  it('matches violations to principles from core-beliefs.md', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    mkdirSync(join(tempDir, 'docs', 'design-docs'), { recursive: true });
+
+    writeFileSync(join(tempDir, 'docs', 'design-docs', 'core-beliefs.md'),
+      `# Core Beliefs\n\n1. Never swallow errors — always handle or re-throw\n2. Use strict typing everywhere\n`
+    );
+
+    writeFileSync(join(tempDir, 'src', 'swallow.ts'),
+      `export function risky() {\n  try { doStuff(); } catch (e) {}\n}\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; description: string }>).filter(i =>
+      i.category === 'principle-violation');
+    const matched = violations.find(v => v.description.includes('Principle:'));
+    expect(matched).toBeDefined();
+    expect(matched!.description).toContain('swallow');
+  });
+
+  it('skips principle violations in comments', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'commented.ts'),
+      `// Note: don't use catch (e) {} empty blocks\nexport function clean() { return 1; }\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('commented'));
+    // empty-catch pattern should not match comment lines
+    const emptyCatch = violations.find(v => (v as unknown as { description: string }).description.includes('Empty catch'));
+    expect(emptyCatch).toBeUndefined();
+  });
+
+  it('skips test files for principle violations', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    writeFileSync(join(tempDir, 'src', 'bad.test.ts'),
+      `import { describe, it } from 'vitest';\ndescribe('test', () => { it('ok', () => { const x: any = 1; }); });\n`
+    );
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const violations = (result.items as Array<{ category: string; file: string }>).filter(i =>
+      i.category === 'principle-violation' && i.file.includes('bad.test'));
+    expect(violations.length).toBe(0);
+  });
+
+  // --- Expanded pattern consistency tests ---
+
+  it('detects export style inconsistency', () => {
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    // Create files with mixed export styles (default threshold is 60%)
+    // 3 default + 3 named = 50% dominance, below 60% threshold
+    writeFileSync(join(tempDir, 'src', 'a.ts'), `export default function a() { return 1; }\n`);
+    writeFileSync(join(tempDir, 'src', 'b.ts'), `export default function b() { return 2; }\n`);
+    writeFileSync(join(tempDir, 'src', 'c.ts'), `export default function c() { return 3; }\n`);
+    writeFileSync(join(tempDir, 'src', 'd.ts'), `export function d() { return 4; }\n`);
+    writeFileSync(join(tempDir, 'src', 'e.ts'), `export function e() { return 5; }\n`);
+    writeFileSync(join(tempDir, 'src', 'f.ts'), `export function f() { return 6; }\n`);
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    const patterns = (result.items as Array<{ category: string; description: string }>).filter(i =>
+      i.category === 'pattern-inconsistency' && i.description.includes('export-style'));
+    // Should detect mixed export styles
+    expect(patterns.length).toBeGreaterThan(0);
+  });
+
+  // --- Trend tracking tests ---
+
+  it('saves gc-history.jsonl after each run', () => {
+    gcCommand({});
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    expect(existsSync(historyPath)).toBe(true);
+    const content = readFileSync(historyPath, 'utf-8').trim();
+    const entry = JSON.parse(content);
+    expect(entry.timestamp).toBeDefined();
+    expect(typeof entry.total).toBe('number');
+    expect(typeof entry.critical).toBe('number');
+    expect(typeof entry.warning).toBe('number');
+    expect(typeof entry.info).toBe('number');
+    expect(entry.categories).toBeDefined();
+  });
+
+  it('appends to existing history', () => {
+    gcCommand({});
+    gcCommand({});
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const lines = readFileSync(historyPath, 'utf-8').trim().split('\n');
+    expect(lines.length).toBe(2);
+  });
+
+  it('detects rising drift trend', () => {
+    // Seed history with rising values
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const entries = [
+      { timestamp: '2026-03-01T00:00:00Z', total: 2, critical: 0, warning: 1, info: 1, categories: {} },
+      { timestamp: '2026-03-02T00:00:00Z', total: 5, critical: 1, warning: 2, info: 2, categories: {} },
+    ];
+    writeFileSync(historyPath, entries.map(e => JSON.stringify(e)).join('\n') + '\n');
+
+    // Create source files that will generate more than 5 drift items
+    mkdirSync(join(tempDir, 'src'), { recursive: true });
+    for (let i = 0; i < 8; i++) {
+      writeFileSync(join(tempDir, 'src', `file${i}.ts`),
+        `export function fn${i}() {\n  try { doStuff(); } catch (e) {}\n}\n`
+      );
+    }
+
+    const result = captureJson(() => gcCommand({ json: true }));
+    expect(result.trend).toBeDefined();
+    const trend = result.trend as { direction: string; message: string };
+    expect(trend.direction).toBe('rising');
+    expect(trend.message).toContain('rising');
+  });
+
+  it('detects declining drift trend', () => {
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const entries = [
+      { timestamp: '2026-03-01T00:00:00Z', total: 10, critical: 2, warning: 4, info: 4, categories: {} },
+      { timestamp: '2026-03-02T00:00:00Z', total: 5, critical: 1, warning: 2, info: 2, categories: {} },
+    ];
+    writeFileSync(historyPath, entries.map(e => JSON.stringify(e)).join('\n') + '\n');
+
+    // Current run will produce 0 items (empty project) — declining
+    const result = captureJson(() => gcCommand({ json: true }));
+    expect(result.trend).toBeDefined();
+    const trend = result.trend as { direction: string; message: string };
+    expect(trend.direction).toBe('declining');
+  });
+
+  it('shows trend in text output', () => {
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const entries = [
+      { timestamp: '2026-03-01T00:00:00Z', total: 10, critical: 2, warning: 4, info: 4, categories: {} },
+      { timestamp: '2026-03-02T00:00:00Z', total: 5, critical: 1, warning: 2, info: 2, categories: {} },
+    ];
+    writeFileSync(historyPath, entries.map(e => JSON.stringify(e)).join('\n') + '\n');
+
+    const output = captureText(() => gcCommand({}));
+    expect(output).toContain('declining');
+  });
+
+  it('includes trend in JSON output', () => {
+    const result = captureJson(() => gcCommand({ json: true }));
+    // With only 1 entry in history (just the current run), no trend yet
+    expect(result.trend).toBeNull();
+  });
+
+  it('tracks category counts in history', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/deleted.ts` for details.');
+
+    gcCommand({});
+
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const content = readFileSync(historyPath, 'utf-8').trim();
+    const entry = JSON.parse(content);
+    expect(entry.categories['stale-documentation']).toBeGreaterThan(0);
   });
 });

@@ -6,16 +6,16 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 203 tests across 13 files — all passing
+- **Tests**: 217 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 203 tests across 13 files, all passing.
+All 10 commands fully implemented. 217 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
@@ -24,7 +24,7 @@ All 10 commands fully implemented. 203 tests across 13 files, all passing.
 | P2 | Architectural Enforcement | `ralph lint` | 32 | 0.0.10 |
 | P3 | Quality Grading | `ralph grade` | 36 | 0.0.9 |
 | P4 | Repo Diagnostics | `ralph doctor` | 12 | 0.0.8 |
-| P5 | Drift Detection | `ralph gc` | 8 | 0.0.10 |
+| P5 | Drift Detection | `ralph gc` | 22 | 0.0.11 |
 | P6 | Execution Plans | `ralph plan` | 8 | 0.0.3 |
 | P7 | Taste Escalation | `ralph promote` | 5 | 0.0.3 |
 | P8 | References | `ralph ref` | 4 | 0.0.3 |
@@ -100,13 +100,20 @@ All 10 commands fully implemented. 203 tests across 13 files, all passing.
 - **`collectFiles` enhancement**: Added `includeTests` option to the shared file collector so GC can scan test files without affecting lint behavior.
 - **4 new tests**: Exports with no importers, imported files not flagged, orphaned test files, fix-descriptions output.
 
+### GC Enhancements (0.0.11)
+
+- **Golden principle violations**: Scans source files against 4 built-in anti-pattern detectors (empty catch blocks, console.log usage, `any` type, deep optional chaining). Parses principles from `docs/design-docs/core-beliefs.md` and domain docs (RELIABILITY.md, SECURITY.md) to match violations to documented principles. Supports `promote doc` format (`- **date** — principle`), numbered entries, and bullet entries.
+- **Pattern consistency expansion**: Beyond error-handling (try-catch vs .catch()), now also detects export style inconsistency (default-export vs named-export) and null-checking patterns (=== null vs !== null vs nullish coalescing). Reports when dominant pattern is below consistency threshold.
+- **Trend tracking**: Saves drift snapshots to `.ralph/gc-history.jsonl` after each run. Detects rising (entropy accumulating), declining (cleanup outpacing), or stable drift velocity using last 3 runs. Shows trend in both text and JSON output modes.
+- **14 new tests**: Empty catch detection, any type detection, deep optional chaining, principle matching from core-beliefs.md, comment skipping, test file exclusion, export style inconsistency, history persistence, history appending, rising/declining/stable trend detection, trend in text/JSON output, category count tracking.
+
 ---
 
 ## Deferred Items
 
 - **Interactive mode** for `ralph init` — needs `@inquirer/prompts` dependency
 - **`ralph ref discover`** — needs interactive prompts
-- **GC enhancements** — golden principle violations detection missing, pattern consistency limited (only error-handling patterns), trend tracking missing
+- **GC enhancements** — golden principle violations could support user-defined anti-patterns (currently 4 built-in detectors only)
 - **Lint --fix auto-fix** — flag registered but not implemented for any rule
 - **Promote format** — date placement doesn't match spec (date first vs principle first)
 - **Ref discover** — scan dependencies for llms.txt files (needs dep parsing)
