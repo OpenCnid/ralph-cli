@@ -50,11 +50,15 @@ export async function refAddCommand(urlOrPath: string, options: { name?: string 
       process.exit(1);
     }
     content = readFileSync(fullPath, 'utf-8');
-    sourceName = basename(urlOrPath, '.txt').replace(/-llms$/, '');
+    const ext = urlOrPath.endsWith('.md') ? '.md' : '.txt';
+    sourceName = basename(urlOrPath, ext).replace(/-llms$/, '');
   }
 
+  // Determine suffix based on source file extension or URL path
+  const isMd = urlOrPath.endsWith('.md') || urlOrPath.endsWith('-llms.md');
+  const suffix = isMd ? '-llms.md' : '-llms.txt';
   const name = options.name ?? sanitizeName(sourceName);
-  const filename = `${name}-llms.txt`;
+  const filename = `${name}${suffix}`;
   const filePath = join(refsDir, filename);
 
   // Add metadata comment
@@ -141,7 +145,7 @@ export async function refUpdateCommand(name?: string): Promise<void> {
 
   const files = name
     ? [readdirSync(refsDir).find(f => f.includes(name))]
-    : readdirSync(refsDir).filter(f => f.endsWith('.txt'));
+    : readdirSync(refsDir).filter(f => f.endsWith('.txt') || f.endsWith('.md'));
 
   let updated = 0;
   for (const file of files) {

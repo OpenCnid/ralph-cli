@@ -30,6 +30,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache ralph-cli
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ralph-cli-\${{ runner.os }}-\${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ralph-cli-\${{ runner.os }}-
+
       - name: Install ralph-cli
         run: npm install -g ralph-cli
 
@@ -70,6 +77,10 @@ test:
 
 quality:
   stage: quality
+  cache:
+    key: ralph-cli
+    paths:
+      - /usr/local/lib/node_modules/ralph-cli
   script:
     - npm install -g ralph-cli
     - ralph lint

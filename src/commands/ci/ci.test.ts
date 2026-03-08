@@ -61,6 +61,22 @@ describe('ci generate', () => {
     expect(output).toContain('ralph grade --ci');
   });
 
+  it('includes cache step for ralph-cli in GitHub Actions', () => {
+    ciGenerateCommand({ platform: 'github' });
+
+    const content = readFileSync(join(tempDir, '.github', 'workflows', 'ralph.yml'), 'utf-8');
+    expect(content).toContain('actions/cache@v4');
+    expect(content).toContain('Cache ralph-cli');
+  });
+
+  it('includes cache config in GitLab CI', () => {
+    ciGenerateCommand({ platform: 'gitlab' });
+
+    const content = readFileSync(join(tempDir, '.ralph-ci.gitlab-ci.yml'), 'utf-8');
+    expect(content).toContain('cache:');
+    expect(content).toContain('key: ralph-cli');
+  });
+
   it('auto-detects GitHub when .github/ exists', () => {
     mkdirSync(join(tempDir, '.github'), { recursive: true });
     ciGenerateCommand({});

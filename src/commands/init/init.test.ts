@@ -152,6 +152,42 @@ describe('initCommand', () => {
     expect(principles!.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('generates config.yml with all default sections', () => {
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'my-app',
+      devDependencies: { typescript: '^5.0.0', vitest: '^1.0.0' },
+    }));
+
+    initCommand({ defaults: true });
+
+    const config = readFileSync(join(tempDir, '.ralph/config.yml'), 'utf-8');
+    // architecture section
+    expect(config).toContain('architecture:');
+    expect(config).toContain('layers:');
+    expect(config).toContain('- types');
+    expect(config).toContain('- service');
+    expect(config).toContain('max-lines: 500');
+    // quality section
+    expect(config).toContain('quality:');
+    expect(config).toContain('minimum-grade: D');
+    expect(config).toContain('tool: vitest');
+    // gc section
+    expect(config).toContain('gc:');
+    expect(config).toContain('consistency-threshold: 60');
+    expect(config).toContain('- node_modules');
+    // doctor section
+    expect(config).toContain('doctor:');
+    expect(config).toContain('minimum-score: 7');
+    // paths section
+    expect(config).toContain('paths:');
+    expect(config).toContain('agents-md: AGENTS.md');
+    expect(config).toContain('plans: docs/exec-plans');
+    expect(config).toContain('references: docs/references');
+    // references section
+    expect(config).toContain('references:');
+    expect(config).toContain('max-total-kb: 200');
+  });
+
   it('tech-debt-tracker.md has the table template', () => {
     writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
       name: 'test-project',

@@ -273,11 +273,71 @@ export function configYml(projectName: string, detection: DetectionResult): stri
     config += `\n  framework: ${detection.framework}`;
   }
 
+  // Architecture section
+  config += `
+
+architecture:
+  layers:
+    - types
+    - config
+    - data
+    - service
+    - ui
+  files:
+    max-lines: 500
+    naming:
+      schemas: "*Schema"
+      types: "*Type"`;
+
+  // Quality section
+  config += `
+
+quality:
+  minimum-grade: D`;
+
   if (detection.testRunner && detection.testRunner !== 'none') {
     const coverageTool = detection.testRunner === 'go-test' ? 'go-test' : detection.testRunner;
-    config += `\n\nquality:\n  coverage:\n    tool: ${coverageTool}`;
+    config += `
+  coverage:
+    tool: ${coverageTool}`;
   }
 
-  config += '\n';
+  // GC section
+  const defaultExcludes = ['node_modules', 'dist', '.next', 'coverage'];
+  config += `
+
+gc:
+  consistency-threshold: 60
+  exclude:
+${defaultExcludes.map(e => `    - ${e}`).join('\n')}`;
+
+  // Doctor section
+  config += `
+
+doctor:
+  minimum-score: 7`;
+
+  // Paths section
+  config += `
+
+paths:
+  agents-md: AGENTS.md
+  architecture-md: ARCHITECTURE.md
+  docs: docs
+  specs: docs/product-specs
+  plans: docs/exec-plans
+  design-docs: docs/design-docs
+  references: docs/references
+  generated: docs/generated
+  quality: docs/QUALITY_SCORE.md`;
+
+  // References section
+  config += `
+
+references:
+  max-total-kb: 200
+  warn-single-file-kb: 80
+`;
+
   return config;
 }

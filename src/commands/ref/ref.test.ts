@@ -57,6 +57,25 @@ describe('ref commands', () => {
     expect(existsSync(join(tempDir, 'docs', 'references', 'old-ref-llms.txt'))).toBe(false);
   });
 
+  it('adds a local .md file with -llms.md suffix', async () => {
+    writeFileSync(join(tempDir, 'my-doc-llms.md'), '# Reference\n\nMarkdown reference.');
+    await refAddCommand('my-doc-llms.md', {});
+
+    const files = readdirSync(join(tempDir, 'docs', 'references')).filter(f => f.endsWith('.md') && !f.startsWith('.'));
+    expect(files.length).toBe(1);
+    expect(files[0]).toMatch(/-llms\.md$/);
+
+    const content = readFileSync(join(tempDir, 'docs', 'references', files[0]!), 'utf-8');
+    expect(content).toContain('Markdown reference.');
+  });
+
+  it('uses -llms.txt suffix for .txt source files', async () => {
+    writeFileSync(join(tempDir, 'plain.txt'), 'Plain text ref.');
+    await refAddCommand('plain.txt', { name: 'plain-ref' });
+
+    expect(existsSync(join(tempDir, 'docs', 'references', 'plain-ref-llms.txt'))).toBe(true);
+  });
+
   it('adds metadata comment with source and date', async () => {
     writeFileSync(join(tempDir, 'source.txt'), 'Content');
     await refAddCommand('source.txt', { name: 'test' });
