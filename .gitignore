@@ -1,4 +1,8 @@
 node_modules/
 dist/
 coverage/
-.ralph/
+
+# .ralph/ — ignore generated files, but track config and rules
+.ralph/gc-report.md
+.ralph/grade-history.jsonl
+.ralph/hooks/

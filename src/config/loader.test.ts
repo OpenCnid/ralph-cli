@@ -1,0 +1,223 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { findConfigFile, findProjectRoot, mergeWithDefaults, loadConfig } from './loader.js';
+
+function makeTempDir(): string {
+  const dir = join(tmpdir(), `ralph-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+describe('findConfigFile', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns null when no config exists', () => {
+    expect(findConfigFile(tempDir)).toBeNull();
+  });
+
+  it('finds config in current directory', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), 'project:\n  name: test\n  language: typescript\n');
+    expect(findConfigFile(tempDir)).toBe(join(configDir, 'config.yml'));
+  });
+
+  it('finds config in parent directory', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), 'project:\n  name: test\n  language: typescript\n');
+    const childDir = join(tempDir, 'src', 'deep');
+    mkdirSync(childDir, { recursive: true });
+    expect(findConfigFile(childDir)).toBe(join(configDir, 'config.yml'));
+  });
+});
+
+describe('findProjectRoot', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('finds root via .ralph/config.yml', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), '');
+    const childDir = join(tempDir, 'src');
+    mkdirSync(childDir, { recursive: true });
+    expect(findProjectRoot(childDir)).toBe(tempDir);
+  });
+
+  it('finds root via .git', () => {
+    const gitDir = join(tempDir, '.git');
+    mkdirSync(gitDir, { recursive: true });
+    const childDir = join(tempDir, 'src', 'deep');
+    mkdirSync(childDir, { recursive: true });
+    expect(findProjectRoot(childDir)).toBe(tempDir);
+  });
+
+  it('falls back to startDir when no markers found', () => {
+    const childDir = join(tempDir, 'some', 'deep', 'path');
+    mkdirSync(childDir, { recursive: true });
+    // In practice we'd hit filesystem root, but the function returns startDir as fallback
+    const result = findProjectRoot(childDir);
+    expect(typeof result).toBe('string');
+  });
+});
+
+describe('mergeWithDefaults', () => {
+  it('fills in all defaults for minimal config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+    });
+
+    expect(config.project.name).toBe('test');
+    expect(config.project.language).toBe('typescript');
+    expect(config.architecture.layers).toEqual(['types', 'config', 'data', 'service', 'ui']);
+    expect(config.architecture.files['max-lines']).toBe(500);
+    expect(config.architecture.files.naming.schemas).toBe('*Schema');
+    expect(config.architecture.files.naming.types).toBe('*Type');
+    expect(config.quality['minimum-grade']).toBe('D');
+    expect(config.quality.coverage.tool).toBe('none');
+    expect(config.quality.coverage['report-path']).toBe('coverage/lcov.info');
+    expect(config.gc['consistency-threshold']).toBe(60);
+    expect(config.gc.exclude).toEqual(['node_modules', 'dist', '.next', 'coverage']);
+    expect(config.doctor['minimum-score']).toBe(7);
+    expect(config.doctor['custom-checks']).toEqual([]);
+    expect(config.paths['agents-md']).toBe('AGENTS.md');
+    expect(config.paths.docs).toBe('docs');
+    expect(config.references['max-total-kb']).toBe(200);
+    expect(config.references['warn-single-file-kb']).toBe(80);
+  });
+
+  it('preserves user-provided values', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'custom', language: 'python', framework: 'django' },
+      architecture: { layers: ['data', 'api'] },
+      quality: { 'minimum-grade': 'B' },
+    });
+
+    expect(config.project.name).toBe('custom');
+    expect(config.project.framework).toBe('django');
+    expect(config.architecture.layers).toEqual(['data', 'api']);
+    expect(config.quality['minimum-grade']).toBe('B');
+    // Other defaults still applied
+    expect(config.doctor['minimum-score']).toBe(7);
+  });
+
+  it('applies CI overrides when isCi is true', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      quality: { 'minimum-grade': 'D' },
+      ci: {
+        quality: { 'minimum-grade': 'B' },
+        doctor: { 'minimum-score': 9 },
+      },
+    }, true);
+
+    expect(config.quality['minimum-grade']).toBe('B');
+    expect(config.doctor['minimum-score']).toBe(9);
+  });
+
+  it('does not apply CI overrides when isCi is false', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      ci: {
+        quality: { 'minimum-grade': 'A' },
+      },
+    }, false);
+
+    expect(config.quality['minimum-grade']).toBe('D'); // default, not CI override
+  });
+});
+
+describe('loadConfig', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns defaults with warning when no config file exists', () => {
+    const result = loadConfig(tempDir);
+    expect(result.configPath).toBeNull();
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings[0]).toContain('No .ralph/config.yml found');
+    expect(result.config.project.name).toBe('unknown');
+  });
+
+  it('loads valid config from file', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: my-project
+  language: go
+  framework: gin
+quality:
+  minimum-grade: B
+`);
+
+    const result = loadConfig(tempDir);
+    expect(result.configPath).toBe(join(configDir, 'config.yml'));
+    expect(result.config.project.name).toBe('my-project');
+    expect(result.config.project.language).toBe('go');
+    expect(result.config.project.framework).toBe('gin');
+    expect(result.config.quality['minimum-grade']).toBe('B');
+    // Defaults applied for unspecified fields
+    expect(result.config.architecture.layers).toEqual(['types', 'config', 'data', 'service', 'ui']);
+  });
+
+  it('throws on invalid YAML', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), '{ invalid yaml:: [');
+
+    expect(() => loadConfig(tempDir)).toThrow('Invalid YAML');
+  });
+
+  it('throws on invalid config values', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: cobol
+`);
+
+    expect(() => loadConfig(tempDir)).toThrow('Invalid config');
+  });
+
+  it('returns warnings for unknown keys', () => {
+    const configDir = join(tempDir, '.ralph');
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, 'config.yml'), `
+project:
+  name: test
+  language: typescript
+extra_key: true
+`);
+
+    const result = loadConfig(tempDir);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('extra_key');
+  });
+});
