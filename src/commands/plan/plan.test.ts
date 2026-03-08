@@ -182,4 +182,38 @@ describe('plan commands', () => {
     expect(result.active).toHaveLength(1);
     expect(result.active[0]!.title).toBe('Status JSON plan');
   });
+
+  it('generates contextual tasks for "add" plans', () => {
+    planCreateCommand('Add user authentication', {});
+
+    const files = readdirSync(join(tempDir, 'docs', 'exec-plans', 'active'));
+    const content = readFileSync(join(tempDir, 'docs', 'exec-plans', 'active', files[0]!), 'utf-8');
+    expect(content).toContain('Design approach');
+    expect(content).toContain('Implement core functionality');
+    expect(content).toContain('Add tests');
+    expect(content).not.toContain('Task 1');
+  });
+
+  it('generates contextual tasks for "fix" plans', () => {
+    planCreateCommand('Fix login crash on empty password', {});
+
+    const files = readdirSync(join(tempDir, 'docs', 'exec-plans', 'active'));
+    const content = readFileSync(join(tempDir, 'docs', 'exec-plans', 'active', files[0]!), 'utf-8');
+    expect(content).toContain('Reproduce');
+    expect(content).toContain('root cause');
+    expect(content).toContain('Implement fix');
+  });
+
+  it('generates contextual tasks for "migrate" full plans', () => {
+    planCreateCommand('Migrate database to PostgreSQL', { full: true });
+
+    const files = readdirSync(join(tempDir, 'docs', 'exec-plans', 'active'));
+    const content = readFileSync(join(tempDir, 'docs', 'exec-plans', 'active', files[0]!), 'utf-8');
+    expect(content).toContain('Research target approach');
+    expect(content).toContain('migration strategy');
+    expect(content).toContain('Implement migration');
+    expect(content).toContain('integration tests');
+    // Full plans have 4 tasks
+    expect((content.match(/- \[ \]/g) ?? []).length).toBe(4);
+  });
 });

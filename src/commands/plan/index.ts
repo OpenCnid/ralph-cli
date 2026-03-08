@@ -36,6 +36,76 @@ function now(): string {
   return `${d.toISOString().split('T')[0]} ${d.toTimeString().split(' ')[0]!.slice(0, 5)}`;
 }
 
+function generateTasks(title: string, full: boolean): string[] {
+  const lower = title.toLowerCase();
+  const taskCount = full ? 4 : 3;
+
+  // Detect action from title (use word-start \b with trailing .* to match word stems)
+  if (/\b(fix|bug|issue|error|crash)\b/.test(lower)) {
+    const tasks = [
+      'Reproduce the issue and document expected vs actual behavior',
+      'Identify root cause',
+      'Implement fix',
+      'Add regression test to prevent recurrence',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+  if (/\b(migrat\w*|mov\w+|convert|switch|transition)\b/.test(lower)) {
+    const tasks = [
+      'Research target approach and document trade-offs',
+      'Design migration strategy with rollback plan',
+      'Implement migration',
+      'Verify migration with integration tests',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+  if (/\b(refactor\w*|restructur\w*|reorganiz\w*|clean\s*up|simplif\w*)\b/.test(lower)) {
+    const tasks = [
+      'Identify scope and affected files',
+      'Implement refactoring in stages',
+      'Update tests to match new structure',
+      'Verify no behavioral regressions',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+  if (/\b(remov\w*|delet\w*|deprecat\w*|drop)\b/.test(lower)) {
+    const tasks = [
+      'Identify all usages and dependents',
+      'Remove the target code/feature',
+      'Update tests and references',
+      'Verify no broken dependencies',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+  if (/\b(upgrad\w*|updat\w+|bump)\b/.test(lower)) {
+    const tasks = [
+      'Check compatibility and breaking changes',
+      'Implement upgrade',
+      'Test for regressions across affected areas',
+      'Update documentation to reflect changes',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+  if (/\b(add|implement\w*|creat\w*|build|introduc\w*)\b/.test(lower)) {
+    const tasks = [
+      'Design approach and identify integration points',
+      'Implement core functionality',
+      'Add tests covering key scenarios',
+      'Update documentation',
+    ];
+    return tasks.slice(0, taskCount);
+  }
+
+  // Default: generic but still actionable
+  const tasks = [
+    'Analyze requirements and define scope',
+    'Implement changes',
+    'Add or update tests',
+    'Update documentation if needed',
+  ];
+  return tasks.slice(0, taskCount);
+}
+
 function getCompletionPercentage(content: string): { checked: number; total: number; pct: number } {
   const checked = (content.match(/- \[x\]/gi) ?? []).length;
   const unchecked = (content.match(/- \[ \]/g) ?? []).length;
@@ -145,6 +215,9 @@ export function planCreateCommand(title: string, options: { full?: boolean }): v
   const filename = `${id}-${slug}.md`;
   const filePath = join(activeDir, filename);
 
+  const tasks = generateTasks(title, !!options.full);
+  const taskLines = tasks.map(t => `- [ ] ${t}`).join('\n');
+
   let content: string;
   if (options.full) {
     content = `# Plan: ${title}
@@ -158,10 +231,7 @@ Why this work is happening and what success looks like.
 
 ## Tasks
 
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
-- [ ] Task 4
+${taskLines}
 
 ## Decisions
 
@@ -183,9 +253,7 @@ Status: active
 
 ## Tasks
 
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+${taskLines}
 `;
   }
 

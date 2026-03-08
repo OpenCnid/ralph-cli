@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 243 tests across 13 files — all passing
+- **Tests**: 246 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions)
 
 ---
 
@@ -156,15 +156,18 @@ All 10 commands fully implemented. 223 tests across 13 files, all passing.
 - **Tests run successfully check**: New backpressure check that actually executes the project's test command and verifies it exits 0. Detects test command from package.json `scripts.test` (Node.js), `go test ./...` (Go), or `python -m pytest` (Python). Only runs when both test runner and test files are detected. Uses 60-second timeout to prevent hanging. Reports specific failure details (exit code or timeout).
 - **2 new tests**: Passing test command detection, failing test command detection with exit code.
 
+### Plan Contextual Task Suggestions (0.0.19)
+
+- **Contextual task generation**: `ralph plan create` now generates context-aware task suggestions based on the plan title instead of generic "Task 1, Task 2" placeholders. Detects action keywords (fix, migrate, refactor, remove, upgrade, add/implement/create) and generates appropriate tasks. For example, "Fix login crash" generates reproduce/root-cause/fix/regression-test tasks; "Migrate to PostgreSQL" generates research/design/implement/verify tasks.
+- **Six action categories**: fix/bug, migrate/move/convert, refactor/restructure, remove/delete/deprecate, upgrade/update, add/implement/create. Falls back to generic-but-actionable tasks (analyze/implement/test/document) for unrecognized patterns.
+- **3 new tests**: Contextual tasks for "add" plans, "fix" plans, and "migrate" full plans (verifying 4-task count).
+
 ---
 
 ## Discovered Spec Gaps (for future work)
 
 #### Doctor Command
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
-
-#### Plan Command
-- Lightweight/full plan templates use generic placeholder tasks instead of contextual suggestions
 
 #### Lint Command
 - `--fix` flag registered but no auto-fix logic implemented in any rule
