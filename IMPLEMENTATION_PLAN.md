@@ -6,16 +6,16 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 261 tests across 13 files — all passing
+- **Tests**: 264 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix), 0.0.23 (doctor spec compliance: LLM line numbers, spec file count, domain count, target score label)
 
 ---
 
 ## Completed Implementation (P0–P9 + Quality Enhancements)
 
-All 10 commands fully implemented. 261 tests across 13 files, all passing.
+All 10 commands fully implemented. 264 tests across 13 files, all passing.
 
 | Priority | Feature | Command | Tests | Tag |
 |----------|---------|---------|-------|-----|
@@ -181,6 +181,14 @@ All 10 commands fully implemented. 261 tests across 13 files, all passing.
 - **Naming-convention autofix**: The naming-convention rule now implements `autofix` — renames non-conforming Zod schema exports to match the configured pattern (e.g., `UserData` → `UserDataSchema`). Computes the correct suffix from the pattern config. Updates all references in the declaring file and across importing files in the codebase using whole-word replacement.
 - **Ref discover timeout fix**: Fixed pre-existing test timeout in `ref discover` test that makes network requests — increased timeout from 5s default to 30s.
 - **7 new tests**: Single-file rename, cross-file import update, no-op when already conforming, violations cleared after fix, fix suggestion uses computed name, JSON output with fixes, JSON output without fixes.
+
+### Doctor Spec Compliance (0.0.23)
+
+- **LLM reference line number reporting**: Doctor content check now reports the specific line number where LLM provider references are found (e.g., `References "claude" on line 3`). Fix recommendations include the line number for direct navigation. Added "claude" and "copilot" to the detected LLM terms list, matching the spec example that shows detecting "Claude".
+- **Product-specs file count**: Structure check for `docs/product-specs/` now counts `.md` files and reports the count (e.g., `2 spec file(s)`), matching the spec example output `specs/ exists (4 spec files)`.
+- **Architecture doc domain count**: Content check for `ARCHITECTURE.md` now counts section headings (h2/h3) and reports the count (e.g., `Describes 3 domain(s)/section(s)`), matching the spec example `Architecture doc describes 3 domains`.
+- **Target score label in fix summary**: Fix summary now shows the target score label (e.g., `Fix 2 issue(s) to reach Excellent:`) instead of generic "to improve score", matching the spec example output.
+- **3 new tests**: LLM reference line number detection with "claude", product-specs file count reporting, architecture doc domain count.
 
 ---
 

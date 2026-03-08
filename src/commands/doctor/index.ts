@@ -60,13 +60,30 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
                    dir === 'product-specs' ? 'specs' :
                    dir;
     const dirPath = join(projectRoot, config.paths[dirKey as keyof typeof config.paths] as string);
-    checks.push({
-      name: `docs/${dir}/ exists`,
-      category: 'structure',
-      pass: existsSync(dirPath),
-      detail: existsSync(dirPath) ? 'Present' : 'Missing',
-      fix: existsSync(dirPath) ? undefined : `Run \`ralph init\` to create docs/${dir}/`,
-    });
+    if (existsSync(dirPath)) {
+      let detail = 'Present';
+      // For product-specs, show file count per spec example
+      if (dir === 'product-specs') {
+        try {
+          const specFiles = readdirSync(dirPath).filter(f => f.endsWith('.md'));
+          detail = specFiles.length > 0 ? `${specFiles.length} spec file(s)` : 'Present (empty)';
+        } catch { /* ignore */ }
+      }
+      checks.push({
+        name: `docs/${dir}/ exists`,
+        category: 'structure',
+        pass: true,
+        detail,
+      });
+    } else {
+      checks.push({
+        name: `docs/${dir}/ exists`,
+        category: 'structure',
+        pass: false,
+        detail: 'Missing',
+        fix: `Run \`ralph init\` to create docs/${dir}/`,
+      });
+    }
   }
 
   // exec-plans with active/ and completed/
@@ -143,14 +160,26 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
 
     // No LLM refs
-    const llmTerms = ['openai', 'anthropic', 'gpt-4', 'gpt-3', 'chatgpt', 'gemini'];
-    const hasLlmRefs = llmTerms.some(t => content.includes(t));
+    const llmTerms = ['openai', 'anthropic', 'gpt-4', 'gpt-3', 'chatgpt', 'gemini', 'claude', 'copilot'];
+    const agentsLines = readFileSync(agentsPath, 'utf-8').split('\n');
+    let llmLineNum: number | undefined;
+    let llmTerm: string | undefined;
+    for (let i = 0; i < agentsLines.length; i++) {
+      const lower = (agentsLines[i] ?? '').toLowerCase();
+      const found = llmTerms.find(t => lower.includes(t));
+      if (found) {
+        llmLineNum = i + 1;
+        llmTerm = found;
+        break;
+      }
+    }
+    const hasLlmRefs = llmLineNum !== undefined;
     checks.push({
       name: 'AGENTS.md has no LLM provider references',
       category: 'content',
       pass: !hasLlmRefs,
-      detail: hasLlmRefs ? 'Found LLM provider references' : 'Clean',
-      fix: hasLlmRefs ? 'Remove references to specific LLM providers from AGENTS.md' : undefined,
+      detail: hasLlmRefs ? `References "${llmTerm}" on line ${llmLineNum}` : 'Clean',
+      fix: hasLlmRefs ? `Remove LLM-specific references from AGENTS.md (line ${llmLineNum})` : undefined,
     });
 
     // ToC structure (not monolith)
@@ -168,13 +197,17 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
   // ARCHITECTURE.md describes domain boundaries
   const archPath = join(projectRoot, config.paths['architecture-md']);
   if (existsSync(archPath)) {
-    const content = readFileSync(archPath, 'utf-8').toLowerCase();
-    const hasDomains = content.includes('domain') || content.includes('boundary') || content.includes('layer');
+    const archContent = readFileSync(archPath, 'utf-8');
+    const archLower = archContent.toLowerCase();
+    const hasDomains = archLower.includes('domain') || archLower.includes('boundary') || archLower.includes('layer');
+    // Count domain-like headings/entries (## Domain, ### domain-name, - **domain**)
+    const domainHeadings = archContent.match(/^#{2,3}\s+\S+/gm) ?? [];
+    const domainCount = domainHeadings.length;
     checks.push({
       name: 'ARCHITECTURE.md describes boundaries',
       category: 'content',
       pass: hasDomains,
-      detail: hasDomains ? 'Domain/layer content found' : 'No domain or layer descriptions found',
+      detail: hasDomains ? `Describes ${domainCount} domain(s)/section(s)` : 'No domain or layer descriptions found',
       fix: hasDomains ? undefined : 'Add domain boundaries and layer descriptions to ARCHITECTURE.md',
     });
   }
@@ -517,10 +550,13 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
   const passed = checks.filter(c => c.pass).length;
   info(`Score: ${score}/10 (${scoreLabel(score)}) — ${passed}/${checks.length} checks passed`);
 
-  // Fix summary
+  // Fix summary with target score label
   if (failingChecks.length > 0) {
     console.log('');
-    info(`Fix ${failingChecks.length} issue(s) to improve score:`);
+    // Calculate potential score if all failing checks were fixed
+    const potentialScore = calculateScore(checks.map(c => ({ ...c, pass: true })));
+    const targetLabel = scoreLabel(potentialScore);
+    info(`Fix ${failingChecks.length} issue(s) to reach ${targetLabel}:`);
     failingChecks.forEach((c, i) => {
       if (c.fix) {
         console.log(`  ${i + 1}. ${c.fix}`);

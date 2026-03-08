@@ -186,6 +186,38 @@ describe('doctor checks', () => {
     expect(testRunCheck!.fix).toContain('Fix failing tests');
   });
 
+  it('detects LLM references with line number', () => {
+    writeFileSync(join(tempDir, 'AGENTS.md'), '# Agents\n## Commands\nUse Claude for code review\n## Build\n## Test\n## Lint\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const llmCheck = checks.find(c => c.name.includes('LLM'));
+    expect(llmCheck).toBeDefined();
+    expect(llmCheck!.pass).toBe(false);
+    expect(llmCheck!.detail).toContain('line 3');
+    expect(llmCheck!.detail).toContain('claude');
+    expect(llmCheck!.fix).toContain('line 3');
+  });
+
+  it('reports product-specs file count', () => {
+    const specsDir = join(tempDir, 'docs', 'product-specs');
+    mkdirSync(specsDir, { recursive: true });
+    writeFileSync(join(specsDir, 'auth.md'), '# Auth Spec\n');
+    writeFileSync(join(specsDir, 'billing.md'), '# Billing Spec\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const specsCheck = checks.find(c => c.name.includes('product-specs'));
+    expect(specsCheck).toBeDefined();
+    expect(specsCheck!.pass).toBe(true);
+    expect(specsCheck!.detail).toContain('2 spec file(s)');
+  });
+
+  it('reports architecture doc domain count', () => {
+    writeFileSync(join(tempDir, 'ARCHITECTURE.md'), '# Architecture\n## Auth Domain\n## Billing Domain\n## User Domain\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const archCheck = checks.find(c => c.name.includes('describes boundaries'));
+    expect(archCheck).toBeDefined();
+    expect(archCheck!.pass).toBe(true);
+    expect(archCheck!.detail).toContain('3 domain(s)/section(s)');
+  });
+
   it('fully initialized repo passes most checks', () => {
     // Set up a fully initialized structure
     mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });
