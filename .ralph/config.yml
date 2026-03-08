@@ -44,6 +44,7 @@ quality:
   minimum-grade: C
   coverage:
     tool: vitest
+    report-path: coverage/lcov.info
 
 gc:
   consistency-threshold: 60

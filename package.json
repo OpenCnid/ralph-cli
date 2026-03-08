@@ -1,6 +1,6 @@
 {
   "name": "ralph-cli",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "description": "CLI tool that prepares and maintains repositories for AI agent development",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "dev": "tsc --watch"
   },
@@ -25,6 +26,7 @@
   "homepage": "https://github.com/OpenCnid/ralph-cli#readme",
   "devDependencies": {
     "@types/node": "^25.3.5",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^10.0.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

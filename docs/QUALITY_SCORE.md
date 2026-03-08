@@ -6,29 +6,219 @@ Last updated: 2026-03-08
 
 | Domain | Tests | Docs | Architecture | File Health | Staleness | Overall |
 |--------|-------|------|--------------|-------------|-----------|----------|
-| unknown | C | D | A | C | A | **D** |
+| config | A | F | A | A | A | **F** |
+| lint | B | F | A | A | A | **F** |
+| grade | B | F | A | F | A | **F** |
+| gc | A | F | A | F | A | **F** |
+| doctor | A | F | A | F | A | **F** |
+| init | B | F | A | A | A | **F** |
+| plan | B | F | A | A | A | **F** |
+| promote | B | F | A | A | A | **F** |
+| ref | D | F | A | A | A | **F** |
+| hooks | B | F | A | A | A | **F** |
+| ci | B | F | A | A | A | **F** |
+| ralph-cli | B | A | A | C | A | **C** |
 
 ## Details
 
-### unknown
+### config
 
-- **Tests**: C — No coverage tool configured
-- **Docs**: D — 2/5 documentation files present
+- **Tests**: A — 97% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 143 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### lint
+
+- **Tests**: B — 83% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 108 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### grade
+
+- **Tests**: B — 80% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: F — Avg 809 lines, 1 oversized: index.ts (809)
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### gc
+
+- **Tests**: A — 94% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: F — Avg 766 lines, 1 oversized: index.ts (766)
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### doctor
+
+- **Tests**: A — 95% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: F — Avg 615 lines, 1 oversized: index.ts (615)
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### init
+
+- **Tests**: B — 88% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 194 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### plan
+
+- **Tests**: B — 87% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 451 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### promote
+
+- **Tests**: B — 82% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 230 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### ref
+
+- **Tests**: D — 43% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 364 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### hooks
+
+- **Tests**: B — 80% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 125 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### ci
+
+- **Tests**: B — 88% line coverage
+- **Docs**: F — 0/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 137 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: F
+
+### ralph-cli
+
+- **Tests**: B — 84% line coverage
+- **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: C — Avg 192 lines, 3 oversized: index.ts (809), index.ts (766), index.ts (615)
 - **Staleness**: A — Median 0d since last change
-- **Overall**: D
+- **Overall**: C
 
 ## Trends
 
-- unknown/tests: C (stable) — No coverage tool configured
-- unknown/docs: D (was F today) — improved — 2/5 documentation files present
-- unknown/architecture: A (stable) — No architectural violations
-- unknown/fileHealth: C (stable) — Avg 192 lines, 3 oversized: index.ts (809), index.ts (766), index.ts (615)
-- unknown/staleness: A (stable) — Median 0d since last change
-- unknown/overall: D (was F today) — improved
+- config/tests: A (stable) — 97% line coverage
+- config/docs: F (stable) — 0/3 domain documentation files present
+- config/architecture: A (stable) — No architectural violations
+- config/fileHealth: A (stable) — Avg 143 lines, no oversized files
+- config/staleness: A (stable) — Median 0d since last change
+- config/overall: F (stable)
+- lint/tests: B (stable) — 83% line coverage
+- lint/docs: F (stable) — 0/3 domain documentation files present
+- lint/architecture: A (stable) — No architectural violations
+- lint/fileHealth: A (stable) — Avg 108 lines, no oversized files
+- lint/staleness: A (stable) — Median 0d since last change
+- lint/overall: F (stable)
+- grade/tests: B (stable) — 80% line coverage
+- grade/docs: F (stable) — 0/3 domain documentation files present
+- grade/architecture: A (stable) — No architectural violations
+- grade/fileHealth: F (stable) — Avg 809 lines, 1 oversized: index.ts (809)
+- grade/staleness: A (stable) — Median 0d since last change
+- grade/overall: F (stable)
+- gc/tests: A (stable) — 94% line coverage
+- gc/docs: F (stable) — 0/3 domain documentation files present
+- gc/architecture: A (stable) — No architectural violations
+- gc/fileHealth: F (stable) — Avg 766 lines, 1 oversized: index.ts (766)
+- gc/staleness: A (stable) — Median 0d since last change
+- gc/overall: F (stable)
+- doctor/tests: A (stable) — 95% line coverage
+- doctor/docs: F (stable) — 0/3 domain documentation files present
+- doctor/architecture: A (stable) — No architectural violations
+- doctor/fileHealth: F (stable) — Avg 615 lines, 1 oversized: index.ts (615)
+- doctor/staleness: A (stable) — Median 0d since last change
+- doctor/overall: F (stable)
+- init/tests: B (stable) — 88% line coverage
+- init/docs: F (stable) — 0/3 domain documentation files present
+- init/architecture: A (stable) — No architectural violations
+- init/fileHealth: A (stable) — Avg 194 lines, no oversized files
+- init/staleness: A (stable) — Median 0d since last change
+- init/overall: F (stable)
+- plan/tests: B (stable) — 87% line coverage
+- plan/docs: F (stable) — 0/3 domain documentation files present
+- plan/architecture: A (stable) — No architectural violations
+- plan/fileHealth: A (stable) — Avg 451 lines, no oversized files
+- plan/staleness: A (stable) — Median 0d since last change
+- plan/overall: F (stable)
+- promote/tests: B (stable) — 82% line coverage
+- promote/docs: F (stable) — 0/3 domain documentation files present
+- promote/architecture: A (stable) — No architectural violations
+- promote/fileHealth: A (stable) — Avg 230 lines, no oversized files
+- promote/staleness: A (stable) — Median 0d since last change
+- promote/overall: F (stable)
+- ref/tests: D (stable) — 43% line coverage
+- ref/docs: F (stable) — 0/3 domain documentation files present
+- ref/architecture: A (stable) — No architectural violations
+- ref/fileHealth: A (stable) — Avg 364 lines, no oversized files
+- ref/staleness: A (stable) — Median 0d since last change
+- ref/overall: F (stable)
+- hooks/tests: B (stable) — 80% line coverage
+- hooks/docs: F (stable) — 0/3 domain documentation files present
+- hooks/architecture: A (stable) — No architectural violations
+- hooks/fileHealth: A (stable) — Avg 125 lines, no oversized files
+- hooks/staleness: A (stable) — Median 0d since last change
+- hooks/overall: F (stable)
+- ci/tests: B (stable) — 88% line coverage
+- ci/docs: F (stable) — 0/3 domain documentation files present
+- ci/architecture: A (stable) — No architectural violations
+- ci/fileHealth: A (stable) — Avg 137 lines, no oversized files
+- ci/staleness: A (stable) — Median 0d since last change
+- ci/overall: F (stable)
+- ralph-cli/tests: B (stable) — 84% line coverage
+- ralph-cli/docs: A (stable) — 5/5 documentation files present
+- ralph-cli/architecture: A (stable) — No architectural violations
+- ralph-cli/fileHealth: C (stable) — Avg 192 lines, 3 oversized: index.ts (809), index.ts (766), index.ts (615)
+- ralph-cli/staleness: A (stable) — Median 0d since last change
+- ralph-cli/overall: C (stable)
 
 ## Action Items
 
-- [ ] unknown: Add missing documentation (2/5 documentation files present)
-- [ ] unknown: Consider splitting large files — Avg 192 lines, 3 oversized: index.ts (809), index.ts (766), index.ts (615)
+- [ ] config: Add missing documentation (0/3 domain documentation files present)
+- [ ] lint: Add missing documentation (0/3 domain documentation files present)
+- [ ] grade: Add missing documentation (0/3 domain documentation files present)
+- [ ] grade: Split oversized files — Avg 809 lines, 1 oversized: index.ts (809)
+- [ ] gc: Add missing documentation (0/3 domain documentation files present)
+- [ ] gc: Split oversized files — Avg 766 lines, 1 oversized: index.ts (766)
+- [ ] doctor: Add missing documentation (0/3 domain documentation files present)
+- [ ] doctor: Split oversized files — Avg 615 lines, 1 oversized: index.ts (615)
+- [ ] init: Add missing documentation (0/3 domain documentation files present)
+- [ ] plan: Add missing documentation (0/3 domain documentation files present)
+- [ ] promote: Add missing documentation (0/3 domain documentation files present)
+- [ ] ref: Improve test coverage (currently 43% line coverage)
+- [ ] ref: Add missing documentation (0/3 domain documentation files present)
+- [ ] hooks: Add missing documentation (0/3 domain documentation files present)
+- [ ] ci: Add missing documentation (0/3 domain documentation files present)
+- [ ] ralph-cli: Consider splitting large files — Avg 192 lines, 3 oversized: index.ts (809), index.ts (766), index.ts (615)
