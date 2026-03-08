@@ -543,9 +543,30 @@ describe('generateQualityMd', () => {
       overall: 'A' as const,
     }];
     const md = generateQualityMd(scores, history);
-    // Should use spec format: "current (was previous) — improved/degraded"
-    expect(md).toContain('auth/tests: A (was B) — improved');
-    expect(md).toContain('auth/docs: B (was D) — improved');
+    // Should use spec format: "current (was previous [temporal]) — improved/degraded"
+    expect(md).toMatch(/auth\/tests: A \(was B.*\) — improved/);
+    expect(md).toMatch(/auth\/docs: B \(was D.*\) — improved/);
+  });
+
+  it('includes temporal context in trend labels', () => {
+    // History from yesterday
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const history = [{
+      timestamp: yesterday,
+      scores: [{ domain: 'auth', tests: 'C' as const, docs: 'A' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'C' as const }],
+    }];
+    const scores = [{
+      domain: 'auth',
+      tests: { grade: 'A' as const, detail: '95%' },
+      docs: { grade: 'A' as const, detail: '5/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'A' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Should include "yesterday" temporal label
+    expect(md).toContain('was C yesterday');
   });
 
   it('includes stable indicator when grade is unchanged', () => {

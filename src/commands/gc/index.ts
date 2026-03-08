@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync, appendFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
@@ -33,6 +34,8 @@ interface HistoryEntry {
   warning: number;
   info: number;
   categories: Record<string, number>;
+  /** Fingerprints of drift items for cross-run deduplication */
+  itemKeys?: string[] | undefined;
 }
 
 // --- Anti-pattern detectors for golden principle violations ---
@@ -363,10 +366,28 @@ function scanStaleDocumentation(projectRoot: string, config: RalphConfig): Drift
           for (const ref of codeRefs) {
             const path = ref.replace(/`/g, '');
             if (!existsSync(join(projectRoot, path))) {
+              // Try to find when the file was deleted using git
+              let gitContext = '';
+              try {
+                const gitOutput = execSync(
+                  `git log -1 --format="%h %at" --diff-filter=D -- "${path}"`,
+                  { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+                ).trim();
+                if (gitOutput) {
+                  const parts = gitOutput.split(' ');
+                  const commitHash = parts[0];
+                  const timestamp = parseInt(parts[1] ?? '0', 10) * 1000;
+                  if (timestamp > 0) {
+                    const daysAgo = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+                    gitContext = ` (deleted ${daysAgo} day(s) ago in commit ${commitHash})`;
+                  }
+                }
+              } catch { /* git not available or no history */ }
+
               items.push({
                 category: 'stale-documentation',
                 file: rel,
-                description: `References non-existent file: ${path}`,
+                description: `References non-existent file: ${path}${gitContext}`,
                 severity: 'warning',
                 fix: `Update ${rel} to remove or correct the reference to ${path}`,
               });
@@ -582,6 +603,9 @@ export function gcCommand(options: GcOptions): void {
     return true;
   });
 
+  // Compute item fingerprints for cross-run dedup
+  const itemKeys = items.map(i => `${i.category}:${i.file}:${i.description.split('(')[0]!.trim()}`);
+
   // Save history entry
   const categoryCount: Record<string, number> = {};
   for (const item of items) {
@@ -595,21 +619,51 @@ export function gcCommand(options: GcOptions): void {
     warning: items.filter(i => i.severity === 'warning').length,
     info: items.filter(i => i.severity === 'info').length,
     categories: categoryCount,
+    itemKeys,
   };
 
   const history = loadHistory(projectRoot);
+
+  // Cross-run deduplication: count how many consecutive previous runs each item appeared in
+  const persistentCounts = new Map<string, number>();
+  for (const key of itemKeys) {
+    let count = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i]!.itemKeys?.includes(key)) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    if (count > 0) persistentCounts.set(key, count);
+  }
+
   saveHistoryEntry(projectRoot, historyEntry);
+
+  // Annotate persistent items
+  const persistentItems = items.map((item, idx) => {
+    const key = itemKeys[idx]!;
+    const runCount = persistentCounts.get(key);
+    return {
+      ...item,
+      persistentRuns: runCount ? runCount + 1 : undefined, // +1 counting current run
+    };
+  });
 
   // Output
   if (options.json) {
     const trend = detectTrend([...history, historyEntry]);
     console.log(JSON.stringify({
-      items,
+      items: persistentItems.map(i => ({
+        ...i,
+        ...(i.persistentRuns ? { persistentRuns: i.persistentRuns } : {}),
+      })),
       summary: {
         total: items.length,
         critical: historyEntry.critical,
         warning: historyEntry.warning,
         info: historyEntry.info,
+        persistent: persistentItems.filter(i => i.persistentRuns && i.persistentRuns >= 2).length,
       },
       trend: trend ? { direction: trend.direction, message: trend.message } : null,
     }, null, 2));
@@ -625,14 +679,15 @@ export function gcCommand(options: GcOptions): void {
     if (items.length === 0) {
       success('No drift detected');
     } else {
-      const categories = [...new Set(items.map(i => i.category))];
+      const categories = [...new Set(persistentItems.map(i => i.category))];
       for (const cat of categories) {
         console.log('');
         heading(cat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-        const catItems = items.filter(i => i.category === cat);
+        const catItems = persistentItems.filter(i => i.category === cat);
         for (const item of catItems) {
           const prefix = item.severity === 'critical' ? '✗' : item.severity === 'warning' ? '⚠' : 'ℹ';
-          console.log(`  ${prefix} ${item.file}: ${item.description}`);
+          const persistTag = item.persistentRuns && item.persistentRuns >= 2 ? ` [persistent: ${item.persistentRuns} runs]` : '';
+          console.log(`  ${prefix} ${item.file}: ${item.description}${persistTag}`);
           console.log(`    Fix: ${item.fix}`);
         }
       }

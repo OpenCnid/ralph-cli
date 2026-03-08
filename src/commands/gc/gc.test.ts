@@ -426,6 +426,56 @@ describe('gc command', () => {
     expect(String(result.error)).toContain('Unknown category');
   });
 
+  it('stores item fingerprints in history for cross-run dedup', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone.ts` for details.');
+
+    gcCommand({});
+
+    const historyPath = join(tempDir, '.ralph', 'gc-history.jsonl');
+    const content = readFileSync(historyPath, 'utf-8').trim();
+    const entry = JSON.parse(content);
+    expect(entry.itemKeys).toBeDefined();
+    expect(Array.isArray(entry.itemKeys)).toBe(true);
+    expect(entry.itemKeys.length).toBeGreaterThan(0);
+    expect(entry.itemKeys[0]).toContain('stale-documentation');
+  });
+
+  it('flags persistent drift items across runs', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone.ts` for details.');
+
+    // Run twice to build history
+    gcCommand({});
+    const result = captureJson(() => gcCommand({ json: true }));
+
+    const items = result.items as Array<{ persistentRuns?: number; category: string }>;
+    const staleItems = items.filter(i => i.category === 'stale-documentation');
+    expect(staleItems.length).toBeGreaterThan(0);
+    // Item appeared in previous run, so persistentRuns should be 2
+    expect(staleItems[0]!.persistentRuns).toBe(2);
+  });
+
+  it('reports persistent count in JSON summary', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone.ts` for details.');
+
+    gcCommand({});
+    const result = captureJson(() => gcCommand({ json: true }));
+
+    const summary = result.summary as { persistent: number };
+    expect(summary.persistent).toBeGreaterThan(0);
+  });
+
+  it('shows persistent tag in text output', () => {
+    mkdirSync(join(tempDir, 'docs'), { recursive: true });
+    writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/gone.ts` for details.');
+
+    gcCommand({});
+    const output = captureText(() => gcCommand({}));
+    expect(output).toContain('[persistent: 2 runs]');
+  });
+
   it('tracks category counts in history', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/deleted.ts` for details.');

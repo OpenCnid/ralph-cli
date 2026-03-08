@@ -532,6 +532,26 @@ function loadHistory(projectRoot: string): HistoryEntry[] {
 }
 
 /**
+ * Format a temporal label from an ISO timestamp relative to now.
+ * Returns labels like " last week", " 3 days ago", " yesterday".
+ */
+function formatTemporalLabel(timestamp: string): string {
+  try {
+    const date = new Date(timestamp);
+    const daysAgo = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysAgo <= 0) return ' today';
+    if (daysAgo === 1) return ' yesterday';
+    if (daysAgo <= 6) return ` ${daysAgo} days ago`;
+    if (daysAgo <= 13) return ' last week';
+    if (daysAgo <= 27) return ` ${Math.floor(daysAgo / 7)} weeks ago`;
+    if (daysAgo <= 59) return ' last month';
+    return ` ${Math.floor(daysAgo / 30)} months ago`;
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Compute trend descriptions by comparing current scores against recent history.
  * Detects sustained degradation (3+ consecutive drops) and sustained improvement.
  */
@@ -551,6 +571,10 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
 
     const prev = domainHistory[domainHistory.length - 1]!;
 
+    // Compute temporal label from the most recent history entry timestamp
+    const prevTimestamp = history[history.length - 1]?.timestamp;
+    const timeLabel = prevTimestamp ? formatTemporalLabel(prevTimestamp) : '';
+
     for (const dim of dimensions) {
       const currentGrade = dim === 'overall' ? score.overall
         : dim === 'staleness' ? score.staleness.grade
@@ -562,9 +586,9 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
       const prevIdx = GRADE_ORDER.indexOf(prevGrade);
 
       if (currentIdx < prevIdx) {
-        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}) — improved`);
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — improved`);
       } else if (currentIdx > prevIdx) {
-        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}) — degraded`);
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}${timeLabel}) — degraded`);
       } else {
         trends.push(`${score.domain}/${dim}: ${currentGrade} (stable)`);
       }
