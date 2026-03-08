@@ -163,6 +163,21 @@ describe('scoreProject', () => {
     expect(entry.scores[0]).toHaveProperty('fileHealthDetail');
     expect(entry.scores[0]).toHaveProperty('stalenessDetail');
   });
+
+  it('creates .ralph/grade-history.jsonl when .ralph directory is missing', () => {
+    const historyPath = join(tempDir, '.ralph', 'grade-history.jsonl');
+    expect(existsSync(historyPath)).toBe(false);
+
+    const origCwd = process.cwd();
+    process.chdir(tempDir);
+    try {
+      gradeCommand(undefined, {});
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    expect(existsSync(historyPath)).toBe(true);
+  });
 });
 
 describe('parseLcov', () => {

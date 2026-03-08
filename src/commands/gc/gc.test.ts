@@ -134,6 +134,12 @@ describe('gc command', () => {
     expect(deadItems[0]!.description).toContain('no corresponding source');
   });
 
+  it('creates .ralph/gc-history.jsonl when .ralph directory is missing', () => {
+    rmSync(join(tempDir, '.ralph'), { recursive: true, force: true });
+    gcCommand({});
+    expect(existsSync(join(tempDir, '.ralph', 'gc-history.jsonl'))).toBe(true);
+  });
+
   it('includes git context in dead code description when available', () => {
     // Initialize a git repo so git log can find history
     execSync('git init', { cwd: tempDir, stdio: 'pipe' });

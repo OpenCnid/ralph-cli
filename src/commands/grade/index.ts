@@ -1,9 +1,9 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { readFileSync, existsSync, appendFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig, DomainConfig, Grade } from '../../config/schema.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { ensureDir, success, warn, error, info } from '../../utils/index.js';
 import { safeWriteFile } from '../../utils/fs.js';
 import { collectFiles } from '../lint/files.js';
 import { runRules } from '../lint/engine.js';
@@ -666,6 +666,7 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
 
 function appendTrend(projectRoot: string, scores: DomainScore[]): void {
   const historyPath = join(projectRoot, '.ralph', 'grade-history.jsonl');
+  ensureDir(dirname(historyPath));
   const entry = JSON.stringify({
     timestamp: new Date().toISOString(),
     scores: scores.map(s => ({

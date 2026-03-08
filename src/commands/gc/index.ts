@@ -1,11 +1,11 @@
 import { existsSync, readFileSync, readdirSync, statSync, appendFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { safeWriteFile, safeReadFile } from '../../utils/fs.js';
-import { success, warn, error, info, heading } from '../../utils/index.js';
+import { ensureDir, success, warn, error, info, heading } from '../../utils/index.js';
 import { collectFiles } from '../lint/files.js';
 import { parseImports } from '../lint/imports.js';
 
@@ -545,6 +545,7 @@ function saveHistoryEntry(projectRoot: string, entry: HistoryEntry): void {
   const historyPath = join(projectRoot, '.ralph', 'gc-history.jsonl');
   const line = JSON.stringify(entry) + '\n';
   try {
+    ensureDir(dirname(historyPath));
     appendFileSync(historyPath, line);
   } catch {
     // Ensure directory exists and retry
