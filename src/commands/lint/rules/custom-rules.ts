@@ -21,11 +21,11 @@
  *     ]}
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import type { LintRule, LintViolation, LintContext, Severity } from '../engine.js';
+import type { LintRule, LintViolation, LintContext, Severity, LintFixResult } from '../engine.js';
 
 interface CustomRuleDefinition {
   name: string;
@@ -37,6 +37,9 @@ interface CustomRuleDefinition {
     'within-lines'?: number;
   };
   fix: string;
+  autofix?: {
+    replace: string;
+  };
 }
 
 function isValidSeverity(s: unknown): s is Severity {
@@ -122,7 +125,7 @@ export function loadCustomRules(rulesDir: string): LintRule[] {
     const pattern = new RegExp(def.match.pattern);
     const requireNearby = def.match['require-nearby'] ? new RegExp(def.match['require-nearby']) : null;
 
-    rules.push({
+    const rule: LintRule = {
       name: def.name,
       description: def.description ?? '',
       run(context: LintContext): LintViolation[] {
@@ -163,7 +166,39 @@ export function loadCustomRules(rulesDir: string): LintRule[] {
 
         return violations;
       },
-    });
+    };
+
+    if (def.autofix?.replace !== undefined) {
+      rule.autofix = (context: LintContext): LintFixResult[] => {
+        const fixes: LintFixResult[] = [];
+        for (const sourceFile of context.files) {
+          let fileContent: string;
+          try {
+            fileContent = readFileSync(sourceFile, 'utf-8');
+          } catch {
+            continue;
+          }
+
+          if (!pattern.test(fileContent)) continue;
+          pattern.lastIndex = 0;
+          const updatedContent = fileContent.replace(
+            new RegExp(def.match.pattern, 'g'),
+            def.autofix.replace,
+          );
+
+          if (updatedContent !== fileContent) {
+            writeFileSync(sourceFile, updatedContent, 'utf-8');
+            fixes.push({
+              file: relative(context.projectRoot, sourceFile).replace(/\\/g, '/'),
+              description: `Applied autofix: ${def.name}`,
+            });
+          }
+        }
+        return fixes;
+      };
+    }
+
+    rules.push(rule);
   }
 
   return rules;

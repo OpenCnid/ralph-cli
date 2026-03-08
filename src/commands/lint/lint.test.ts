@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runRules, formatViolation, formatJson } from './engine.js';
 import type { LintRule, LintContext, LintViolation } from './engine.js';
+import { lintCommand } from './index.js';
 import { createFileSizeRule } from './rules/file-size.js';
 import { createNamingConventionRule } from './rules/naming-convention.js';
 import { loadCustomRules } from './rules/custom-rules.js';
@@ -202,10 +203,77 @@ console.log(x);
     const rules = loadCustomRules(rulesDir);
     expect(rules.length).toBe(1);
     expect(rules[0]!.name).toBe('no-console');
+    expect(rules[0]!.autofix).toBeUndefined();
 
     const violations = rules[0]!.run({ projectRoot: tempDir, files: [sourceFile] });
     expect(violations.length).toBe(1);
     expect(violations[0]!.severity).toBe('warning');
+  });
+
+  it('applies custom YAML autofix with lint --fix', () => {
+    mkdirSync(join(tempDir, '.git'), { recursive: true });
+    mkdirSync(join(tempDir, '.ralph', 'rules'), { recursive: true });
+    writeFileSync(join(tempDir, '.ralph', 'config.yml'), 'project:\n  name: test\n  language: typescript\n');
+    writeFileSync(join(tempDir, '.ralph', 'rules', 'no-console-log.yml'), `
+name: no-console-log
+description: Use structured logger
+severity: warning
+match:
+  pattern: 'console\\.log\\('
+autofix:
+  replace: 'logger.info('
+fix: Replace console.log with structured logger
+`);
+
+    const sourceFile = join(tempDir, 'app.ts');
+    writeFileSync(sourceFile, `
+const logger = { info: (...args) => args };
+console.log('a');
+`);
+
+    const origCwd = process.cwd();
+    process.chdir(tempDir);
+    try {
+      lintCommand(undefined, { fix: true, rule: 'no-console-log' });
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    const updated = readFileSync(sourceFile, 'utf-8');
+    expect(updated).toContain('logger.info(');
+    expect(updated).not.toContain('console.log(');
+
+    const rule = loadCustomRules(join(tempDir, '.ralph', 'rules')).find(r => r.name === 'no-console-log');
+    const violations = rule!.run({ projectRoot: tempDir, files: [sourceFile] });
+    expect(violations.length).toBe(0);
+  });
+
+  it('applies custom YAML autofix replacement globally across matching files', () => {
+    const rulesDir = join(tempDir, 'rules');
+    mkdirSync(rulesDir, { recursive: true });
+    writeFileSync(join(rulesDir, 'no-console.yml'), `
+name: no-console
+description: no console logging
+severity: warning
+match:
+  pattern: 'console\\.log\\('
+autofix:
+  replace: 'logger.info('
+fix: use logger
+`);
+
+    const fileA = join(tempDir, 'a.ts');
+    const fileB = join(tempDir, 'b.ts');
+    writeFileSync(fileA, `console.log('a1');\nconsole.log('a2');\n`);
+    writeFileSync(fileB, `console.log('b1');\n`);
+
+    const rule = loadCustomRules(rulesDir)[0]!;
+    expect(rule.autofix).toBeDefined();
+    const fixes = rule.autofix!({ projectRoot: tempDir, files: [fileA, fileB] });
+
+    expect(fixes.length).toBe(2);
+    expect(readFileSync(fileA, 'utf-8')).toBe(`logger.info('a1');\nlogger.info('a2');\n`);
+    expect(readFileSync(fileB, 'utf-8')).toBe(`logger.info('b1');\n`);
   });
 
   it('supports require-nearby pattern', () => {
