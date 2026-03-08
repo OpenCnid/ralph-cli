@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { safeWriteFile } from '../../utils/fs.js';
-import { success, warn, info, heading } from '../../utils/index.js';
+import { success, warn, info, heading, plain } from '../../utils/index.js';
 import type { DriftItem } from './scanners.js';
 import {
   scanGoldenPrincipleViolations,
@@ -45,7 +45,7 @@ export function gcCommand(options: GcOptions): void {
     if (!VALID_CATEGORIES.includes(options.category)) {
       const msg = `Unknown category "${options.category}". Valid categories: ${VALID_CATEGORIES.join(', ')}`;
       if (options.json) {
-        console.log(JSON.stringify({ error: msg }, null, 2));
+        plain(JSON.stringify({ error: msg }, null, 2));
       } else {
         warn(msg);
       }
@@ -113,7 +113,7 @@ export function gcCommand(options: GcOptions): void {
   // Output
   if (options.json) {
     const trend = detectTrend([...history, historyEntry]);
-    console.log(JSON.stringify({
+    plain(JSON.stringify({
       items: persistentItems.map(i => ({
         ...i,
         ...(i.persistentRuns ? { persistentRuns: i.persistentRuns } : {}),
@@ -141,24 +141,24 @@ export function gcCommand(options: GcOptions): void {
     } else {
       const categories = [...new Set(persistentItems.map(i => i.category))];
       for (const cat of categories) {
-        console.log('');
+        plain('');
         heading(cat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
         const catItems = persistentItems.filter(i => i.category === cat);
         for (const item of catItems) {
           const prefix = item.severity === 'critical' ? '✗' : item.severity === 'warning' ? '⚠' : 'ℹ';
           const persistTag = item.persistentRuns && item.persistentRuns >= 2 ? ` [persistent: ${item.persistentRuns} runs]` : '';
-          console.log(`  ${prefix} ${item.file}: ${item.description}${persistTag}`);
-          console.log(`    Fix: ${item.fix}`);
+          plain(`  ${prefix} ${item.file}: ${item.description}${persistTag}`);
+          plain(`    Fix: ${item.fix}`);
         }
       }
-      console.log('');
+      plain('');
       info(`${items.length} drift item(s) found`);
     }
 
     // Show trend
     const trend = detectTrend([...history, historyEntry]);
     if (trend) {
-      console.log('');
+      plain('');
       if (trend.direction === 'rising') {
         warn(trend.message);
       } else if (trend.direction === 'declining') {

@@ -169,6 +169,7 @@ export function loadCustomRules(rulesDir: string): LintRule[] {
     };
 
     if (def.autofix?.replace !== undefined) {
+      const autofixReplace = def.autofix.replace;
       rule.autofix = (context: LintContext): LintFixResult[] => {
         const fixes: LintFixResult[] = [];
         for (const sourceFile of context.files) {
@@ -183,7 +184,7 @@ export function loadCustomRules(rulesDir: string): LintRule[] {
           pattern.lastIndex = 0;
           const updatedContent = fileContent.replace(
             new RegExp(def.match.pattern, 'g'),
-            def.autofix.replace,
+            autofixReplace,
           );
 
           if (updatedContent !== fileContent) {

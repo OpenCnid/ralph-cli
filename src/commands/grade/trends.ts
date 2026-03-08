@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path';
 import { readFileSync, existsSync, appendFileSync } from 'node:fs';
-import { ensureDir, info } from '../../utils/index.js';
+import { ensureDir, info, plain } from '../../utils/index.js';
 import type { DomainScore } from './scorers.js';
 import { GRADE_ORDER } from './scorers.js';
 import type { Grade } from '../../config/schema.js';
@@ -196,9 +196,9 @@ export function displayTrend(history: HistoryEntry[]): void {
   const dimensions = ['tests', 'docs', 'architecture', 'fileHealth', 'staleness', 'overall'] as const;
   const recent = history.slice(-10); // last 10 snapshots
 
-  console.log('');
+  plain('');
   info(`Grade trend (last ${recent.length} snapshot${recent.length === 1 ? '' : 's'}):`);
-  console.log('');
+  plain('');
 
   // Group by domain
   const domains = new Set<string>();
@@ -207,16 +207,16 @@ export function displayTrend(history: HistoryEntry[]): void {
   }
 
   for (const domain of domains) {
-    console.log(`  ${domain}:`);
+    plain(`  ${domain}:`);
     for (const dim of dimensions) {
       const grades = recent
         .map(e => e.scores.find(s => s.domain === domain))
         .filter((s): s is NonNullable<typeof s> => s != null)
         .map(s => s[dim] as Grade);
       if (grades.length > 0) {
-        console.log(`    ${dim}: ${grades.join(' -> ')}`);
+        plain(`    ${dim}: ${grades.join(' -> ')}`);
       }
     }
-    console.log('');
+    plain('');
   }
 }

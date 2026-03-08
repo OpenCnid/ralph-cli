@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { findProjectRoot } from '../../config/index.js';
 import { safeWriteFile } from '../../utils/fs.js';
-import { success, warn, info } from '../../utils/index.js';
+import { success, warn, info, plain } from '../../utils/index.js';
 
 interface CiGenerateOptions {
   platform?: string | undefined;
@@ -129,7 +129,7 @@ export function ciGenerateCommand(options: CiGenerateOptions): void {
     }
     case 'generic':
     default: {
-      console.log(GENERIC_TEMPLATE);
+      plain(GENERIC_TEMPLATE);
       break;
     }
   }

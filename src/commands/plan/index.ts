@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync, renameSync, unlinkSync } from 'n
 import { join, basename } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { ensureDir, safeWriteFile, safeReadFile } from '../../utils/fs.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { success, warn, error, info, plain } from '../../utils/index.js';
 
 function getNextPlanId(plansDir: string): string {
   const activeDir = join(plansDir, 'active');
@@ -371,7 +371,7 @@ export function planListCommand(options: { all?: boolean; json?: boolean }): voi
         plans.push(parsePlanInfo(completedDir, file));
       }
     }
-    console.log(JSON.stringify({ plans }, null, 2));
+    plain(JSON.stringify({ plans }, null, 2));
     return;
   }
 
@@ -379,26 +379,26 @@ export function planListCommand(options: { all?: boolean; json?: boolean }): voi
   if (existsSync(activeDir)) {
     const files = readdirSync(activeDir).filter(f => f.endsWith('.md')).sort();
     if (files.length === 0) {
-      console.log('  (none)');
+      plain('  (none)');
     }
     for (const file of files) {
       const p = parsePlanInfo(activeDir, file);
-      console.log(`  ${p.id}: ${p.title} (${p.completion.pct}% complete)`);
+      plain(`  ${p.id}: ${p.title} (${p.completion.pct}% complete)`);
     }
   } else {
-    console.log('  (none)');
+    plain('  (none)');
   }
 
   if (options.all && existsSync(completedDir)) {
-    console.log('');
+    plain('');
     info('Completed/Abandoned Plans:');
     const files = readdirSync(completedDir).filter(f => f.endsWith('.md')).sort();
     if (files.length === 0) {
-      console.log('  (none)');
+      plain('  (none)');
     }
     for (const file of files) {
       const p = parsePlanInfo(completedDir, file);
-      console.log(`  ${p.id}: ${p.title} [${p.status}]`);
+      plain(`  ${p.id}: ${p.title} [${p.status}]`);
     }
   }
 }
@@ -411,7 +411,7 @@ export function planStatusCommand(options?: { json?: boolean }): void {
 
   if (!existsSync(activeDir)) {
     if (options?.json) {
-      console.log(JSON.stringify({ active: [], total: 0 }, null, 2));
+      plain(JSON.stringify({ active: [], total: 0 }, null, 2));
     } else {
       info('No active plans.');
     }
@@ -421,7 +421,7 @@ export function planStatusCommand(options?: { json?: boolean }): void {
   const files = readdirSync(activeDir).filter(f => f.endsWith('.md')).sort();
   if (files.length === 0) {
     if (options?.json) {
-      console.log(JSON.stringify({ active: [], total: 0 }, null, 2));
+      plain(JSON.stringify({ active: [], total: 0 }, null, 2));
     } else {
       info('No active plans.');
     }
@@ -431,14 +431,14 @@ export function planStatusCommand(options?: { json?: boolean }): void {
   const plans = files.map(file => parsePlanInfo(activeDir, file));
 
   if (options?.json) {
-    console.log(JSON.stringify({ active: plans, total: plans.length }, null, 2));
+    plain(JSON.stringify({ active: plans, total: plans.length }, null, 2));
     return;
   }
 
   info(`${files.length} active plan(s):`);
   for (const p of plans) {
-    console.log(`  ${p.id}: ${p.title}`);
-    console.log(`      ${p.completion.checked}/${p.completion.total} tasks (${p.completion.pct}% complete)`);
+    plain(`  ${p.id}: ${p.title}`);
+    plain(`      ${p.completion.checked}/${p.completion.total} tasks (${p.completion.pct}% complete)`);
   }
 }
 

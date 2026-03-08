@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { findProjectRoot } from '../../config/loader.js';
-import { ensureDir, safeWriteFile, success, warn, info } from '../../utils/index.js';
+import { ensureDir, safeWriteFile, success, warn, info, plain } from '../../utils/index.js';
 import { detectProject } from './detect.js';
 import * as templates from './templates.js';
 import * as prompt from '../../utils/prompt.js';
@@ -119,7 +119,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
     }
   }
 
-  console.log('');
+  plain('');
   info(`Done: ${created} created, ${skipped} skipped`);
   if (created > 0) {
     info('Review generated files and customize for your project.');

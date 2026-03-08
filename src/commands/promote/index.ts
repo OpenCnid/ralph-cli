@@ -2,7 +2,7 @@ import { existsSync, readFileSync, appendFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { ensureDir, safeWriteFile, safeReadFile } from '../../utils/fs.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { success, warn, error, info, plain } from '../../utils/index.js';
 import { runRules } from '../lint/engine.js';
 import type { LintContext } from '../lint/engine.js';
 import { loadCustomRules } from '../lint/rules/custom-rules.js';
@@ -167,7 +167,7 @@ export function promoteListCommand(): void {
   const { config } = loadConfig(projectRoot);
 
   info('Taste Rules:');
-  console.log('');
+  plain('');
 
   // Doc-level: core-beliefs.md entries
   const beliefsPath = join(projectRoot, config.paths['design-docs'], 'core-beliefs.md');
@@ -179,9 +179,9 @@ export function promoteListCommand(): void {
     const datedLegacy = content.match(/^- \*\*\d{4}-\d{2}-\d{2}\*\* — .+$/gm) ?? [];
     if (entries.length > 0 || dated.length > 0 || datedLegacy.length > 0) {
       info('Documentation (core-beliefs.md):');
-      for (const e of entries) console.log(`  ○ ${e.trim()}`);
-      for (const e of dated) console.log(`  ○ ${e.replace(/^- /, '').trim()}`);
-      for (const e of datedLegacy) console.log(`  ○ ${e.replace(/^- /, '').trim()}`);
+      for (const e of entries) plain(`  ○ ${e.trim()}`);
+      for (const e of dated) plain(`  ○ ${e.replace(/^- /, '').trim()}`);
+      for (const e of datedLegacy) plain(`  ○ ${e.replace(/^- /, '').trim()}`);
     }
   }
 
@@ -193,7 +193,7 @@ export function promoteListCommand(): void {
       // Count violations per custom rule by running them against the codebase
       const violationCounts = countCustomRuleViolations(projectRoot, rulesDir, config.gc.exclude);
 
-      console.log('');
+      plain('');
       info('Lint Rules (.ralph/rules/):');
       for (const file of ruleFiles) {
         const content = safeReadFile(join(rulesDir, file)) ?? '';
@@ -206,7 +206,7 @@ export function promoteListCommand(): void {
         const marker = count === 0 ? '✓' : '○';
         const suffix = count > 0 ? ` — ${count} violation(s) remaining` : '';
         const fromSuffix = fromMatch?.[1] ? ` [promoted from ${fromMatch[1]}]` : '';
-        console.log(`  ${marker} ${name} — ${desc} (${file})${suffix}${fromSuffix}`);
+        plain(`  ${marker} ${name} — ${desc} (${file})${suffix}${fromSuffix}`);
       }
     }
   }
@@ -216,13 +216,13 @@ export function promoteListCommand(): void {
   if (existsSync(patternsDir)) {
     const docs = readdirSync(patternsDir).filter(f => f.endsWith('.md'));
     if (docs.length > 0) {
-      console.log('');
+      plain('');
       info('Patterns (design-docs/patterns/):');
       for (const doc of docs) {
         const content = safeReadFile(join(patternsDir, doc)) ?? '';
         const titleMatch = content.match(/^# (.+)$/m);
         const title = titleMatch?.[1] ?? doc;
-        console.log(`  ○ ${title} (patterns/${doc})`);
+        plain(`  ○ ${title} (patterns/${doc})`);
       }
     }
   }

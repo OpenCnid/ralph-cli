@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import type { RalphConfig } from '../../config/schema.js';
-import { success, warn, error, info, heading } from '../../utils/index.js';
+import { success, warn, error, info, heading, plain } from '../../utils/index.js';
 import * as prompt from '../../utils/prompt.js';
 
 interface DoctorOptions {
@@ -522,7 +522,7 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
   const score = calculateScore(checks);
 
   if (options.json) {
-    console.log(JSON.stringify({
+    plain(JSON.stringify({
       score,
       label: scoreLabel(score),
       checks: checks.map(c => ({
@@ -550,7 +550,7 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
     const allPass = catChecks.every(c => c.pass);
     const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
 
-    console.log('');
+    plain('');
     heading(`${allPass ? '\u2705' : '\u26A0\uFE0F '} ${catLabel}`);
     for (const check of catChecks) {
       if (check.pass) {
@@ -558,27 +558,27 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
       } else {
         error(`${check.name} — ${check.detail}`);
         if (check.fix) {
-          console.log(`    Fix: ${check.fix}`);
+          plain(`    Fix: ${check.fix}`);
         }
         failingChecks.push(check);
       }
     }
   }
 
-  console.log('');
+  plain('');
   const passed = checks.filter(c => c.pass).length;
   info(`Score: ${score}/10 (${scoreLabel(score)}) — ${passed}/${checks.length} checks passed`);
 
   // Fix summary with target score label
   if (failingChecks.length > 0) {
-    console.log('');
+    plain('');
     // Calculate potential score if all failing checks were fixed
     const potentialScore = calculateScore(checks.map(c => ({ ...c, pass: true })));
     const targetLabel = scoreLabel(potentialScore);
     info(`Fix ${failingChecks.length} issue(s) to reach ${targetLabel}:`);
     failingChecks.forEach((c, i) => {
       if (c.fix) {
-        console.log(`  ${i + 1}. ${c.fix}`);
+        plain(`  ${i + 1}. ${c.fix}`);
       }
     });
   }
@@ -591,10 +591,10 @@ export async function doctorCommand(options: DoctorOptions): Promise<void> {
   if (options.fix) {
     const fixable = checks.filter(c => !c.pass && c.fix?.includes('ralph init'));
     if (fixable.length > 0) {
-      console.log('');
+      plain('');
       info('Fixable issues:');
       for (const check of fixable) {
-        console.log(`  • ${check.name}`);
+        plain(`  • ${check.name}`);
       }
 
       const proceed = process.stdin.isTTY === true

@@ -19,3 +19,7 @@ export function info(msg: string): void {
 export function heading(msg: string): void {
   console.log(pc.bold(msg));
 }
+
+export function plain(msg: string): void {
+  console.log(msg);
+}

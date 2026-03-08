@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync, unlinkSync } from 'nod
 import { join, basename } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
 import { ensureDir, safeWriteFile, safeReadFile } from '../../utils/fs.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { success, warn, error, info, plain } from '../../utils/index.js';
 import { ask } from '../../utils/prompt.js';
 
 function today(): string {
@@ -113,21 +113,21 @@ export function refListCommand(options: { sizes?: boolean }): void {
   }
 
   info(`References (${entries.length} files, ${totalKb}KB total):`);
-  console.log('');
+  plain('');
 
   if (options.sizes) {
     const maxKb = config.references['max-total-kb'];
     for (const e of entries) {
       const bar = '█'.repeat(Math.max(1, Math.round((e.sizeKb / maxKb) * 40)));
       const pct = maxKb > 0 ? Math.round((e.sizeKb / maxKb) * 100) : 0;
-      console.log(`  ${e.name.padEnd(40)} ${String(e.sizeKb).padStart(4)}KB ${bar} ${pct}%`);
+      plain(`  ${e.name.padEnd(40)} ${String(e.sizeKb).padStart(4)}KB ${bar} ${pct}%`);
     }
-    console.log('');
-    console.log(`  Total: ${totalKb}KB / ${maxKb}KB (${Math.round((totalKb / maxKb) * 100)}%)`);
+    plain('');
+    plain(`  Total: ${totalKb}KB / ${maxKb}KB (${Math.round((totalKb / maxKb) * 100)}%)`);
   } else {
     for (const e of entries) {
-      console.log(`  ${e.name} (${e.sizeKb}KB${e.date ? `, added ${e.date}` : ''})`);
-      if (e.source) console.log(`    Source: ${e.source}`);
+      plain(`  ${e.name} (${e.sizeKb}KB${e.date ? `, added ${e.date}` : ''})`);
+      if (e.source) plain(`    Source: ${e.source}`);
     }
   }
 
@@ -295,11 +295,11 @@ export async function refDiscoverCommand(): Promise<void> {
   }
 
   success(`Found ${discovered.length} available reference(s):`);
-  console.log('');
+  plain('');
   for (const ref of discovered) {
-    console.log(`  ${ref.name}: ${ref.url}`);
+    plain(`  ${ref.name}: ${ref.url}`);
   }
-  console.log('');
+  plain('');
 
   if (process.stdin.isTTY === true) {
     const answer = await ask('Add references? (numbers like "1,3", "a" for all, Enter to skip)', '');

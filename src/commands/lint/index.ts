@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { statSync } from 'node:fs';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { success, warn, error, info, plain } from '../../utils/index.js';
 import { runRules, formatViolation, formatJson } from './engine.js';
 import type { LintRule, LintContext, LintFixResult } from './engine.js';
 import { collectFiles } from './files.js';
@@ -84,23 +84,23 @@ export function lintCommand(targetPath: string | undefined, options: LintOptions
       for (const f of allFixes) {
         success(`Fixed: ${f.file} — ${f.description}`);
       }
-      console.log('');
+      plain('');
     }
 
     // Re-run rules to report remaining violations
     const result = runRules(rules, context);
 
     if (options.json) {
-      console.log(formatJson(result, allFixes));
+      plain(formatJson(result, allFixes));
     } else {
       if (result.violations.length === 0) {
         success(`All violations fixed (${allFixes.length} fix(es) applied, ${rules.length} rules, ${files.length} files)`);
       } else {
         for (const v of result.violations) {
-          console.log('');
-          console.log(formatViolation(v));
+          plain('');
+          plain(formatViolation(v));
         }
-        console.log('');
+        plain('');
         info(`${result.violations.length} violation(s) remaining after ${allFixes.length} fix(es) (${rules.length} rules, ${files.length} files)`);
       }
     }
@@ -116,16 +116,16 @@ export function lintCommand(targetPath: string | undefined, options: LintOptions
 
   // Output
   if (options.json) {
-    console.log(formatJson(result));
+    plain(formatJson(result));
   } else {
     if (result.violations.length === 0) {
       success(`No violations found (${rules.length} rules, ${files.length} files)`);
     } else {
       for (const v of result.violations) {
-        console.log('');
-        console.log(formatViolation(v));
+        plain('');
+        plain(formatViolation(v));
       }
-      console.log('');
+      plain('');
       info(`${result.violations.length} violation(s) found (${rules.length} rules, ${files.length} files)`);
     }
   }

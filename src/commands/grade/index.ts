@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { loadConfig, findProjectRoot } from '../../config/index.js';
-import { success, warn, error, info } from '../../utils/index.js';
+import { success, warn, error, info, plain } from '../../utils/index.js';
 import { safeWriteFile } from '../../utils/fs.js';
 import {
   scoreDomain,
@@ -75,20 +75,20 @@ export function gradeCommand(domain: string | undefined, options: GradeOptions):
 
   // Display
   for (const s of scores) {
-    console.log('');
+    plain('');
     info(`${s.domain}: Overall grade ${s.overall}`);
-    console.log(`  Tests: ${s.tests.grade} (${s.tests.detail})`);
-    console.log(`  Docs: ${s.docs.grade} (${s.docs.detail})`);
-    console.log(`  Architecture: ${s.architecture.grade} (${s.architecture.detail})`);
-    console.log(`  File Health: ${s.fileHealth.grade} (${s.fileHealth.detail})`);
-    console.log(`  Staleness: ${s.staleness.grade} (${s.staleness.detail})`);
+    plain(`  Tests: ${s.tests.grade} (${s.tests.detail})`);
+    plain(`  Docs: ${s.docs.grade} (${s.docs.detail})`);
+    plain(`  Architecture: ${s.architecture.grade} (${s.architecture.detail})`);
+    plain(`  File Health: ${s.fileHealth.grade} (${s.fileHealth.detail})`);
+    plain(`  Staleness: ${s.staleness.grade} (${s.staleness.detail})`);
   }
 
   // Display degradation/improvement alerts
   const trends = computeTrends(history, scores);
   const alerts = trends.filter(t => t.includes('sustained'));
   if (alerts.length > 0) {
-    console.log('');
+    plain('');
     for (const alert of alerts) {
       if (alert.includes('degradation')) {
         warn(alert);
@@ -103,7 +103,7 @@ export function gradeCommand(domain: string | undefined, options: GradeOptions):
     const minGrade = config.quality['minimum-grade'];
     const failing = scores.filter(s => gradeIsBelow(s.overall, minGrade));
     if (failing.length > 0) {
-      console.log('');
+      plain('');
       error(`${failing.length} domain(s) below minimum grade ${minGrade}`);
       process.exit(1);
     }
