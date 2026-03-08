@@ -548,6 +548,27 @@ describe('generateQualityMd', () => {
     expect(md).toContain('auth/docs: B (was D) — improved');
   });
 
+  it('includes stable indicator when grade is unchanged', () => {
+    const history = [{
+      timestamp: '2026-03-01T00:00:00Z',
+      scores: [{ domain: 'auth', tests: 'A' as const, docs: 'B' as const, architecture: 'A' as const, fileHealth: 'A' as const, staleness: 'A' as const, overall: 'A' as const }],
+    }];
+    const scores = [{
+      domain: 'auth',
+      tests: { grade: 'A' as const, detail: '95%' },
+      docs: { grade: 'B' as const, detail: '4/5' },
+      architecture: { grade: 'A' as const, detail: 'clean' },
+      fileHealth: { grade: 'A' as const, detail: 'ok' },
+      staleness: { grade: 'A' as const, detail: 'recent' },
+      overall: 'A' as const,
+    }];
+    const md = generateQualityMd(scores, history);
+    // Unchanged grades should show "stable" indicator
+    expect(md).toContain('auth/tests: A (stable)');
+    expect(md).toContain('auth/docs: B (stable)');
+    expect(md).toContain('auth/overall: A (stable)');
+  });
+
   it('generates action items for non-A domains with specific details', () => {
     const scores = [{
       domain: 'billing',

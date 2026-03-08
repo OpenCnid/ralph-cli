@@ -559,7 +559,17 @@ export function gcCommand(options: GcOptions): void {
   }
 
   // Filter by category
+  const VALID_CATEGORIES = ['principle-violation', 'dead-code', 'stale-documentation', 'pattern-inconsistency'];
   if (options.category) {
+    if (!VALID_CATEGORIES.includes(options.category)) {
+      const msg = `Unknown category "${options.category}". Valid categories: ${VALID_CATEGORIES.join(', ')}`;
+      if (options.json) {
+        console.log(JSON.stringify({ error: msg }, null, 2));
+      } else {
+        warn(msg);
+      }
+      return;
+    }
     items = items.filter(i => i.category === options.category);
   }
 

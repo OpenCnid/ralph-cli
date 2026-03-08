@@ -413,6 +413,19 @@ describe('gc command', () => {
     expect(matched!.description).toContain('swallow');
   });
 
+  it('warns on invalid --category value', () => {
+    const output = captureText(() => gcCommand({ category: 'nonexistent' }));
+    expect(output).toContain('Unknown category');
+    expect(output).toContain('nonexistent');
+    expect(output).toContain('principle-violation');
+  });
+
+  it('returns error JSON on invalid --category in JSON mode', () => {
+    const result = captureJson(() => gcCommand({ json: true, category: 'invalid-cat' }));
+    expect(result.error).toBeDefined();
+    expect(String(result.error)).toContain('Unknown category');
+  });
+
   it('tracks category counts in history', () => {
     mkdirSync(join(tempDir, 'docs'), { recursive: true });
     writeFileSync(join(tempDir, 'docs', 'README.md'), 'See `src/deleted.ts` for details.');

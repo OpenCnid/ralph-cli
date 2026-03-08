@@ -6,10 +6,10 @@
 
 - **All 10 commands implemented**: init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci + config validate
 - **Source**: `src/cli.ts` (commander router), `src/config/` (schema, loader, validation, defaults), `src/utils/` (fs, output), `src/commands/` (init/, lint/, grade/, doctor/, plan/, promote/, ref/, gc/, hooks/, ci/, config-validate.ts)
-- **Tests**: 271 tests across 13 files — all passing
+- **Tests**: 276 tests across 13 files — all passing
 - **Config files**: `vitest.config.ts` (excludes dist/), `tsconfig.json` (strict, ESM, types: [node], include: [src])
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
-- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix), 0.0.23 (doctor spec compliance: LLM line numbers, spec file count, domain count, target score label), 0.0.24 (CI environment auto-detection, CI config overrides wiring)
+- **Tags**: 0.0.1 (P0+P1), 0.0.2 (P2), 0.0.3 (P6+P7+P8), 0.0.4 (P5+P9), 0.0.5 (staleness+trends), 0.0.6 (multi-format coverage), 0.0.7 (comprehensive config validation), 0.0.8 (domain isolation + doctor enhancements), 0.0.9 (per-domain grade scoring), 0.0.10 (file-organization rule + GC dead code detection), 0.0.11 (GC enhancements: principle violations, pattern expansion, trend tracking), 0.0.12 (doctor fixes + plan tech-debt-tracker), 0.0.13 (promote format fix + user-defined GC anti-patterns), 0.0.14 (grade spec compliance + plan complete --reason), 0.0.15 (GC category filter + fix-descriptions file + plan JSON + grade action details), 0.0.16 (promote list violation counts), 0.0.17 (GC pattern line numbers + promote escalation path), 0.0.18 (doctor tests run check), 0.0.19 (plan contextual task suggestions), 0.0.20 (complete config.yml, ref -llms.md, CI caching), 0.0.21 (ref discover, pre-commit staged files), 0.0.22 (lint --fix autofix, ref discover timeout fix), 0.0.23 (doctor spec compliance: LLM line numbers, spec file count, domain count, target score label), 0.0.24 (CI environment auto-detection, CI config overrides wiring), 0.0.25 (GC category validation, grade stable trends, plan spec compliance)
 
 ---
 
@@ -190,6 +190,14 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 - **Target score label in fix summary**: Fix summary now shows the target score label (e.g., `Fix 2 issue(s) to reach Excellent:`) instead of generic "to improve score", matching the spec example output.
 - **3 new tests**: LLM reference line number detection with "claude", product-specs file count reporting, architecture doc domain count.
 
+### GC Category Validation, Grade Stable Trends, Plan Spec Compliance (0.0.25)
+
+- **GC `--category` validation**: `ralph gc --category <invalid>` now warns with the list of valid categories (principle-violation, dead-code, stale-documentation, pattern-inconsistency) instead of silently returning empty results. Works in both text and JSON output modes. Why: invalid categories silently returning zero items was confusing and hard to debug.
+- **Grade stable trend indicator**: `computeTrends()` now reports "stable" when a dimension's grade is unchanged between runs (e.g., `auth/tests: A (stable)`). Previously only reported "improved" or "degraded", omitting unchanged dimensions entirely. Matches spec example showing `ui/architecture: C → C (stable)`.
+- **Plan estimated scope**: Full plans (`ralph plan create --full`) now include `Estimated scope: N–M tasks` field per spec requirement. The range is computed from the generated task count with a 50% buffer.
+- **Plan tech debt tracker spec compliance**: Column names changed from "Discovered Date" → "Discovered" and "Related Plan" → "Plan" to match spec. Priority levels changed from P0/P1/P2/P3 → High/Medium/Low to match spec examples.
+- **5 new tests**: Invalid category warning (text + JSON), stable trend indicator, estimated scope in full plans, tech debt tracker column names and priority levels.
+
 ### CI Environment Auto-Detection & Config Override Wiring (0.0.24)
 
 - **CI environment auto-detection**: `loadConfig()` now automatically detects CI environments by checking standard environment variables (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `CIRCLECI`, `JENKINS_URL`, `TRAVIS`, `BUILDKITE`). When detected, the `ci:` section overrides in `.ralph/config.yml` are automatically applied — no `--ci` flag needed. This makes the previously inert `ci:` config section functional. Why: CI config overrides were defined in schema, validated, and had merging logic, but were never triggered because no code detected the CI environment or passed `isCi: true` to the config loader.
@@ -203,6 +211,28 @@ All 10 commands fully implemented. 271 tests across 13 files, all passing.
 
 #### Doctor Command
 - `--fix` runs silently with defaults instead of interactive confirmation per spec
+- Linter detection only covers JS/TS tools (eslint, biome); missing Python (ruff, pylint) and Go (golangci-lint) detection
+
+#### Grade Command
+- Trend output lacks temporal context (spec shows "last week") and detailed reasons (spec shows "design doc deleted, not replaced")
+- No per-dimension sustained degradation detection (only overall grade tracked for 3+ drops)
+
+#### GC Command
+- No git history context for dead code (spec shows "Last imported: removed in commit abc123")
+- No git history context for stale docs (spec shows "was deleted 14 days ago")
+- Cross-run deduplication not implemented (only within-run)
+
+#### Lint Command
+- Config schema uses `architecture.files` instead of spec's `architecture.rules`
+- Missing `direction` field in ArchitectureConfig (forward-only hardcoded)
+- Type naming convention check is stubbed (doesn't report violations)
+- Custom rule scripts not supported (YAML only)
+
+#### Ref Command
+- `ref discover` doesn't prompt to add discovered references (spec says interactive)
+
+#### Init Command
+- Not interactive (deferred, needs `@inquirer/prompts`)
 
 ---
 

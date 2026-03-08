@@ -143,15 +143,14 @@ function ensureTechDebtTracker(plansDir: string): void {
   if (existsSync(trackerPath)) return;
   const content = `# Tech Debt Tracker
 
-| ID | Description | Priority | Discovered Date | Related Plan |
-|----|-------------|----------|-----------------|--------------|
+| ID | Description | Priority | Discovered | Plan |
+|----|-------------|----------|------------|------|
 
 ## Priority Levels
 
-- **P0** — Blocking current work or causing incidents
-- **P1** — Should be addressed soon, increasing friction
-- **P2** — Nice to fix, low impact
-- **P3** — Cosmetic or negligible impact
+- **High** — Blocking current work or causing incidents
+- **Medium** — Should be addressed soon, increasing friction
+- **Low** — Nice to fix, low impact
 `;
   safeWriteFile(trackerPath, content);
 }
@@ -224,6 +223,7 @@ export function planCreateCommand(title: string, options: { full?: boolean }): v
 
 Created: ${today()}
 Status: active
+Estimated scope: ${tasks.length}–${tasks.length + Math.ceil(tasks.length * 0.5)} tasks
 
 ## Context
 

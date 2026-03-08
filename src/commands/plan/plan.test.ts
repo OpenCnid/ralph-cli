@@ -126,8 +126,8 @@ describe('plan commands', () => {
     expect(existsSync(trackerPath)).toBe(true);
     const content = readFileSync(trackerPath, 'utf-8');
     expect(content).toContain('# Tech Debt Tracker');
-    expect(content).toContain('| ID | Description | Priority | Discovered Date | Related Plan |');
-    expect(content).toContain('P0');
+    expect(content).toContain('| ID | Description | Priority | Discovered | Plan |');
+    expect(content).toContain('High');
   });
 
   it('does not overwrite existing tech-debt-tracker.md', () => {
@@ -202,6 +202,33 @@ describe('plan commands', () => {
     expect(content).toContain('Reproduce');
     expect(content).toContain('root cause');
     expect(content).toContain('Implement fix');
+  });
+
+  it('includes estimated scope in full plans', () => {
+    planCreateCommand('Add feature flags system', { full: true });
+
+    const files = readdirSync(join(tempDir, 'docs', 'exec-plans', 'active'));
+    const content = readFileSync(join(tempDir, 'docs', 'exec-plans', 'active', files[0]!), 'utf-8');
+    expect(content).toContain('Estimated scope:');
+    expect(content).toMatch(/Estimated scope: \d+–\d+ tasks/);
+  });
+
+  it('creates tech debt tracker with spec-compliant column names', () => {
+    planCreateCommand('First plan', {});
+
+    const trackerPath = join(tempDir, 'docs', 'exec-plans', 'tech-debt-tracker.md');
+    expect(existsSync(trackerPath)).toBe(true);
+    const content = readFileSync(trackerPath, 'utf-8');
+    // Spec uses "Discovered" not "Discovered Date", "Plan" not "Related Plan"
+    expect(content).toContain('| Discovered |');
+    expect(content).toContain('| Plan |');
+    expect(content).not.toContain('Discovered Date');
+    expect(content).not.toContain('Related Plan');
+    // Spec uses High/Medium/Low, not P0/P1/P2/P3
+    expect(content).toContain('**High**');
+    expect(content).toContain('**Medium**');
+    expect(content).toContain('**Low**');
+    expect(content).not.toContain('**P0**');
   });
 
   it('generates contextual tasks for "migrate" full plans', () => {

@@ -565,6 +565,8 @@ function computeTrends(history: HistoryEntry[], currentScores: DomainScore[]): s
         trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}) — improved`);
       } else if (currentIdx > prevIdx) {
         trends.push(`${score.domain}/${dim}: ${currentGrade} (was ${prevGrade}) — degraded`);
+      } else {
+        trends.push(`${score.domain}/${dim}: ${currentGrade} (stable)`);
       }
     }
 
