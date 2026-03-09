@@ -11,6 +11,10 @@ export interface Check {
   fix?: string | undefined;
 }
 
+export const doctorRuntime = {
+  execSync,
+};
+
 function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
   const checks: Check[] = [];
 
@@ -364,7 +368,7 @@ function runBackpressureChecks(projectRoot: string): Check[] {
       let testsPass = false;
       let testDetail = '';
       try {
-        execSync(testCmd, {
+        doctorRuntime.execSync(testCmd, {
           cwd: projectRoot,
           stdio: ['pipe', 'pipe', 'pipe'],
           timeout: 60000, // 60 second timeout
@@ -434,7 +438,10 @@ function runOperationalChecks(projectRoot: string): Check[] {
   if (isGitRepo) {
     let commitCount = 0;
     try {
-      const output = execSync('git rev-list --count HEAD', { cwd: projectRoot, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+      const output = doctorRuntime.execSync(
+        'git rev-list --count HEAD',
+        { cwd: projectRoot, stdio: ['pipe', 'pipe', 'pipe'] },
+      ).toString().trim();
       commitCount = parseInt(output, 10) || 0;
     } catch {
       // No commits yet (empty repo)

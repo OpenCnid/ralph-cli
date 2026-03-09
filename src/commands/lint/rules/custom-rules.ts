@@ -22,7 +22,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { LintRule, LintViolation, LintContext, Severity, LintFixResult } from '../engine.js';
@@ -46,6 +46,10 @@ function isValidSeverity(s: unknown): s is Severity {
   return s === 'error' || s === 'warning' || s === 'info';
 }
 
+export const customRulesRuntime = {
+  execFileSync,
+};
+
 export function loadCustomRules(rulesDir: string): LintRule[] {
   if (!existsSync(rulesDir)) return [];
 
@@ -67,7 +71,7 @@ export function loadCustomRules(rulesDir: string): LintRule[] {
             projectRoot: context.projectRoot,
             files: context.files,
           });
-          const output = execSync(`node "${scriptPath}"`, {
+          const output = customRulesRuntime.execFileSync(process.execPath, [scriptPath], {
             cwd: context.projectRoot,
             encoding: 'utf-8',
             input,
