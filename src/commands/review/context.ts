@@ -167,7 +167,7 @@ export function assembleContext(
   diff: string,
   diffStat: string,
   changedFiles: string[],
-  options: { diffOnly: boolean; maxDiffLines: number },
+  options: { diffOnly: boolean; maxDiffLines: number; scope?: string | undefined },
 ): ReviewContext {
   const projectRoot = process.cwd();
   let architecture = '';
@@ -228,6 +228,6 @@ export function assembleContext(
     specs,
     rules,
     projectName: config.project.name,
-    scope: diffStat || 'unknown',
+    scope: options.scope ?? 'unknown',
   };
 }
