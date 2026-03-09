@@ -2,16 +2,17 @@
 
 ## Current State
 
-- **Version**: 0.2.1 (package.json — v0.2.2 and v0.3.0 completed but version not yet bumped)
-- **Commands**: All 12 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review) + config validate. `ralph heal` not yet started.
-- **Tests**: 627 across 26 files — all passing
-- **Next**: v0.4.0 (`ralph heal`)
+- **Version**: 0.4.0
+- **Commands**: All 13 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal) + config validate.
+- **Tests**: 685 across 30 files
+- **Next**: Post-release cleanup and validation follow-up
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.4.0 | 2026-03-09 | `ralph heal` automated self-repair — diagnostics, heal prompt, agent orchestration, CLI registration, architecture/docs updates |
 | 0.3.0 | 2026-03-09 | `ralph review` agent-powered code review — diff extraction, context assembly, prompt engine, output formats (text/json/markdown), agent reuse from run |
 | 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
 | 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
@@ -43,6 +44,7 @@ Full details → `CHANGELOG.md`
 | `config validate` | ✅ Complete (all sections, nested keys, type checks) | 27+ |
 | `ralph run` | ✅ Complete (plan/build modes, agent abstraction, checkpoint, auto-detect) | 80+ |
 | `ralph review` | ✅ Complete (diff extraction, context assembly, prompt, output formats) | 42+ |
+| `ralph heal` | ✅ Complete (diagnostics, heal prompt, agent repair flow, verification) | 47+ |
 
 ## Deferred Items
 
@@ -655,11 +657,11 @@ Wire `ralph heal` into the commander CLI.
 
 ### Task 9: Version bump + CHANGELOG
 
-- [ ] Bump `package.json` version to `0.4.0`.
-- [ ] Add v0.4.0 section to `CHANGELOG.md` summarising: ralph heal command (automated self-repair via diagnostics + agent), 9 tasks, test count.
-- [ ] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.4.0`, commands → 13, add `0.4.0` row to Release History, add `ralph heal` row to Command Status table.
-- [ ] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
-- [ ] Done when: `ralph --version` prints `0.4.0`. CHANGELOG has a v0.4.0 entry. All validation passes.
+- [x] Bump `package.json` version to `0.4.0`.
+- [x] Add v0.4.0 section to `CHANGELOG.md` summarising: ralph heal command (automated self-repair via diagnostics + agent), 9 tasks, test count.
+- [x] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.4.0`, commands → 13, add `0.4.0` row to Release History, add `ralph heal` row to Command Status table.
+- [x] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
+- [x] Done when: `ralph --version` prints `0.4.0`. CHANGELOG has a v0.4.0 entry. All validation passes.
 
 ### Dependency Graph
 
