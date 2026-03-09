@@ -589,16 +589,16 @@ Define types used by all heal modules.
 
 Run ralph diagnostic commands and parse their output into issue counts.
 
-- [ ] Create `src/commands/heal/diagnostics.ts`.
-- [ ] `runCommand(cmd: string): Promise<{ output: string, exitCode: number }>` — spawn command, capture stdout+stderr, return both.
-- [ ] `parseDoctorOutput(output: string): number` — count lines starting with `✗` (check failures).
-- [ ] `parseGradeOutput(output: string): number` — count occurrences of `F` or `D` grade labels in output.
-- [ ] `parseGcOutput(output: string): number` — count lines starting with `⚠`.
-- [ ] `parseLintOutput(output: string): number` — count violation lines (lines containing "violation" or non-zero counts from summary).
-- [ ] `runDiagnostics(commands: string[], options: { only?: string, skip?: string }): Promise<DiagnosticResult[]>` — resolve effective command list (apply `--only` and `--skip` filtering; skip wins if both match), run each command, parse issues.
-- [ ] Files: `src/commands/heal/diagnostics.ts`
-- [ ] Tests: `tests/heal-diagnostics.test.ts` — test each parse function with realistic fixture output (doctor failure lines, grade D/F lines, gc warning lines, lint violation lines), test `runDiagnostics` with mocked `runCommand`, test `--only` filtering, `--skip` filtering, overlap (skip wins).
-- [ ] Done when: All parse functions accurately count issues from realistic command output. `runDiagnostics` applies filters correctly.
+- [x] Create `src/commands/heal/diagnostics.ts`.
+- [x] `runCommand(cmd: string): Promise<{ output: string, exitCode: number }>` — spawn command, capture stdout+stderr, return both.
+- [x] `parseDoctorOutput(output: string): number` — count lines starting with `✗` (check failures).
+- [x] `parseGradeOutput(output: string): number` — count occurrences of `F` or `D` grade labels in output.
+- [x] `parseGcOutput(output: string): number` — count lines starting with `⚠`.
+- [x] `parseLintOutput(output: string): number` — count violation lines (lines containing "violation" or non-zero counts from summary).
+- [x] `runDiagnostics(commands: string[], options: { only?: string, skip?: string }): Promise<DiagnosticResult[]>` — resolve effective command list (apply `--only` and `--skip` filtering; skip wins if both match), run each command, parse issues.
+- [x] Files: `src/commands/heal/diagnostics.ts`
+- [x] Tests: `tests/heal-diagnostics.test.ts` — test each parse function with realistic fixture output (doctor failure lines, grade D/F lines, gc warning lines, lint violation lines), test `runDiagnostics` with mocked `runCommand`, test `--only` filtering, `--skip` filtering, overlap (skip wins).
+- [x] Done when: All parse functions accurately count issues from realistic command output. `runDiagnostics` applies filters correctly.
 
 ### Task 5: Prompt template (`prompts.ts`)
 

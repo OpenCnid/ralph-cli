@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../src/commands/heal/diagnostics.js', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../src/commands/heal/diagnostics.js')>();
-  return { ...mod };
-});
-
 import {
+  diagnosticRuntime,
   parseDoctorOutput,
   parseGradeOutput,
   parseGcOutput,
@@ -113,66 +109,48 @@ describe('parseLintOutput', () => {
   });
 });
 
-// ─── runDiagnostics ───────────────────────────────────────────────────────────
-
-// We test runDiagnostics by mocking runCommand at module level
-vi.mock('../src/commands/heal/diagnostics.js', async () => {
-  // We'll override runCommand in each test via module-level mock
-  const actual = await vi.importActual<typeof import('../src/commands/heal/diagnostics.js')>(
-    '../src/commands/heal/diagnostics.js',
-  );
-  return {
-    ...actual,
-    runCommand: vi.fn(),
-  };
-});
-
 describe('runDiagnostics', () => {
   beforeEach(() => {
-    vi.resetModules();
+    vi.restoreAllMocks();
   });
 
   it('runs all commands and parses results', async () => {
-    const { runDiagnostics: rd, runCommand } = await import('../src/commands/heal/diagnostics.js');
-    const mockRunCommand = vi.mocked(runCommand);
+    const mockRunCommand = vi.spyOn(diagnosticRuntime, 'runCommand');
     mockRunCommand
       .mockResolvedValueOnce({ output: '✗ Missing AGENTS.md', exitCode: 1 })
       .mockResolvedValueOnce({ output: 'Overall grade D\n', exitCode: 1 });
 
-    const results = await rd(['ralph doctor', 'ralph grade --ci'], {});
+    const results = await runDiagnostics(['ralph doctor', 'ralph grade --ci'], {});
     expect(results).toHaveLength(2);
     expect(results[0]).toMatchObject({ command: 'ralph doctor', issues: 1, exitCode: 1 });
     expect(results[1]).toMatchObject({ command: 'ralph grade --ci', issues: 1, exitCode: 1 });
   });
 
   it('applies --only filter', async () => {
-    const { runDiagnostics: rd, runCommand } = await import('../src/commands/heal/diagnostics.js');
-    const mockRunCommand = vi.mocked(runCommand);
+    const mockRunCommand = vi.spyOn(diagnosticRuntime, 'runCommand');
     mockRunCommand.mockResolvedValueOnce({ output: '✗ issue', exitCode: 1 });
 
-    const results = await rd(['ralph doctor', 'ralph grade --ci', 'ralph gc'], { only: 'doctor' });
+    const results = await runDiagnostics(['ralph doctor', 'ralph grade --ci', 'ralph gc'], { only: 'doctor' });
     expect(mockRunCommand).toHaveBeenCalledTimes(1);
     expect(results[0].command).toBe('ralph doctor');
   });
 
   it('applies --skip filter', async () => {
-    const { runDiagnostics: rd, runCommand } = await import('../src/commands/heal/diagnostics.js');
-    const mockRunCommand = vi.mocked(runCommand);
+    const mockRunCommand = vi.spyOn(diagnosticRuntime, 'runCommand');
     mockRunCommand
       .mockResolvedValueOnce({ output: '', exitCode: 0 })
       .mockResolvedValueOnce({ output: '', exitCode: 0 });
 
-    const results = await rd(['ralph doctor', 'ralph grade --ci', 'ralph gc'], { skip: 'grade' });
+    const results = await runDiagnostics(['ralph doctor', 'ralph grade --ci', 'ralph gc'], { skip: 'grade' });
     expect(mockRunCommand).toHaveBeenCalledTimes(2);
     expect(results.map((r) => r.command)).toEqual(['ralph doctor', 'ralph gc']);
   });
 
   it('skip wins when both only and skip match', async () => {
-    const { runDiagnostics: rd, runCommand } = await import('../src/commands/heal/diagnostics.js');
-    const mockRunCommand = vi.mocked(runCommand);
+    const mockRunCommand = vi.spyOn(diagnosticRuntime, 'runCommand');
     mockRunCommand.mockResolvedValueOnce({ output: '', exitCode: 0 });
 
-    const results = await rd(['ralph doctor', 'ralph grade --ci'], {
+    const results = await runDiagnostics(['ralph doctor', 'ralph grade --ci'], {
       only: 'doctor,grade',
       skip: 'grade',
     });
@@ -181,10 +159,9 @@ describe('runDiagnostics', () => {
   });
 
   it('returns empty array when all commands are skipped', async () => {
-    const { runDiagnostics: rd, runCommand } = await import('../src/commands/heal/diagnostics.js');
-    const mockRunCommand = vi.mocked(runCommand);
+    const mockRunCommand = vi.spyOn(diagnosticRuntime, 'runCommand');
 
-    const results = await rd(['ralph doctor'], { skip: 'doctor' });
+    const results = await runDiagnostics(['ralph doctor'], { skip: 'doctor' });
     expect(mockRunCommand).not.toHaveBeenCalled();
     expect(results).toHaveLength(0);
   });
