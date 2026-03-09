@@ -2,7 +2,7 @@
 
 ## Current State
 
-- **Version**: 0.2.0
+- **Version**: 0.2.1
 - **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate
 - **Tests**: 503 across 21 files — all passing
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
@@ -11,6 +11,7 @@
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
 | 0.2.0 | 2026-03-09 | `ralph run` autonomous build loop — agent abstraction, prompt engine, checkpoint, auto-detect, 80+ tests |
 | 0.1.1 | 2026-03-08 | Interactive init/doctor/ref, prompt utils, grade crash fix, GC orphan fix, custom YAML autofix, README + AGENTS.md |
 | 0.0.28–0.0.32 | 2026-03-07 | GC git context, config schema rename (`files`→`rules`), direction field, script rules, trend reasons, spec alignment |
@@ -330,11 +331,11 @@ Resolves spec items 2d, 2e.
 
 ### Task 8: Version bump + CHANGELOG
 
-- [ ] Bump `package.json` version from `0.2.0` to `0.2.1`.
-- [ ] Add v0.2.1 section to `CHANGELOG.md` summarising: per-domain docs (12 domains), GC drift resolved (5 items), version bump.
-- [ ] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.2.1`, add `0.2.1` row to Release History.
-- [ ] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
-- [ ] Done when: `ralph --version` prints `0.2.1`. CHANGELOG has a v0.2.1 entry. All validation passes.
+- [x] Bump `package.json` version from `0.2.0` to `0.2.1`.
+- [x] Add v0.2.1 section to `CHANGELOG.md` summarising: per-domain docs (12 domains), GC drift resolved (5 items), version bump.
+- [x] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.2.1`, add `0.2.1` row to Release History.
+- [x] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
+- [x] Done when: `ralph --version` prints `0.2.1`. CHANGELOG has a v0.2.1 entry. All validation passes.
 
 ### Dependency Graph
 

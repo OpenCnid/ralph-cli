@@ -2,6 +2,49 @@
 
 All notable changes to ralph-cli are documented here. Reverse chronological.
 
+## [0.2.1] — 2026-03-09
+
+Spec: `docs/product-specs/dogfood-v0.2.1.md`. 8 tasks (dogfood cleanup).
+
+### Added
+
+- **Per-domain design docs** for all 12 domains (`config`, `run`, `init`, `lint`, `grade`, `gc`, `doctor`, `plan`, `promote`, `ref`, `hooks`, `ci`). Each domain now has three doc files: `{path}/DESIGN.md`, `docs/design-docs/{domain}.md`, `docs/design-docs/{domain}/DESIGN.md`. Each covers Purpose, Usage, Config, Architecture, and Design Decisions.
+- **`run` domain** added to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it.
+
+### Fixed
+
+- **GC false positives resolved**: Added inline comment to `src/config/loader.ts` explaining safe optional chaining. Added boundary comment to `src/utils/output.ts` explaining intentional `console.log` usage. Added `vitest.config.ts` to `gc.exclude` list.
+- **Null-checking migration**: Migrated `=== null` / `!== null` checks to `??=` and `?.` where safe across `src/commands/config-validate.ts` and `src/commands/gc/scanners.ts`.
+
+### Stats
+
+- 503 tests across 21 files — all passing.
+- `ralph grade`: every domain scores A on docs dimension.
+- `ralph gc`: 0 persistent drift items.
+
+---
+
+## [0.2.0] — 2026-03-09
+
+Spec: `docs/product-specs/ralph-run.md`. 13 tasks.
+
+### Added
+
+- **`ralph run` command**: Autonomous build loop. Spawns a configurable coding agent, generates prompts, commits per iteration, and loops until done or interrupted.
+- **Agent abstraction** (`src/commands/run/agent.ts`): `spawnAgent()` with stdin piping, timeout via `AbortController`, 4-tier `resolveAgent()` (CLI flag → phase-specific → default → preset), `AGENT_PRESETS` for known CLIs, `injectModel()`.
+- **Prompt engine** (`src/commands/run/prompts.ts`): `PLAN_TEMPLATE` and `BUILD_TEMPLATE` with 11 template variables (`{project_name}`, `{src_path}`, `{specs_path}`, `{date}`, `{test_command}`, `{typecheck_command}`, `{validate_command}`, `{skip_tasks}`, `{language}`, `{framework}`, `{project_path}`). Custom file templates supported via config.
+- **Auto-detection** (`src/commands/run/detect.ts`): `detectTestCommand()`, `detectTypecheckCommand()`, `detectSourcePath()`, `composeValidateCommand()`, `detectCompletedTask()`, `normalizePlanContent()`.
+- **Checkpoint persistence** (`src/commands/run/progress.ts`): Round-trip to `.ralph/run-checkpoint.json`. Version-mismatch handling. Banner, iteration header/summary, final summary display functions. `formatDuration()`.
+- **Config schema** (`RunConfig`, `AgentConfig`, `PromptsConfig`, `LoopConfig`, `ValidationConfig`, `GitConfig`): Full defaults table from spec. Merged in `mergeWithDefaults()`.
+- **Config validation**: All `run.*` sub-keys validated with type checks and range checks.
+- **CLI**: `ralph run [mode]` with `--max`, `--agent`, `--model`, `--dry-run`, `--no-commit`, `--no-push`, `--resume`, `--verbose`.
+
+### Stats
+
+- 503 tests across 21 files — all passing.
+
+---
+
 ## [0.1.1] — 2026-03-08
 
 Spec: `docs/product-specs/v0.1.1-patch.md`. 7 items (P0–P6).
