@@ -89,6 +89,7 @@ export function validate(raw: unknown): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  // typeof null === 'object' in JS, so === null checks are required alongside typeof checks — not candidates for ?? migration
   if (raw === null || raw === undefined || typeof raw !== 'object') {
     errors.push('Config must be a YAML object. Fix: ensure the file starts with `project:` key.');
     return { errors, warnings };
