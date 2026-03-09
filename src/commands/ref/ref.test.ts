@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { refAddCommand, refListCommand, refRemoveCommand, refDiscoverCommand } from './index.js';
+import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand, refDiscoverCommand } from './index.js';
 import * as prompt from '../../utils/prompt.js';
 
 function captureOutput(fn: () => void): string[] {
@@ -212,6 +212,97 @@ describe('ref commands', () => {
       const totalLine = lines.find(l => l.includes('Total:'));
       expect(totalLine).toBeDefined();
       expect(totalLine).toContain('KB /');
+    });
+  });
+
+  describe('refUpdateCommand', () => {
+    it('reports error when references directory does not exist', async () => {
+      rmSync(join(tempDir, 'docs', 'references'), { recursive: true, force: true });
+      const lines: string[] = [];
+      vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+
+      await refUpdateCommand();
+
+      expect(lines.some(l => l.includes('No references directory found'))).toBe(true);
+    });
+
+    it('reports no updates when no HTTP-sourced files exist', async () => {
+      writeFileSync(
+        join(tempDir, 'docs', 'references', 'local-llms.txt'),
+        '<!-- ralph-ref: source=local-file.txt fetched=2026-01-01 -->\nLocal content',
+      );
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+
+      await refUpdateCommand();
+
+      expect(lines.some(l => l.includes('No references were updated'))).toBe(true);
+    });
+
+    it('rewrites file with new content and updated fetch date on success', async () => {
+      const refPath = join(tempDir, 'docs', 'references', 'example-llms.txt');
+      writeFileSync(refPath, '<!-- ralph-ref: source=https://example.com/llms.txt fetched=2026-01-01 -->\nOld content');
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('New content', { status: 200 }));
+
+      await refUpdateCommand();
+
+      const updated = readFileSync(refPath, 'utf-8');
+      expect(updated).toContain('New content');
+      expect(updated).not.toContain('Old content');
+      // Date should be updated to today
+      const today = new Date().toISOString().split('T')[0]!;
+      expect(updated).toContain(`fetched=${today}`);
+      expect(updated).toContain('source=https://example.com/llms.txt');
+    });
+
+    it('only updates matching file when name argument is provided', async () => {
+      const refsDir = join(tempDir, 'docs', 'references');
+      writeFileSync(
+        join(refsDir, 'alpha-llms.txt'),
+        '<!-- ralph-ref: source=https://alpha.com/llms.txt fetched=2026-01-01 -->\nAlpha old',
+      );
+      writeFileSync(
+        join(refsDir, 'beta-llms.txt'),
+        '<!-- ralph-ref: source=https://beta.com/llms.txt fetched=2026-01-01 -->\nBeta old',
+      );
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('New content', { status: 200 }));
+
+      await refUpdateCommand('alpha');
+
+      const alpha = readFileSync(join(refsDir, 'alpha-llms.txt'), 'utf-8');
+      const beta = readFileSync(join(refsDir, 'beta-llms.txt'), 'utf-8');
+      expect(alpha).toContain('New content');
+      expect(beta).toContain('Beta old');
+    });
+
+    it('warns and does not modify file when fetch returns non-OK status', async () => {
+      const refPath = join(tempDir, 'docs', 'references', 'example-llms.txt');
+      const originalContent = '<!-- ralph-ref: source=https://example.com/llms.txt fetched=2026-01-01 -->\nOriginal content';
+      writeFileSync(refPath, originalContent);
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404, statusText: 'Not Found' }));
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+
+      await refUpdateCommand();
+
+      const content = readFileSync(refPath, 'utf-8');
+      expect(content).toBe(originalContent);
+      expect(lines.some(l => l.includes('Failed to update') && l.includes('404'))).toBe(true);
+    });
+
+    it('warns and does not modify file when fetch throws', async () => {
+      const refPath = join(tempDir, 'docs', 'references', 'example-llms.txt');
+      const originalContent = '<!-- ralph-ref: source=https://example.com/llms.txt fetched=2026-01-01 -->\nOriginal content';
+      writeFileSync(refPath, originalContent);
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network failure'));
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+
+      await refUpdateCommand();
+
+      const content = readFileSync(refPath, 'utf-8');
+      expect(content).toBe(originalContent);
+      expect(lines.some(l => l.includes('Failed to update') && l.includes('Network failure'))).toBe(true);
     });
   });
 });

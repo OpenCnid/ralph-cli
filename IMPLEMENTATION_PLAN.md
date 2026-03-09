@@ -385,7 +385,7 @@ Expected: all tests pass, doctor 10/10, every domain A on docs dimension, `ralph
 
 ### Task 2: Add tests for `refUpdateCommand`
 
-- [ ] Add tests for `refUpdateCommand` in `src/commands/ref/ref.test.ts`.
+- [x] Add tests for `refUpdateCommand` in `src/commands/ref/ref.test.ts`.
   - No references directory → error message, returns without crash.
   - References directory with no HTTP-sourced files → reports "No references were updated."
   - A file with an HTTP source URL → mock `fetch`, verify file content is rewritten with new content and updated `fetched=` date.

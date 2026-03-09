@@ -14,7 +14,7 @@ Last updated: 2026-03-09
 | init | B | A | A | A | A | **B** |
 | plan | B | A | A | A | A | **B** |
 | promote | B | A | A | A | A | **B** |
-| ref | D | A | A | A | A | **D** |
+| ref | C | A | A | A | A | **C** |
 | hooks | B | A | A | A | A | **B** |
 | ci | B | A | A | A | A | **B** |
 | run | B | A | A | A | A | **B** |
@@ -96,12 +96,12 @@ Last updated: 2026-03-09
 
 ### ref
 
-- **Tests**: D — 43% line coverage
+- **Tests**: C — 62% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 364 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: D
+- **Overall**: C
 
 ### hooks
 
@@ -132,7 +132,7 @@ Last updated: 2026-03-09
 
 ### ralph-cli
 
-- **Tests**: B — 84% line coverage
+- **Tests**: B — 86% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 179 lines, no oversized files
@@ -189,12 +189,12 @@ Last updated: 2026-03-09
 - promote/fileHealth: A (stable) — Avg 230 lines, no oversized files
 - promote/staleness: A (stable) — Median 0d since last change
 - promote/overall: B (stable)
-- ref/tests: D (stable) — 43% line coverage
+- ref/tests: C (stable) — 62% line coverage
 - ref/docs: A (stable) — 3/3 domain documentation files present
 - ref/architecture: A (stable) — No architectural violations
 - ref/fileHealth: A (stable) — Avg 364 lines, no oversized files
 - ref/staleness: A (stable) — Median 0d since last change
-- ref/overall: D (stable)
+- ref/overall: C (stable)
 - hooks/tests: B (stable) — 80% line coverage
 - hooks/docs: A (stable) — 3/3 domain documentation files present
 - hooks/architecture: A (stable) — No architectural violations
@@ -213,7 +213,7 @@ Last updated: 2026-03-09
 - run/fileHealth: A (stable) — Avg 156 lines, no oversized files
 - run/staleness: A (stable) — Median 0d since last change
 - run/overall: B (stable)
-- ralph-cli/tests: B (stable) — 84% line coverage
+- ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
 - ralph-cli/fileHealth: A (stable) — Avg 179 lines, no oversized files
@@ -222,4 +222,3 @@ Last updated: 2026-03-09
 
 ## Action Items
 
-- [ ] ref: Improve test coverage (currently 43% line coverage)
