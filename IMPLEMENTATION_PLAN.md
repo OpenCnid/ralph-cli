@@ -4,7 +4,7 @@
 
 - **Version**: 0.2.2
 - **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate. `ralph review` not yet started.
-- **Tests**: 528 across 21 files — all passing
+- **Tests**: 524 across 21 files — all passing
 - **Next**: v0.3.0 (`ralph review`)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
