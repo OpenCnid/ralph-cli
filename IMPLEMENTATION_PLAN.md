@@ -475,12 +475,12 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 5: Review prompt template (`prompts.ts`)
 
-- [ ] Create `src/commands/review/prompts.ts`.
-- [ ] Define `REVIEW_TEMPLATE` string constant matching the spec's prompt template exactly (all 6 sections: project context, architecture, specs, rules, diff stat, diff, review instructions).
-- [ ] `generateReviewPrompt(context: ReviewContext, options: { diffOnly: boolean }): string` — substitute all template variables: `{project_name}`, `{architecture_content}`, `{specs_content}`, `{rules_content}`, `{diff_stat}`, `{diff_content}`. When `diffOnly`, omit architecture/specs/rules sections.
-- [ ] Files: `src/commands/review/prompts.ts`
-- [ ] Tests: `tests/review-prompts.test.ts` — all variables substituted, `--diff-only` excludes context sections, template matches spec structure.
-- [ ] Done when: `generateReviewPrompt()` produces a complete prompt with all variables filled.
+- [x] Create `src/commands/review/prompts.ts`.
+- [x] Define `REVIEW_TEMPLATE` string constant matching the spec's prompt template exactly (all 6 sections: project context, architecture, specs, rules, diff stat, diff, review instructions).
+- [x] `generateReviewPrompt(context: ReviewContext, options: { diffOnly: boolean }): string` — substitute all template variables: `{project_name}`, `{architecture_content}`, `{specs_content}`, `{rules_content}`, `{diff_stat}`, `{diff_content}`. When `diffOnly`, omit architecture/specs/rules sections.
+- [x] Files: `src/commands/review/prompts.ts`
+- [x] Tests: `tests/review-prompts.test.ts` — all variables substituted, `--diff-only` excludes context sections, template matches spec structure.
+- [x] Done when: `generateReviewPrompt()` produces a complete prompt with all variables filled.
 
 ### Task 6: Command entry point (`index.ts`)
 
