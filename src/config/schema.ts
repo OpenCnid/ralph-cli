@@ -146,6 +146,13 @@ export interface ReviewConfig {
   output: ReviewOutputConfig;
 }
 
+export interface HealConfig {
+  agent: AgentConfig | null;
+  commands: string[];
+  'auto-commit': boolean;
+  'commit-prefix': string;
+}
+
 export interface RalphConfig {
   project: ProjectConfig;
   runner?: RunnerConfig | undefined;
@@ -158,6 +165,7 @@ export interface RalphConfig {
   ci?: CiOverrides | undefined;
   run?: RunConfig | undefined;
   review?: ReviewConfig | undefined;
+  heal?: HealConfig | undefined;
 }
 
 /**
@@ -210,5 +218,11 @@ export interface RawRalphConfig {
     scope: 'staged' | 'commit' | 'range' | 'working';
     context: Partial<ReviewContextConfig>;
     output: Partial<ReviewOutputConfig>;
+  }>;
+  heal?: Partial<{
+    agent: Partial<AgentConfig> | null;
+    commands: string[];
+    'auto-commit': boolean;
+    'commit-prefix': string;
   }>;
 }

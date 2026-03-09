@@ -1,4 +1,4 @@
-import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
+import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -91,6 +91,13 @@ export const DEFAULT_RUN: RunConfig = {
   loop: DEFAULT_LOOP,
   validation: DEFAULT_VALIDATION,
   git: DEFAULT_GIT,
+};
+
+export const DEFAULT_HEAL: HealConfig = {
+  agent: null,
+  commands: ['doctor', 'grade', 'gc', 'lint'],
+  'auto-commit': true,
+  'commit-prefix': 'ralph: heal',
 };
 
 export const DEFAULT_REVIEW: ReviewConfig = {

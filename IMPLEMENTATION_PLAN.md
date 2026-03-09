@@ -2,16 +2,17 @@
 
 ## Current State
 
-- **Version**: 0.2.2
-- **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate. `ralph review` not yet started.
-- **Tests**: 524 across 21 files — all passing
-- **Next**: v0.3.0 (`ralph review`)
+- **Version**: 0.2.1 (package.json — v0.2.2 and v0.3.0 completed but version not yet bumped)
+- **Commands**: All 12 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review) + config validate. `ralph heal` not yet started.
+- **Tests**: 627 across 26 files — all passing
+- **Next**: v0.4.0 (`ralph heal`)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.3.0 | 2026-03-09 | `ralph review` agent-powered code review — diff extraction, context assembly, prompt engine, output formats (text/json/markdown), agent reuse from run |
 | 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
 | 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
 | 0.2.0 | 2026-03-09 | `ralph run` autonomous build loop — agent abstraction, prompt engine, checkpoint, auto-detect, 80+ tests |
@@ -41,6 +42,7 @@ Full details → `CHANGELOG.md`
 | `ralph ci` | ✅ Complete (GitHub Actions + GitLab CI, caching) | 5+ |
 | `config validate` | ✅ Complete (all sections, nested keys, type checks) | 27+ |
 | `ralph run` | ✅ Complete (plan/build modes, agent abstraction, checkpoint, auto-detect) | 80+ |
+| `ralph review` | ✅ Complete (diff extraction, context assembly, prompt, output formats) | 42+ |
 
 ## Deferred Items
 
@@ -538,3 +540,147 @@ After all tasks:
 npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
 ```
 Expected: all tests pass, doctor 10/10, `ralph review` command functional, all acceptance criteria from spec satisfied.
+
+---
+
+## v0.4.0 — `ralph heal` (Automated Self-Repair)
+
+**Spec:** `docs/product-specs/ralph-heal.md`
+**Goal:** Run ralph's own diagnostics, feed failures to a coding agent, commit the fixes — automated self-repair.
+
+**Baseline:** v0.3.0 complete. 627 tests passing. Doctor 10/10. `ralph grade --ci` exits 0. No `src/commands/heal/` directory exists.
+
+### Task 1: Config schema + defaults for `HealConfig`
+
+Add `HealConfig` and supporting types to the config system.
+
+- [x] Add `HealConfig` interface to `src/config/schema.ts`: `{ agent: AgentConfig | null, commands: string[], 'auto-commit': boolean, 'commit-prefix': string }`. Add `heal?: HealConfig | undefined` to `RalphConfig` and corresponding partial to `RawRalphConfig`.
+- [x] Add `DEFAULT_HEAL` to `src/config/defaults.ts` with defaults: `agent: null`, `commands: ['doctor', 'grade', 'gc', 'lint']`, `auto-commit: true`, `commit-prefix: 'ralph: heal'`.
+- [x] Add `heal` merge to `mergeWithDefaults()` in `src/config/loader.ts` (same pattern as `run` and `review`).
+- [x] Files: `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/loader.ts`
+- [x] Tests: Add to `tests/config.test.ts` — `loadConfig()` returns fully-populated `heal` field when absent, partially specified, and fully specified. Verify `heal.agent` null handling.
+- [x] Done when: `loadConfig()` returns a `RalphConfig` with a fully-populated `heal` field. All existing tests pass.
+
+### Task 2: Config validation for `heal.*` fields
+
+Add validation for all `heal.*` fields to the validator.
+
+- [ ] Add `'heal'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
+- [ ] Validate: `heal.agent` (null or valid AgentConfig), `heal.commands` (array of strings, each one of `doctor`/`grade`/`gc`/`lint`), `heal.auto-commit` (boolean), `heal.commit-prefix` (non-empty string).
+- [ ] Warn on unknown keys within `heal.*` sub-objects.
+- [ ] Files: `src/config/validate.ts`
+- [ ] Tests: Add to `tests/config.test.ts` — valid heal config passes, invalid `heal.commands` entry errors, invalid `heal.auto-commit` type errors, unknown keys produce warnings.
+- [ ] Done when: `ralph config validate` validates all `heal.*` fields per spec.
+
+### Task 3: Heal types (`types.ts`)
+
+Define types used by all heal modules.
+
+- [ ] Create `src/commands/heal/types.ts`.
+- [ ] Re-export `HealConfig` from `src/config/schema.ts`.
+- [ ] Define `HealOptions`: `{ agent?: string | undefined, model?: string | undefined, only?: string | undefined, skip?: string | undefined, dryRun?: boolean | undefined, noCommit?: boolean | undefined, verbose?: boolean | undefined }`.
+- [ ] Define `DiagnosticResult`: `{ command: string, issues: number, output: string, exitCode: number }`.
+- [ ] Define `HealContext`: `{ diagnostics: DiagnosticResult[], totalIssues: number, projectName: string }`.
+- [ ] Files: `src/commands/heal/types.ts`
+- [ ] Tests: None (type-only). Verified by TypeScript compilation.
+- [ ] Done when: `npx tsc --noEmit` passes with new types.
+
+### Task 4: Diagnostics module (`diagnostics.ts`)
+
+Run ralph diagnostic commands and parse their output into issue counts.
+
+- [ ] Create `src/commands/heal/diagnostics.ts`.
+- [ ] `runCommand(cmd: string): Promise<{ output: string, exitCode: number }>` — spawn command, capture stdout+stderr, return both.
+- [ ] `parseDoctorOutput(output: string): number` — count lines starting with `✗` (check failures).
+- [ ] `parseGradeOutput(output: string): number` — count occurrences of `F` or `D` grade labels in output.
+- [ ] `parseGcOutput(output: string): number` — count lines starting with `⚠`.
+- [ ] `parseLintOutput(output: string): number` — count violation lines (lines containing "violation" or non-zero counts from summary).
+- [ ] `runDiagnostics(commands: string[], options: { only?: string, skip?: string }): Promise<DiagnosticResult[]>` — resolve effective command list (apply `--only` and `--skip` filtering; skip wins if both match), run each command, parse issues.
+- [ ] Files: `src/commands/heal/diagnostics.ts`
+- [ ] Tests: `tests/heal-diagnostics.test.ts` — test each parse function with realistic fixture output (doctor failure lines, grade D/F lines, gc warning lines, lint violation lines), test `runDiagnostics` with mocked `runCommand`, test `--only` filtering, `--skip` filtering, overlap (skip wins).
+- [ ] Done when: All parse functions accurately count issues from realistic command output. `runDiagnostics` applies filters correctly.
+
+### Task 5: Prompt template (`prompts.ts`)
+
+Template for the heal agent prompt.
+
+- [ ] Create `src/commands/heal/prompts.ts`.
+- [ ] Define `HEAL_TEMPLATE` string constant: includes project context (`{project_name}`, `{project_path}`, `{date}`), diagnostic output (`{diagnostics_output}`), validate command (`{validate_command}`), and instructions (read output carefully, make minimal changes, don't lower quality bars, don't refactor unrelated code, run failing command after each fix to verify; fix priority: doctor > lint > gc > grade).
+- [ ] `generateHealPrompt(context: HealContext, validateCommand: string, projectPath: string, date: string): string` — substitute all template variables.
+- [ ] Files: `src/commands/heal/prompts.ts`
+- [ ] Tests: `tests/heal-prompts.test.ts` — all variables substituted, template contains priority instructions, `{diagnostics_output}` includes per-command sections.
+- [ ] Done when: `generateHealPrompt()` returns a complete prompt string with all variables filled.
+
+### Task 6: Command entry point (`index.ts`)
+
+Orchestrate the full heal workflow.
+
+- [ ] Create `src/commands/heal/index.ts`.
+- [ ] `healCommand(options: HealOptions): Promise<void>` implementing the spec's 10-step command flow:
+  1. Load config
+  2. Run diagnostics (applying `--only`/`--skip` from options)
+  3. If total issues = 0: print "All clear" and exit 0
+  4. Print diagnostic summary (per-command issue count + total)
+  5. If `--dry-run`: generate prompt, print to stdout, exit 0
+  6. Resolve agent (CLI flag `--agent` → `config.heal.agent` → `config.run.agent` → AGENT_PRESETS) using `resolveAgent` from `../run/agent.js`
+  7. Generate prompt via `generateHealPrompt` and spawn agent via `spawnAgent` from `../run/agent.js`
+  8. If `config.heal.auto-commit` and not `--no-commit` and git changes exist: commit with `config.heal.commit-prefix`
+  9. Re-run diagnostics
+  10. If remaining issues > 0: report count; else: print "All issues resolved"
+- [ ] Use `detectTestCommand`, `detectTypecheckCommand`, `composeValidateCommand` from `../run/detect.js` for the `{validate_command}` in the prompt.
+- [ ] Edge cases: no git repo (skip commit step without error), agent not installed (error before spawn), diagnostic command fails to execute (warn and skip that command), all diagnostics pass (exit 0 after step 3).
+- [ ] Files: `src/commands/heal/index.ts`
+- [ ] Tests: `tests/heal.test.ts` — mock `spawnAgent`, `runCommand`, git operations. Test: all diagnostics pass → exits clean; doctor only has issues → agent spawned with doctor output; multiple failures → all included in prompt; `--dry-run` prints prompt without spawning; `--only doctor` limits to doctor command; `--skip grade` skips grade; `--no-commit` skips git; agent spawned with correct args; re-run diagnostics after fix; remaining issues reported.
+- [ ] Done when: All heal scenarios pass. `ralph heal --dry-run` works end-to-end.
+
+### Task 7: CLI registration
+
+Wire `ralph heal` into the commander CLI.
+
+- [ ] Add `import { healCommand } from './commands/heal/index.js'` to `src/cli.ts`.
+- [ ] Register `ralph heal` with all options: `--agent <cli>`, `--model <model>`, `--only <cmds>`, `--skip <cmds>`, `--dry-run`, `--no-commit`, `--verbose`.
+- [ ] Files: `src/cli.ts`
+- [ ] Tests: Verify `ralph heal --help` shows correct usage. Verify option parsing via commander parse.
+- [ ] Done when: `ralph heal`, `ralph heal --dry-run`, and all option combinations parse correctly and invoke `healCommand`.
+
+### Task 8: ARCHITECTURE.md update + domain docs for `heal`
+
+- [ ] Add `heal` domain row to ARCHITECTURE.md domain table: `heal | src/commands/heal | Automated self-repair (diagnostics, prompt, agent-driven fixes)`.
+- [ ] Document cross-command import exceptions: `heal/index.ts` imports from `run/agent.ts` and `run/detect.ts`.
+- [ ] Create `src/commands/heal/DESIGN.md`, `docs/design-docs/heal.md`, `docs/design-docs/heal/DESIGN.md` — each 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions (at least 2).
+- [ ] Add `heal` domain to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it.
+- [ ] Files: `ARCHITECTURE.md`, `.ralph/config.yml`, 3 new doc files.
+- [ ] Tests: Verify `ralph doctor --ci` still passes. Verify `ralph grade` shows A for `heal` docs dimension.
+- [ ] Done when: ARCHITECTURE.md updated. `ralph doctor` passes. `ralph grade --ci` exits 0.
+
+### Task 9: Version bump + CHANGELOG
+
+- [ ] Bump `package.json` version to `0.4.0`.
+- [ ] Add v0.4.0 section to `CHANGELOG.md` summarising: ralph heal command (automated self-repair via diagnostics + agent), 9 tasks, test count.
+- [ ] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.4.0`, commands → 13, add `0.4.0` row to Release History, add `ralph heal` row to Command Status table.
+- [ ] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
+- [ ] Done when: `ralph --version` prints `0.4.0`. CHANGELOG has a v0.4.0 entry. All validation passes.
+
+### Dependency Graph
+
+```
+Task 1 (schema/defaults/loader)
+  └→ Task 2 (validation)
+  └→ Task 3 (types.ts)
+       └→ Task 4 (diagnostics.ts)
+       └→ Task 5 (prompts.ts)
+            └→ Task 6 (index.ts — uses diagnostics + prompts + agent)
+                 └→ Task 7 (CLI registration)
+                 └→ Task 8 (ARCHITECTURE.md + domain docs)
+                      └→ Task 9 (version bump + CHANGELOG)
+```
+
+Tasks 1 → 3 sequential. Tasks 4 and 5 parallel once 3 is done. Task 6 needs 4+5. Tasks 7 and 8 parallel once 6 is done. Task 9 is last.
+
+### Validation
+
+After all tasks:
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: all tests pass, doctor 10/10, `ralph heal` command functional, all acceptance criteria from spec satisfied.

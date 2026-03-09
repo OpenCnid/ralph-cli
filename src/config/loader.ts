@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW } from './defaults.js';
+import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -179,6 +179,20 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
         file: raw.review?.output?.file ?? DEFAULT_REVIEW.output.file,
         'severity-threshold': raw.review?.output?.['severity-threshold'] ?? DEFAULT_REVIEW.output['severity-threshold'],
       },
+    },
+    heal: {
+      agent: raw.heal?.agent === null
+        ? null
+        : raw.heal?.agent !== undefined
+          ? {
+              cli: raw.heal.agent.cli ?? DEFAULT_RUN.agent.cli,
+              args: raw.heal.agent.args ?? DEFAULT_RUN.agent.args,
+              timeout: raw.heal.agent.timeout ?? DEFAULT_RUN.agent.timeout,
+            }
+          : DEFAULT_HEAL.agent,
+      commands: raw.heal?.commands ?? DEFAULT_HEAL.commands,
+      'auto-commit': raw.heal?.['auto-commit'] ?? DEFAULT_HEAL['auto-commit'],
+      'commit-prefix': raw.heal?.['commit-prefix'] ?? DEFAULT_HEAL['commit-prefix'],
     },
   };
 
