@@ -189,11 +189,9 @@ function scoreTestCoverageForDomain(projectRoot: string, config: RalphConfig, do
     }
 
     // Auto-detect fallback
-    if (pct === null) {
-      pct = parseLcovForDomain(content, domainPath) ?? parseGoCoverageForDomain(content, domainPath);
-    }
+    pct ??= parseLcovForDomain(content, domainPath) ?? parseGoCoverageForDomain(content, domainPath);
 
-    if (pct !== null) {
+    if (typeof pct === 'number') {
       return { grade: gradeFromPercentage(pct), detail: `${pct}% line coverage` };
     }
   } catch { /* ignore */ }
@@ -360,20 +358,18 @@ function scoreTestCoverage(projectRoot: string, config: RalphConfig): DimensionS
     const tool = config.quality.coverage.tool;
     if (tool === 'vitest' || tool === 'jest') {
       pct = parseLcov(content);
-      if (pct === null) pct = parseCoberturaXml(content); // fallback
+      pct ??= parseCoberturaXml(content); // fallback
     } else if (tool === 'pytest') {
       pct = parseCoberturaXml(content);
-      if (pct === null) pct = parseLcov(content); // fallback
+      pct ??= parseLcov(content); // fallback
     } else if (tool === 'go-test') {
       pct = parseGoCoverage(content);
     }
 
     // Auto-detect if tool-specific parsing failed
-    if (pct === null) {
-      pct = parseLcov(content) ?? parseCoberturaXml(content) ?? parseGoCoverage(content);
-    }
+    pct ??= parseLcov(content) ?? parseCoberturaXml(content) ?? parseGoCoverage(content);
 
-    if (pct !== null) {
+    if (typeof pct === 'number') {
       return { grade: gradeFromPercentage(pct), detail: `${pct}% line coverage` };
     }
   } catch { /* ignore */ }

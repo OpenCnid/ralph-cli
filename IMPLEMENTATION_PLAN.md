@@ -322,11 +322,11 @@ Resolves spec items 2a, 2b, 2c.
 
 Resolves spec items 2d, 2e.
 
-- [ ] Identify all files using explicit `=== null` or `!== null` checks (reported by `ralph gc`).
-- [ ] For each occurrence, determine if migration to nullish coalescing (`??`) or optional chaining (`?.`) is safe. Migrate where safe. Where null/undefined distinction matters (`exactOptionalPropertyTypes`), add a brief comment: `// null and undefined are distinct here`.
-- [ ] Regression test: `npm test && npx tsc --noEmit` must pass after all changes.
-- [ ] Files: `src/commands/config-validate.ts`, `src/commands/gc/scanners.ts`, and any other affected files identified by `ralph gc`.
-- [ ] Done when: `ralph gc` no longer reports pattern inconsistency for null-checking. All tests pass.
+- [x] Identify all files using explicit `=== null` or `!== null` checks (reported by `ralph gc`).
+- [x] For each occurrence, determine if migration to nullish coalescing (`??`) or optional chaining (`?.`) is safe. Migrate where safe. Where null/undefined distinction matters (`exactOptionalPropertyTypes`), add a brief comment: `// null and undefined are distinct here`.
+- [x] Regression test: `npm test && npx tsc --noEmit` must pass after all changes.
+- [x] Files: `src/commands/config-validate.ts`, `src/commands/gc/scanners.ts`, and any other affected files identified by `ralph gc`.
+- [x] Done when: `ralph gc` no longer reports pattern inconsistency for null-checking. All tests pass.
 
 ### Task 8: Version bump + CHANGELOG
 

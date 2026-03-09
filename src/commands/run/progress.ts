@@ -116,10 +116,10 @@ export function printIterationSummary(
 ): void {
   output.info(`Duration: ${formatDuration(result.durationMs)}`);
   output.info(`Exit code: ${result.exitCode}`);
-  if (task !== null) {
+  if (task !== null) { // null and undefined are distinct: null = no task detected this iteration
     output.info(`Task: ${task}`);
   }
-  if (commitHash !== null) {
+  if (commitHash !== null) { // null and undefined are distinct: null = no commit made this iteration
     output.info(`Commit: ${commitHash}`);
   }
 }
@@ -128,6 +128,7 @@ export function printFinalSummary(reason: string, checkpoint: Checkpoint): void 
   const { history } = checkpoint;
   const totalMs = history.reduce((sum, r) => sum + r.durationMs, 0);
 
+  // null and undefined are distinct: commit is string | null (null = iteration made no commit)
   const firstCommit = history.find(r => r.commit !== null)?.commit ?? null;
   const lastCommit = [...history].reverse().find(r => r.commit !== null)?.commit ?? null;
 
@@ -135,7 +136,7 @@ export function printFinalSummary(reason: string, checkpoint: Checkpoint): void 
   output.info(`Total iterations: ${history.length}`);
   output.info(`Duration: ${formatDuration(totalMs)}`);
 
-  if (firstCommit !== null && lastCommit !== null) {
+  if (firstCommit !== null && lastCommit !== null) { // null = no commits in run history
     if (firstCommit === lastCommit) {
       output.info(`Commit: ${firstCommit}`);
     } else {

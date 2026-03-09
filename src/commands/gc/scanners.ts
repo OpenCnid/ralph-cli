@@ -178,7 +178,7 @@ export function scanGoldenPrincipleViolations(projectRoot: string, config: Ralph
       let match: RegExpExecArray | null;
       const violationLines: number[] = [];
 
-      while ((match = pattern.regex.exec(content)) !== null) {
+      while ((match = pattern.regex.exec(content)) !== null) { // standard RegExp.exec loop — null signals end of matches
         const upToMatch = content.slice(0, match.index);
         const lineNum = upToMatch.split('\n').length;
         violationLines.push(lineNum);

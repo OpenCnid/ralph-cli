@@ -118,6 +118,7 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
         args: raw.run?.agent?.args ?? DEFAULT_RUN.agent.args,
         timeout: raw.run?.agent?.timeout ?? DEFAULT_RUN.agent.timeout,
       },
+      // null and undefined are distinct: null = explicitly disabled, undefined = inherit default
       'plan-agent': raw.run?.['plan-agent'] === null
         ? null
         : raw.run?.['plan-agent'] !== undefined
