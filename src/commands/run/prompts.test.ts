@@ -180,6 +180,67 @@ describe('generatePrompt — built-in templates', () => {
   });
 });
 
+describe('template content quality', () => {
+  const PROVIDER_TERMS = ['claude', 'openai', 'anthropic', 'codex', 'gpt'];
+
+  it('PLAN_TEMPLATE contains no provider-specific language', () => {
+    const lower = PLAN_TEMPLATE.toLowerCase();
+    for (const term of PROVIDER_TERMS) {
+      expect(lower).not.toContain(term);
+    }
+  });
+
+  it('BUILD_TEMPLATE contains no provider-specific language', () => {
+    const lower = BUILD_TEMPLATE.toLowerCase();
+    for (const term of PROVIDER_TERMS) {
+      expect(lower).not.toContain(term);
+    }
+  });
+
+  it('PLAN_TEMPLATE mentions gap analysis', () => {
+    expect(PLAN_TEMPLATE.toLowerCase()).toContain('gap analysis');
+  });
+
+  it('PLAN_TEMPLATE mentions IMPLEMENTATION_PLAN.md', () => {
+    expect(PLAN_TEMPLATE).toContain('IMPLEMENTATION_PLAN.md');
+  });
+
+  it('PLAN_TEMPLATE instructs not to implement anything', () => {
+    expect(PLAN_TEMPLATE.toLowerCase()).toMatch(/do not implement|do not implement anything|planning only/i);
+  });
+
+  it('BUILD_TEMPLATE mentions finding next unchecked task', () => {
+    expect(BUILD_TEMPLATE).toContain('[ ]');
+    expect(BUILD_TEMPLATE).toContain('IMPLEMENTATION_PLAN.md');
+  });
+
+  it('BUILD_TEMPLATE instructs to mark task complete', () => {
+    expect(BUILD_TEMPLATE).toContain('[x]');
+  });
+
+  it('BUILD_TEMPLATE instructs to run validate command and fix failures', () => {
+    expect(BUILD_TEMPLATE).toContain('{validate_command}');
+    expect(BUILD_TEMPLATE.toLowerCase()).toMatch(/fix.*fail|fail.*fix/i);
+  });
+
+  it('BUILD_TEMPLATE instructs one task per iteration', () => {
+    expect(BUILD_TEMPLATE.toLowerCase()).toMatch(/one task|do not work on more than one/i);
+  });
+
+  it('plan template generated prompt mentions gap analysis', () => {
+    const config = baseConfig();
+    const result = generatePrompt('plan', config);
+    expect(result.toLowerCase()).toContain('gap analysis');
+  });
+
+  it('build template generated prompt mentions IMPLEMENTATION_PLAN.md unchecked task', () => {
+    const config = baseConfig();
+    const result = generatePrompt('build', config);
+    expect(result).toContain('IMPLEMENTATION_PLAN.md');
+    expect(result).toContain('[ ]');
+  });
+});
+
 describe('generatePrompt — custom templates', () => {
   it('loads custom plan template from file path', () => {
     const templatePath = join(tempDir, 'plan-template.txt');
