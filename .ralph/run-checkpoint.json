@@ -1,49 +1,28 @@
 {
   "version": 1,
   "phase": "build",
-  "startedAt": "2026-03-09T08:30:09.012Z",
-  "iteration": 6,
+  "startedAt": "2026-03-09T08:35:53.153Z",
+  "iteration": 3,
   "history": [
     {
       "iteration": 1,
-      "durationMs": 182086,
+      "durationMs": 177188,
       "exitCode": 0,
-      "commit": "a00e6af",
+      "commit": "7479e1a",
       "error": null
     },
     {
       "iteration": 2,
-      "durationMs": 236915,
+      "durationMs": 658032,
       "exitCode": 0,
-      "commit": "ec149cb",
+      "commit": "fc7303d",
       "error": null
     },
     {
       "iteration": 3,
-      "durationMs": 104563,
+      "durationMs": 519447,
       "exitCode": 0,
-      "commit": "59c5159",
-      "error": null
-    },
-    {
-      "iteration": 4,
-      "durationMs": 146426,
-      "exitCode": 0,
-      "commit": "539929d",
-      "error": null
-    },
-    {
-      "iteration": 5,
-      "durationMs": 270759,
-      "exitCode": 0,
-      "commit": null,
-      "error": null
-    },
-    {
-      "iteration": 6,
-      "durationMs": 360853,
-      "exitCode": 0,
-      "commit": null,
+      "commit": "4982827",
       "error": null
     }
   ]
