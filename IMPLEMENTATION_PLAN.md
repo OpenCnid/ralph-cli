@@ -464,14 +464,14 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 4: Diff extraction + context assembly (`context.ts`)
 
-- [ ] Create `src/commands/review/context.ts`.
-- [ ] `resolveScope(target: string | undefined, scopeFlag: string | undefined, configScope: string): { gitArgs: string[], scopeLabel: string }` — implement all 6 scope cases from the spec table. Error on `--scope range` with no target.
-- [ ] `extractDiff(gitArgs: string[], contextLines: number): { diff: string, diffStat: string, changedFiles: string[], binaryCount: number }` — run `git diff --unified={n}` and `git diff --stat`, parse changed files from stat output, skip binary files.
-- [ ] `findRelevantSpecs(changedFiles: string[], specsDir: string): string[]` — extract directory names from changed files, fuzzy-match against spec filenames (up to 3 results).
-- [ ] `assembleContext(config: RalphConfig, diff: string, diffStat: string, changedFiles: string[], options: { diffOnly: boolean, maxDiffLines: number }): ReviewContext` — load ARCHITECTURE.md, matched specs, AGENTS.md rules section, truncate diff at maxDiffLines with warning.
-- [ ] Files: `src/commands/review/context.ts`
-- [ ] Tests: `tests/review-context.test.ts` — all 6 scope resolution cases, spec matching (exact, fuzzy, no match), diff truncation at maxDiffLines with warning emitted, binary file count, empty diff detection, not-a-git-repo error.
-- [ ] Done when: All scope resolution + context assembly cases pass tests.
+- [x] Create `src/commands/review/context.ts`.
+- [x] `resolveScope(target: string | undefined, scopeFlag: string | undefined, configScope: string): { gitArgs: string[], scopeLabel: string }` — implement all 6 scope cases from the spec table. Error on `--scope range` with no target.
+- [x] `extractDiff(gitArgs: string[], contextLines: number): { diff: string, diffStat: string, changedFiles: string[], binaryCount: number }` — run `git diff --unified={n}` and `git diff --stat`, parse changed files from stat output, skip binary files.
+- [x] `findRelevantSpecs(changedFiles: string[], specsDir: string): string[]` — extract directory names from changed files, fuzzy-match against spec filenames (up to 3 results).
+- [x] `assembleContext(config: RalphConfig, diff: string, diffStat: string, changedFiles: string[], options: { diffOnly: boolean, maxDiffLines: number }): ReviewContext` — load ARCHITECTURE.md, matched specs, AGENTS.md rules section, truncate diff at maxDiffLines with warning.
+- [x] Files: `src/commands/review/context.ts`
+- [x] Tests: `tests/review-context.test.ts` — all 6 scope resolution cases, spec matching (exact, fuzzy, no match), diff truncation at maxDiffLines with warning emitted, binary file count, empty diff detection, not-a-git-repo error.
+- [x] Done when: All scope resolution + context assembly cases pass tests.
 
 ### Task 5: Review prompt template (`prompts.ts`)
 
