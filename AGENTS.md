@@ -6,6 +6,12 @@
 
 - Build: `npm run build`
 - Test: `npm test`
+- Run (build mode): `ralph run` — spawn agent, implement next task, commit, loop
+- Run (plan mode): `ralph run plan` — spawn agent to generate/update IMPLEMENTATION_PLAN.md
+- Run with max iterations: `ralph run plan --max 3`
+- Override agent: `ralph run --agent codex`
+- Dry run: `ralph run --dry-run` — show prompt without executing
+- Resume from checkpoint: `ralph run --resume`
 - Typecheck: `npx tsc --noEmit`
 - Lint: `npm run lint`
 - Run locally: `node dist/cli.js <command>`
@@ -15,7 +21,7 @@
 
 - `src/cli.ts` — Entry point, command router (commander)
 - `src/commands/<name>/index.ts` — One directory per command
-  - `init/` `lint/` `grade/` `gc/` `doctor/` `plan/` `promote/` `ref/` `hooks/` `ci/`
+  - `init/` `lint/` `grade/` `gc/` `doctor/` `plan/` `promote/` `ref/` `hooks/` `ci/` `run/`
   - `config-validate.ts` — Standalone config validation
 - `src/commands/lint/engine.ts` — Rule framework (built-in + custom)
 - `src/commands/lint/imports.ts` — Import parser

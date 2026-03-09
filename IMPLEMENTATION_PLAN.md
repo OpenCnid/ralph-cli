@@ -36,6 +36,7 @@ Full details → `CHANGELOG.md`
 | `ralph hooks` | ✅ Complete (pre-commit on staged files) | 4+ |
 | `ralph ci` | ✅ Complete (GitHub Actions + GitLab CI, caching) | 5+ |
 | `config validate` | ✅ Complete (all sections, nested keys, type checks) | 27+ |
+| `ralph run` | ✅ Complete (plan/build modes, agent abstraction, checkpoint, auto-detect) | 80+ |
 
 ## Deferred Items
 
