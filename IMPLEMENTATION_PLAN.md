@@ -576,14 +576,14 @@ Add validation for all `heal.*` fields to the validator.
 
 Define types used by all heal modules.
 
-- [ ] Create `src/commands/heal/types.ts`.
-- [ ] Re-export `HealConfig` from `src/config/schema.ts`.
-- [ ] Define `HealOptions`: `{ agent?: string | undefined, model?: string | undefined, only?: string | undefined, skip?: string | undefined, dryRun?: boolean | undefined, noCommit?: boolean | undefined, verbose?: boolean | undefined }`.
-- [ ] Define `DiagnosticResult`: `{ command: string, issues: number, output: string, exitCode: number }`.
-- [ ] Define `HealContext`: `{ diagnostics: DiagnosticResult[], totalIssues: number, projectName: string }`.
-- [ ] Files: `src/commands/heal/types.ts`
-- [ ] Tests: None (type-only). Verified by TypeScript compilation.
-- [ ] Done when: `npx tsc --noEmit` passes with new types.
+- [x] Create `src/commands/heal/types.ts`.
+- [x] Re-export `HealConfig` from `src/config/schema.ts`.
+- [x] Define `HealOptions`: `{ agent?: string | undefined, model?: string | undefined, only?: string | undefined, skip?: string | undefined, dryRun?: boolean | undefined, noCommit?: boolean | undefined, verbose?: boolean | undefined }`.
+- [x] Define `DiagnosticResult`: `{ command: string, issues: number, output: string, exitCode: number }`.
+- [x] Define `HealContext`: `{ diagnostics: DiagnosticResult[], totalIssues: number, projectName: string }`.
+- [x] Files: `src/commands/heal/types.ts`
+- [x] Tests: None (type-only). Verified by TypeScript compilation.
+- [x] Done when: `npx tsc --noEmit` passes with new types.
 
 ### Task 4: Diagnostics module (`diagnostics.ts`)
 
