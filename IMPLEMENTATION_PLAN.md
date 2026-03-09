@@ -8,6 +8,16 @@
 - **Next**: v0.5.0 — `ralph score` fitness scoring + run loop hardening (17 tasks)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
+### Validation Baseline (2026-03-09)
+
+All four checks pass:
+- `npm test` — 685 tests, 30 files ✅
+- `npx tsc --noEmit` — clean ✅
+- `ralph doctor --ci` — 10/10 (28/29 checks; `docs/exec-plans/` missing `active/` + `completed/` subdirs) ✅
+- `ralph grade --ci` — exits 0; `review`/`heal` grade C (coverage file has no entries for those paths — tests are fully mocked); `ref` grade C (62% line coverage) ✅
+
+These quality issues are non-blocking but should be resolved before v0.5.0 to maintain a clean baseline.
+
 ## Release History
 
 | Version | Date | Summary |
@@ -58,6 +68,36 @@ Full details → `CHANGELOG.md`
 - **`exactOptionalPropertyTypes`**: Optional props need `| undefined`.
 - **YAML 1.2**: Single-quote regex patterns with backslashes in `.yml` files.
 - **Test isolation**: Tests `chdir()` to temp dirs with `.git/` stubs. Restore `origCwd` in `afterEach`.
+
+---
+
+## v0.4.1 — Pre-v0.5.0 Baseline Cleanup
+
+**Goal:** Resolve the three non-blocking quality issues discovered at the v0.4.0 baseline before beginning fitness-scoring work.
+
+### Task 1: Create `docs/exec-plans/active/` and `docs/exec-plans/completed/` subdirectories
+
+- [ ] Create `docs/exec-plans/active/.gitkeep` and `docs/exec-plans/completed/.gitkeep` so doctor's exec-plans structure check passes (currently 28/29 checks; this brings it to 29/29).
+  Files: two new `.gitkeep` files.
+
+### Task 2: Fix coverage attribution for `review` and `heal` domains
+
+- [ ] Configure vitest coverage to force-include `src/commands/review/**` and `src/commands/heal/**` in the coverage report so `ralph grade` can score those domains above C.
+  Add `include` patterns to `vitest.config.ts` coverage settings. After running `npm run test:coverage`, both domains should appear in `coverage/lcov.info`. Verify `ralph grade` upgrades `review` and `heal` from C to B or A.
+  Files: `vitest.config.ts`.
+
+### Dependency Graph
+
+```
+Task 1 and Task 2 are independent — can run in either order.
+```
+
+### Validation
+
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: 685 tests pass, typecheck clean, doctor 10/10 (29/29 checks), review + heal grade B or above.
 
 ---
 
