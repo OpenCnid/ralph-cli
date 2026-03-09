@@ -1,28 +1,14 @@
 {
   "version": 1,
   "phase": "build",
-  "startedAt": "2026-03-09T08:35:53.153Z",
-  "iteration": 3,
+  "startedAt": "2026-03-09T09:01:16.983Z",
+  "iteration": 1,
   "history": [
     {
       "iteration": 1,
-      "durationMs": 177188,
+      "durationMs": 8468,
       "exitCode": 0,
-      "commit": "7479e1a",
-      "error": null
-    },
-    {
-      "iteration": 2,
-      "durationMs": 658032,
-      "exitCode": 0,
-      "commit": "fc7303d",
-      "error": null
-    },
-    {
-      "iteration": 3,
-      "durationMs": 519447,
-      "exitCode": 0,
-      "commit": "4982827",
+      "commit": "01ae91c",
       "error": null
     }
   ]
