@@ -312,11 +312,11 @@ Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 ar
 
 Resolves spec items 2a, 2b, 2c.
 
-- [ ] `src/config/loader.ts` lines 78–79: Add inline comment explaining that optional chaining is safe here because `validate()` is called before `mergeWithDefaults()`. Example: `// validated upstream — optional chaining is defensive, not necessary`
-- [ ] `src/utils/output.ts`: Add a comment block at the top explaining that `console.log` calls here are intentional — this is the structured output boundary layer. Example: `// output.ts is the logging boundary; direct console.log usage here is by design`
-- [ ] `.ralph/config.yml` `gc.exclude`: Add `vitest.config.ts` (config file loaded by vitest directly, never imported). This removes the "dead code" false positive.
-- [ ] Files: `src/config/loader.ts`, `src/utils/output.ts`, `.ralph/config.yml`.
-- [ ] Done when: `ralph gc` no longer reports items 2a, 2b, 2c.
+- [x] `src/config/loader.ts` lines 78–79: Add inline comment explaining that optional chaining is safe here because `validate()` is called before `mergeWithDefaults()`. Example: `// validated upstream — optional chaining is defensive, not necessary`
+- [x] `src/utils/output.ts`: Add a comment block at the top explaining that `console.log` calls here are intentional — this is the structured output boundary layer. Example: `// output.ts is the logging boundary; direct console.log usage here is by design`
+- [x] `.ralph/config.yml` `gc.exclude`: Add `vitest.config.ts` (config file loaded by vitest directly, never imported). This removes the "dead code" false positive.
+- [x] Files: `src/config/loader.ts`, `src/utils/output.ts`, `.ralph/config.yml`.
+- [x] Done when: `ralph gc` no longer reports items 2a, 2b, 2c.
 
 ### Task 7: GC null-checking migration
 

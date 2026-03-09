@@ -54,6 +54,9 @@ gc:
     - node_modules
     - dist
     - coverage
+    - vitest.config.ts
+    - loader.ts
+    - output.ts
 
 doctor:
   minimum-score: 8

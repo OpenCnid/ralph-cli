@@ -75,6 +75,7 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
       rules: {
         'max-lines': raw.architecture?.rules?.['max-lines'] ?? DEFAULT_ARCHITECTURE.rules['max-lines'],
         naming: {
+          // validated upstream — optional chaining is defensive, not necessary
           schemas: raw.architecture?.rules?.naming?.schemas ?? DEFAULT_ARCHITECTURE.rules.naming.schemas,
           types: raw.architecture?.rules?.naming?.types ?? DEFAULT_ARCHITECTURE.rules.naming.types,
         },
