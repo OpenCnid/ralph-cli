@@ -510,10 +510,10 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 9: Domain docs for `review`
 
-- [ ] Create `src/commands/review/DESIGN.md`, `docs/design-docs/review.md`, `docs/design-docs/review/DESIGN.md` covering diff extraction, context assembly, prompt generation, output formats, and agent reuse from `run`.
-- [ ] Each file 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions.
-- [ ] Files: 3 new doc files.
-- [ ] Done when: `ralph grade` shows A for `review` docs dimension.
+- [x] Create `src/commands/review/DESIGN.md`, `docs/design-docs/review.md`, `docs/design-docs/review/DESIGN.md` covering diff extraction, context assembly, prompt generation, output formats, and agent reuse from `run`.
+- [x] Each file 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions.
+- [x] Files: 3 new doc files.
+- [x] Done when: `ralph grade` shows A for `review` docs dimension.
 
 ### Dependency Graph
 
