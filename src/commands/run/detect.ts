@@ -85,6 +85,63 @@ export function detectSourcePath(config: RalphConfig, cwd: string = process.cwd(
 }
 
 /**
+ * Normalize plan content for comparison: trim trailing whitespace per line, normalize CRLF to LF.
+ */
+export function normalizePlanContent(content: string): string {
+  return content.replace(/\r\n/g, '\n').replace(/[^\S\n]+$/gm, '');
+}
+
+/**
+ * Detect the first newly-completed task by diffing planBefore against the current IMPLEMENTATION_PLAN.md.
+ * Returns the task description, or null if no newly-completed task is found.
+ */
+export function detectCompletedTask(planBefore: string): string | null {
+  let planAfter: string;
+  try {
+    planAfter = readFileSync('IMPLEMENTATION_PLAN.md', 'utf-8');
+  } catch {
+    return null;
+  }
+
+  const beforeLines = normalizePlanContent(planBefore).split('\n');
+  const afterLines = normalizePlanContent(planAfter).split('\n');
+
+  for (let i = 0; i < afterLines.length; i++) {
+    const before = beforeLines[i] ?? '';
+    const after = afterLines[i] ?? '';
+
+    if (before === after) continue;
+
+    // Check [ ] → [x] transition (case-insensitive)
+    const wasUnchecked = /\[\s\]/i.test(before);
+    const isNowChecked = /\[[xX]\]/.test(after);
+    if (wasUnchecked && isNowChecked) {
+      const description = after
+        .replace(/\[[xX]\]\s*/g, '')
+        .replace(/^[-*\s]+/, '')
+        .replace(/✅\s*/g, '')
+        .trim();
+      if (description) return description;
+    }
+
+    // Check ✅ gained as prefix or suffix
+    const hadCheckmark = /✅/.test(before);
+    const hasCheckmark = /✅/.test(after);
+    if (!hadCheckmark && hasCheckmark) {
+      const description = after
+        .replace(/✅\s*/g, '')
+        .replace(/\s*✅/g, '')
+        .replace(/\[[xX\s]\]\s*/g, '')
+        .replace(/^[-*\s]+/, '')
+        .trim();
+      if (description) return description;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Compose the validate command from detected components.
  * Always includes ralph doctor --ci and ralph grade --ci.
  */

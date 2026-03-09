@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { detectTestCommand, detectTypecheckCommand, detectSourcePath, composeValidateCommand } from './detect.js';
+import { detectTestCommand, detectTypecheckCommand, detectSourcePath, composeValidateCommand, detectCompletedTask, normalizePlanContent } from './detect.js';
 import type { RalphConfig } from '../../config/schema.js';
 
 function makeTempDir(): string {
@@ -207,5 +207,92 @@ describe('composeValidateCommand', () => {
   it('always ends with ralph grade --ci', () => {
     const result = composeValidateCommand('go test ./...', 'go vet ./...');
     expect(result.endsWith('ralph grade --ci')).toBe(true);
+  });
+});
+
+describe('normalizePlanContent', () => {
+  it('normalizes CRLF to LF', () => {
+    expect(normalizePlanContent('line1\r\nline2\r\n')).toBe('line1\nline2\n');
+  });
+
+  it('trims trailing whitespace per line', () => {
+    expect(normalizePlanContent('line1   \nline2\t\nline3')).toBe('line1\nline2\nline3');
+  });
+
+  it('handles mixed CRLF and LF', () => {
+    expect(normalizePlanContent('a\r\nb\nc\r\n')).toBe('a\nb\nc\n');
+  });
+
+  it('preserves leading whitespace', () => {
+    expect(normalizePlanContent('  - item   \n')).toBe('  - item\n');
+  });
+});
+
+describe('detectCompletedTask', () => {
+  let tempDir: string;
+  let origCwd: string;
+
+  beforeEach(() => {
+    origCwd = process.cwd();
+    tempDir = makeTempDir();
+    process.chdir(tempDir);
+  });
+
+  afterEach(() => {
+    process.chdir(origCwd);
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('detects [ ] → [x] transition', () => {
+    const before = '- [ ] Implement user auth\n- [ ] Add tests\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [x] Implement user auth\n- [ ] Add tests\n');
+    expect(detectCompletedTask(before)).toBe('Implement user auth');
+  });
+
+  it('detects case-insensitive [X] checkbox', () => {
+    const before = '- [ ] Build the widget\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [X] Build the widget\n');
+    expect(detectCompletedTask(before)).toBe('Build the widget');
+  });
+
+  it('detects ✅ gained as prefix', () => {
+    const before = '- Deploy to staging\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- ✅ Deploy to staging\n');
+    expect(detectCompletedTask(before)).toBe('Deploy to staging');
+  });
+
+  it('detects ✅ gained as suffix', () => {
+    const before = '- Deploy to staging\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- Deploy to staging ✅\n');
+    expect(detectCompletedTask(before)).toBe('Deploy to staging');
+  });
+
+  it('returns null when no match', () => {
+    const before = '- [ ] Some task\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [ ] Some task\n');
+    expect(detectCompletedTask(before)).toBeNull();
+  });
+
+  it('returns null for whitespace-only changes', () => {
+    const before = '- [ ] Some task\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [ ] Some task  \n');
+    expect(detectCompletedTask(before)).toBeNull();
+  });
+
+  it('returns first completed task when multiple are completed', () => {
+    const before = '- [ ] Task A\n- [ ] Task B\n- [ ] Task C\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [x] Task A\n- [x] Task B\n- [ ] Task C\n');
+    expect(detectCompletedTask(before)).toBe('Task A');
+  });
+
+  it('returns null when IMPLEMENTATION_PLAN.md does not exist', () => {
+    const before = '- [ ] Some task\n';
+    expect(detectCompletedTask(before)).toBeNull();
+  });
+
+  it('returns null when already-checked box stays checked', () => {
+    const before = '- [x] Already done\n- [ ] Pending\n';
+    writeFileSync(join(tempDir, 'IMPLEMENTATION_PLAN.md'), '- [x] Already done\n- [ ] Pending\n');
+    expect(detectCompletedTask(before)).toBeNull();
   });
 });
