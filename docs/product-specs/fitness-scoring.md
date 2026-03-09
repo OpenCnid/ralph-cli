@@ -58,6 +58,49 @@ src/commands/run/
 
 No new external npm dependencies. Uses `child_process` for script execution, `fs` for results.tsv.
 
+### Type Definitions
+
+Defined in `src/commands/score/types.ts`:
+
+```typescript
+/** Result from running a score script or the default scorer. */
+export interface ScoreResult {
+  score: number | null;        // 0.0–1.0, null if scoring failed/unavailable
+  source: 'script' | 'default'; // which scorer produced this result
+  scriptPath: string | null;   // path to score script (null for default scorer)
+  metrics: Record<string, string>; // key-value pairs from scorer output
+  error?: string | undefined;  // error message if scoring failed
+}
+
+/** Single row in .ralph/results.tsv. */
+export interface ResultEntry {
+  commit: string;              // short hash of HEAD
+  iteration: number;           // 1-indexed
+  status: 'pass' | 'fail' | 'timeout' | 'discard';
+  score: number | null;        // null rendered as '—' in TSV
+  delta: number | null;        // null rendered as '—' in TSV
+  durationS: number;           // wall-clock seconds
+  metrics: string;             // raw key=value string, or '—'
+  description: string;         // commit message or '—'
+}
+
+/** Scoring state passed to prompt generation for {score_context}. */
+export interface ScoreContext {
+  previousStatus: 'pass' | 'fail' | 'timeout' | 'discard' | null;
+  previousScore: number | null;
+  currentScore: number | null;
+  delta: number | null;
+  metrics: string;             // raw key=value string
+  changedMetrics: string;      // human-readable diff of changed metrics
+  timeoutSeconds: number;      // iteration-timeout value (for timeout context)
+  regressionThreshold: number; // for "regressions beyond X" message
+  previousTestCount: number | null; // for test count monitoring
+  currentTestCount: number | null;  // for test count monitoring
+}
+```
+
+All modules in `score/` and `run/scoring.ts` import from `score/types.ts`. No circular dependencies.
+
 ### Config Schema Extensions
 
 Added to `schema.ts`:
@@ -75,6 +118,8 @@ export interface ScoringConfig {
 }
 ```
 
+See F-FS04 for full `auto-revert: false` behavioral specification.
+
 Added to `LoopConfig` (existing interface in `schema.ts`):
 
 ```typescript
@@ -91,6 +136,25 @@ Added to `RalphConfig`:
 export interface RalphConfig {
   // ... existing fields ...
   scoring?: ScoringConfig | undefined;
+}
+```
+
+**`RunOptions` extension** (in `src/commands/run/types.ts`):
+
+```typescript
+export interface RunOptions {
+  max?: number | undefined;
+  agent?: string | undefined;
+  model?: string | undefined;
+  dryRun?: boolean | undefined;
+  noCommit?: boolean | undefined;
+  noPush?: boolean | undefined;
+  resume?: boolean | undefined;
+  verbose?: boolean | undefined;
+  noScore?: boolean | undefined;          // NEW — --no-score flag
+  simplify?: boolean | undefined;         // NEW — --simplify flag
+  baselineScore?: number | undefined;     // NEW — --baseline-score <float>
+  force?: boolean | undefined;            // NEW — --force (lock override)
 }
 ```
 
@@ -148,7 +212,7 @@ If the discovered script exists but is not executable (`EACCES` on spawn), log a
 
 - CWD: project root (same as `ralph run`)
 - Environment variables set by ralph:
-  - `RALPH_ITERATION`: current 1-indexed iteration number (string)
+  - `RALPH_ITERATION`: current 1-indexed iteration number (string). When run standalone via `ralph score` (not within `ralph run`), set to `"0"` (sentinel value indicating standalone execution).
   - `RALPH_COMMIT`: short hash of HEAD at time of scoring (after any ralph commit)
 - Timeout: 60 seconds (hardcoded). Score scripts must be fast — they run every iteration.
 - Exit code 0: success — parse stdout for score
@@ -182,7 +246,16 @@ When no score script exists, ralph computes a score from available signals.
 **Inputs:**
 
 - **Test results**: parsed from validation command stdout (see F-FS06 for capture details)
-- **Coverage**: read from `quality.coverage.report-path` config value (JSON format — looks for `statements.pct` or `lines.pct` or `total.statements.pct` fields)
+- **Coverage**: read from `quality.coverage.report-path` config value. **Must be a JSON file** (e.g., Istanbul/c8 `coverage-summary.json`). If the file does not exist, is not valid JSON, or does not contain recognized fields, coverage signal is unavailable — the default scorer proceeds with test data only (or returns null if no test data either). The default `report-path` of `coverage/lcov.info` is an lcov text file, NOT JSON — coverage scoring requires the user to either (a) configure `report-path` to point to a JSON report (e.g., `coverage/coverage-summary.json`), or (b) generate JSON coverage output alongside lcov.
+
+**Coverage JSON field lookup** — checked sequentially, **return immediately on first match** (use optional chaining, e.g., `data?.total?.statements?.pct`):
+
+1. `total.statements.pct` — Istanbul/c8 coverage-summary.json
+2. `total.lines.pct` — Istanbul/c8 fallback
+3. `statements.pct` — flat summary format
+4. `lines.pct` — flat summary fallback
+
+The value must be a number 0–100. Divide by 100 to get `coverage_rate`.
 
 **Test count extraction patterns** — these are **JavaScript RegExp patterns** applied to the full stdout string. Use `RegExp.exec()` or `.match()`, not string `.includes()`. First match wins:
 
@@ -284,9 +357,9 @@ Agent exits
       iteration (no commit to score against), log "pass" (unscored), continue
   → run score script (F-FS01 / F-FS02)
     → no score? → log "pass" (unscored) → next iteration
-  → find last "pass" entry in results.tsv with a non-null score
-    → none found? → this is baseline → log "pass" → next iteration
-  → compute delta = new_score - last_pass_score
+  → read checkpoint.lastScore
+    → null (no prior scored pass)? → this is baseline → save to checkpoint → log "pass" → next iteration
+  → compute delta = new_score - checkpoint.lastScore
   → delta < -threshold AND no keep signal?
     → revert to baseline → log "discard"
   → otherwise → log "pass"
@@ -294,21 +367,32 @@ Agent exits
 
 **Revert procedure:**
 
+0. **Capture description BEFORE reverting:** `description = execSync('git log -1 --format=%s HEAD').trim().slice(0, 72)` — this preserves the iteration's commit message for the results.tsv `description` column. For `fail`, `timeout`, and `discard` statuses, this is the agent's work commit, not the baseline. Store in a local variable; use when appending the results.tsv row after revert.
 1. Remove stale git locks: `rm -f .git/index.lock .git/refs/heads/*.lock` — prevents revert failure if the agent was killed mid-git-operation (e.g., SIGTERM during `git commit`)
-2. `git reset --hard <baseline_commit>` — restores all tracked files to pre-iteration state
-3. Compute new untracked files: diff the current `git ls-files --others --exclude-standard` against the pre-agent snapshot (captured before agent spawned)
-4. Delete only files that are NEW since the agent ran — files that were untracked before the agent are preserved
-5. This is safer than `git clean -fd` which would destroy pre-existing untracked files the user may want
+2. **Verify branch:** `currentBranch = execSync('git rev-parse --abbrev-ref HEAD').trim()`. If `currentBranch !== originalBranch` (captured before agent spawn), run `git checkout <originalBranch>` first. Log warning: `"Agent switched to branch ${currentBranch} — restoring ${originalBranch}"`. This prevents `git reset --hard` from corrupting an unrelated branch.
+3. `git reset --hard <baseline_commit>` — restores all tracked files to pre-iteration state
+4. Compute new untracked files: diff the current `git ls-files --others --exclude-standard` against the pre-agent snapshot (captured before agent spawned)
+5. Delete only files that are NEW since the agent ran — files that were untracked before the agent are preserved
+6. This is safer than `git clean -fd` which would destroy pre-existing untracked files the user may want
 
-**Baseline commit:** Captured via `git rev-parse HEAD` immediately before the agent spawns. This is the commit the loop returns to on any revert.
+**Baseline commit:** Captured via `git rev-parse HEAD` immediately before the agent spawns. This is the commit the loop returns to on any revert. Also saved to `checkpoint.baselineCommit` for resume recovery.
+
+**Original branch:** Captured via `git rev-parse --abbrev-ref HEAD` immediately before the agent spawns. Used to detect and restore branch switches by the agent (see Revert procedure step 2).
 
 **Threshold behavior:** The `regression-threshold` is an **absolute delta**, not a percentage. A threshold of 0.02 means: if the score dropped by more than 0.02 points (e.g., 0.87 → 0.84 = delta of -0.03, exceeds threshold), revert. For low-scoring projects (score ~0.1), 0.02 is a ~20% relative drop — adjust the threshold to match your project's score range.
 
 **Boundary case:** A delta of exactly `-threshold` (e.g., -0.02 when threshold is 0.02) does NOT trigger revert. Revert fires when `delta < -threshold` (strictly less than).
 
-**Cumulative regression check:** In addition to the per-iteration regression check, ralph tracks the run's **best passing score** (highest score among all `pass` entries in the current run). After computing the per-iteration delta, also compute: `cumulative_delta = current_score - best_score`. If `cumulative_delta < -cumulative_threshold` (default 0.10), revert with status `discard` and append `[cumulative regression]` to description. This catches slow-bleed degradation where each step is within per-iteration threshold but the total drift is unacceptable.
+**`auto-revert: false` behavior:** When `scoring.auto-revert` is `false`:
+- Scoring still runs. Score, delta, and metrics are computed and logged normally.
+- **Regressions are NOT reverted.** Status is logged as `pass` with `[regression ignored: delta {delta}]` appended to the description.
+- The cumulative regression check is also skipped (cumulative revert requires auto-revert).
+- Baseline recalibration (3 consecutive discards) never triggers since no discards are produced.
+- The `lastScore` and `bestScore` checkpoint fields still update normally (they track actual scores, not just passing ones).
 
-The cumulative check runs *after* the per-iteration check passes. So a score that fails the per-iteration check is reverted for per-iteration regression, not cumulative. Only scores that pass per-iteration but fail cumulative get the `[cumulative regression]` annotation.
+**Cumulative regression check:** In addition to the per-iteration regression check, ralph tracks the run's **best passing score** (highest score among all `pass` entries in the current run, stored in `checkpoint.bestScore`). After computing the per-iteration delta, also compute: `cumulative_drop = best_score - current_score`. If `cumulative_drop > cumulative_threshold` (default 0.10), revert with status `discard` and append `[cumulative regression]` to description. This catches slow-bleed degradation where each step is within per-iteration threshold but the total drift is unacceptable.
+
+The cumulative check runs *after* the per-iteration check passes. So a score that fails the per-iteration check is reverted for per-iteration regression, not cumulative. Only scores that pass per-iteration but fail cumulative get the `[cumulative regression]` annotation. The cumulative check only runs when `auto-revert` is `true`.
 
 **Keep signal — the `.ralph/keep` file:**
 
@@ -359,7 +443,11 @@ export interface AgentResult {
 }
 ```
 
-**Timeout of 0:** Disables the feature entirely. No timer is set.
+**Interaction with `AgentConfig.timeout`:** Within `ralph run`, `iteration-timeout` is the **authoritative** timeout for the agent phase. The `run/timeout.ts` wrapper must override `AgentConfig.timeout` to prevent the inner `spawnAgent()` abort from firing independently. Implementation: before calling `spawnAgent()`, set `agentConfig.timeout` to `iterationTimeout > 0 ? Math.max(iterationTimeout + 30, agentConfig.timeout) : agentConfig.timeout`. This ensures the inner abort never fires before the outer SIGTERM/SIGKILL sequence. Outside of `ralph run` (e.g., `ralph review`, `ralph heal`), `AgentConfig.timeout` remains the sole timeout.
+
+If the inner `spawnAgent()` abort fires despite this (edge case: system clock skew), the run loop must treat `result.error` containing `"timed out"` (case-insensitive) as equivalent to `timedOut: true` — revert to baseline and log `timeout` status.
+
+**Timeout of 0:** Disables the iteration timeout entirely. No timer is set. `AgentConfig.timeout` remains active as the sole timeout (existing behavior preserved).
 
 **Scope:** The iteration timeout covers the **agent phase only** (from `spawnAgent()` to agent exit). Validation commands (F-FS06) and score scripts (F-FS01) have their own independent timeouts (120s and 60s respectively, both hardcoded). The total worst-case wall-clock time per iteration is: `iteration-timeout + 240s (two validation commands) + 60s (score script) = iteration-timeout + 300s`. This is intentional — validation and scoring are ralph's own processes with known timeouts, while the agent is an external process with unpredictable behavior.
 
@@ -422,6 +510,8 @@ Regressions beyond {threshold} will be auto-reverted.
 ```
 This is informational — it doesn't block or revert, but surfaces the signal.
 
+**Edge case:** If previous test count is 0 (or unavailable), skip the percentage check. Any test count increase from zero is expected project bootstrapping, not suspicious inflation.
+
 After a `discard` iteration:
 ```
 ## Score Context
@@ -445,6 +535,36 @@ Ensure all tests pass and typecheck succeeds.
 ```
 
 **When no scores exist yet** (first iteration or no previous scored iteration): `{score_context}` resolves to empty string. No scoring context added.
+
+**Prompt Integration — API changes:**
+
+The `generatePrompt()` function signature gains a `scoreContext` option:
+
+```typescript
+// Updated options parameter in generatePrompt():
+export function generatePrompt(
+  mode: RunMode,
+  config: RalphConfig,
+  options?: {
+    skipTasks?: string | undefined;
+    scoreContext?: string | undefined;  // NEW — populated by run/scoring.ts
+  },
+): string;
+```
+
+`buildVariables()` includes `score_context` in the returned `Record<string, string>`:
+
+```typescript
+score_context: options.scoreContext ?? '',
+```
+
+`run/scoring.ts` exports a function to generate the context string:
+
+```typescript
+export function buildScoreContext(ctx: ScoreContext): string;
+```
+
+The run loop calls `buildScoreContext()` after each iteration, then passes the result to `generatePrompt()` for the NEXT iteration's prompt. On the first iteration, `scoreContext` is `undefined` (resolves to empty string).
 
 ### F-FS08: `ralph score` Command
 
@@ -544,7 +664,7 @@ Current metrics: {metrics}
 - Cannot be combined with `--mode plan` or `--no-score` → exit with error if combined with either
 - Uses the same scoring, revert, and timeout infrastructure as normal iterations
 - If score drops → auto-revert (same threshold as normal)
-- The simplification preamble replaces the build prompt's "Your Task" section, not appends to it
+- The simplification preamble replaces **everything from `## Your Task` through the end of the template** (including all Step subsections). The `## Validation` section and `{score_context}` section above it are preserved — only the task instruction section is replaced. The preamble IS the complete task instruction.
 - `--simplify` without any existing score: the first iteration establishes a baseline (scored, never reverted), subsequent iterations enforce score maintenance
 
 ### F-FS10: `--no-score` Flag
@@ -563,6 +683,7 @@ ralph run --no-score [--max N]
 - No score context in prompts
 - Timeout still applies (it's independent of scoring)
 - Cannot be combined with `--simplify` (simplification requires scoring to enforce score maintenance; exit with error if both specified)
+- Cannot be combined with `--baseline-score` (`--baseline-score` sets a scoring baseline, but `--no-score` disables scoring entirely; exit with error if both specified)
 - Useful for quick debugging iterations where scoring overhead isn't wanted
 - **Results.tsv entries are still written for `fail` and `timeout` statuses** — the score, delta, and metrics columns are `—`, but the audit trail of failures and timeouts is preserved. Only `pass` and `discard` entries are suppressed (since those depend on scoring).
 
@@ -612,55 +733,88 @@ The lock module exports: `acquireLock(): void` (throws on conflict), `releaseLoc
 
 After the score script exits (in the scoring step of the run loop), ralph checks for side effects:
 
-1. Run `git status --porcelain` and compare against the pre-scoring state (captured just before scoring)
-2. If new dirty files appeared (modified tracked files or new untracked files that weren't there before scoring):
-   - Log warning: `"Score script modified working tree — restoring (files: <list>)"`
-   - Restore tracked files: `git checkout -- .`
-   - Remove new untracked files (same diff approach as the revert procedure — only remove files new since pre-scoring snapshot)
+1. Capture pre-scoring state: `preScoringHead = git rev-parse HEAD` AND `preScoringStatus = git status --porcelain` (done before score script runs)
+2. After scoring, compare:
+   - **Commit detection:** If `git rev-parse HEAD !== preScoringHead`, the score script created commits. Log warning: `"Score script created commits — reverting HEAD to ${preScoringHead}"`. Run `git reset --hard ${preScoringHead}`.
+   - **Dirty file detection:** Run `git status --porcelain` and compare against `preScoringStatus`. If new dirty files appeared: log warning `"Score script modified working tree — restoring (files: <list>)"`, restore tracked files via `git checkout -- .`, remove new untracked files (same diff approach as the revert procedure).
 3. This runs regardless of whether scoring succeeded or failed
 4. The check does NOT run for the default scorer (it's pure computation with no subprocesses that could modify files)
 
 ### Run Loop Modification
 
-The existing `runCommand()` in `src/commands/run/index.ts` gains new steps. **Preserve all existing behavior** — signal handling (`SIGINT`/`SIGTERM` with `stopping` flag), checkpoint saving, TTY confirmation prompts, and stall detection remain unchanged. The new steps are inserted into the existing loop body, not a replacement. The modified loop:
+The existing `runCommand()` in `src/commands/run/index.ts` gains new steps. **Preserve all existing behavior** — signal handling (`SIGINT`/`SIGTERM` with `stopping` flag), checkpoint saving, TTY confirmation prompts, and stall detection remain unchanged. The new steps are inserted into the existing loop body, not a replacement.
+
+**Plan mode exemption:** Scoring, validation, timeout, and auto-revert features apply to **build mode only**. When `mode === 'plan'`, the loop skips all scoring/validation/timeout steps — iterations proceed as they do today (agent runs, changes committed, plan convergence check). The run lock (F-FS11) applies to both modes. The `--simplify`, `--no-score`, and `--baseline-score` flags are invalid with `--mode plan` — exit with error if combined.
+
+The modified loop (build mode):
 
 ```
 pre-loop:
   → acquire run lock (F-FS11)
+  → if mode === 'plan': skip all scoring/validation/timeout steps below (plan exemption)
+  → validate flag combinations:
+    → --simplify + --mode plan → error exit
+    → --no-score + --simplify → error exit
+    → --no-score + --baseline-score → error exit
+    → --baseline-score + --mode plan → error exit
 
 loop start
-  → capture baseline: git rev-parse HEAD
+  → capture baseline: git rev-parse HEAD → save to checkpoint.baselineCommit
+  → capture original branch: git rev-parse --abbrev-ref HEAD
   → capture pre-agent untracked files: git ls-files --others --exclude-standard
   → snapshot .ralph/keep existence (keepExistedBeforeAgent)
   → start timeout timer (if iteration-timeout > 0)
-  → spawn agent (wrapped with timeout)
-    → if timed out: rm -f .git/index.lock, revert to baseline, log "timeout", continue loop
+  → spawn agent (wrapped with timeout; override AgentConfig.timeout per F-FS05)
+    → if timed out:
+      → capture description: git log -1 --format=%s HEAD (before revert)
+      → revert to baseline (includes branch verify + .git/index.lock removal)
+      → log "timeout" with captured description
+      → continue loop
   → detect changes: hasChanges() OR (git rev-parse HEAD != baseline)
     → no changes: increment noChangesCount, save checkpoint, stall check, continue
+      (NO results.tsv entry for no-changes iterations)
+  → capture description: git log -1 --format=%s HEAD (captures agent's commit message)
   → run validation commands (F-FS06)
-    → test-command fails: revert to baseline, log "fail", continue
-    → typecheck-command fails: revert to baseline, log "fail", continue
+    → test-command fails:
+      → revert to baseline (includes branch verify)
+      → log "fail" with captured description
+      → continue
+    → typecheck-command fails:
+      → revert to baseline (includes branch verify)
+      → log "fail" with captured description
+      → continue
   → if auto-commit AND hasChanges(): gitCommit()
+    → update description: git log -1 --format=%s HEAD (captures ralph's commit message)
   → run scoring (unless --no-score)
-    → capture pre-scoring git status
+    → capture pre-scoring state: git status --porcelain AND git rev-parse HEAD
     → score obtained:
-      → post-scoring dirty check: restore if score script modified working tree
-      → if first scored iteration AND no --baseline-score: record as baseline, log "pass"
-      → if --baseline-score set AND no prior pass: use provided baseline for comparison
-      → compare against last pass score (per-iteration regression check)
+      → post-scoring dirty check: compare git status + HEAD against pre-scoring
+        → if HEAD changed: git reset --hard <pre_scoring_head>, log warning
+        → if new dirty files: git checkout -- . + remove new untracked, log warning
+      → if first scored iteration AND no --baseline-score:
+        → record as baseline in checkpoint (lastScore, bestScore), log "pass"
+      → if --baseline-score set AND no prior pass:
+        → use provided baseline for comparison
+      → compare against checkpoint.lastScore (per-iteration regression check)
+        → if auto-revert is false:
+          → log "pass" with [regression ignored: delta X] if regressed, continue
         → regression beyond threshold AND no valid keep signal?
-          → revert to baseline → log "discard"
-          → increment consecutive discard counter
+          → revert to baseline (includes branch verify)
+          → log "discard" with captured description
+          → increment checkpoint.consecutiveDiscards
           → if 3 consecutive discards: recalibrate baseline to best discarded score
-        → pass? → reset consecutive discard counter
-      → cumulative regression check: compare against run's best score
+          → continue
+        → pass? → reset checkpoint.consecutiveDiscards
+      → cumulative regression check (only if auto-revert is true):
         → best_score - current_score > cumulative-threshold?
-          → revert to baseline → log "discard [cumulative regression]"
+          → revert to baseline (includes branch verify)
+          → log "discard [cumulative regression]" with captured description
+          → continue
       → check .ralph/keep: only honor if keepExistedBeforeAgent was true
         → agent-created keep: warn, delete, proceed with normal regression logic
-    → no score obtained: log "pass" (unscored)
-  → log "pass" with score
-  → update run's best score if this score exceeds it
+    → no score obtained: log "pass" (unscored) with captured description
+  → log "pass" with score and captured description
+  → update checkpoint: lastScore, bestScore, lastScoredIteration
   → gitPush() (if configured)
   → inject score context into next prompt vars (including test count monitoring)
   → save checkpoint
@@ -681,10 +835,20 @@ interface Checkpoint {
   bestScore?: number | null;           // highest score in this run (for cumulative check)
   consecutiveDiscards?: number;        // count of consecutive discard statuses
   baselineScore?: number | null;       // explicit baseline from --baseline-score flag
+  baselineCommit?: string | null;      // git SHA of the baseline commit for current iteration
 }
 ```
 
-**Backward compatibility:** All new checkpoint fields are optional with `undefined` default. When loading a checkpoint from a prior version (missing these fields), they default to their initial values: `null` for scores, `0` for consecutiveDiscards. No migration step needed — the checkpoint reader treats missing fields as absent.
+**Baseline commit persistence:** `baselineCommit` is saved to the checkpoint at the start of each iteration (after capturing `git rev-parse HEAD`). On resume, if the previous iteration was interrupted:
+- Load `baselineCommit` from checkpoint
+- If non-null: verify it exists (`git cat-file -t <sha>`), then `git reset --hard <baselineCommit>` to restore clean state before starting the next iteration
+- If null or missing: fall back to current HEAD (existing behavior)
+
+This prevents partial agent commits from poisoning the baseline on resume.
+
+**Checkpoint is authoritative for scoring state.** The regression check uses `checkpoint.lastScore` and `checkpoint.bestScore` — NOT a results.tsv lookup. Results.tsv is an append-only audit log. If results.tsv is deleted mid-run, scoring continues unaffected because all state is in the checkpoint. This also avoids O(n) file scanning on every iteration.
+
+**Backward compatibility:** All new checkpoint fields are optional with `undefined` default. When loading a checkpoint from a prior version (missing these fields), they default to their initial values: `null` for scores and baselineCommit, `0` for consecutiveDiscards. No migration step needed — the checkpoint reader treats missing fields as absent.
 
 ### Changes Detection
 
@@ -710,14 +874,14 @@ This catches both uncommitted changes AND agent-made commits.
 ### F-FS02: Default Scorer
 - AC-08: Default scorer activates when no score script exists
 - AC-09: Test pass rate parsed from validation stdout using defined regex patterns
-- AC-10: Coverage parsed from JSON report at configured path
+- AC-10: Coverage parsed from JSON report at configured path; non-JSON files (e.g., lcov.info) result in coverage signal unavailable (no crash, no score penalty); JSON field lookup follows defined priority order
 - AC-11: Single signal available → that signal gets full weight (1.0)
 - AC-12: Both signals missing → score is null, iteration proceeds unscored
 - AC-13: Config validation rejects weights that don't sum to 1.0
 
 ### F-FS03: Results Log
 - AC-14: `.ralph/results.tsv` created with header on first append
-- AC-15: Every `ralph run` iteration appends exactly one row
+- AC-15: Every `ralph run` iteration that produces changes (new commits or uncommitted modifications) appends exactly one row. No-changes iterations (where `hasNewWork` is false) do NOT append a row — they only increment the stall counter.
 - AC-16: All columns populated per schema; tabs in values replaced with spaces
 - AC-17: Description sourced from `git log -1 --format=%s HEAD`, truncated to 72 chars
 - AC-18: File survives deletion mid-run (recreated on next append)
@@ -732,7 +896,7 @@ This catches both uncommitted changes AND agent-made commits.
 - AC-25: Delta exactly at `-threshold` does NOT trigger revert (strictly less than)
 
 ### F-FS05: Iteration Timeout
-- AC-26: Agent process receives SIGTERM after configured timeout seconds
+- AC-26: Agent process receives SIGTERM after configured `iteration-timeout` seconds; `AgentConfig.timeout` is overridden within `ralph run` to prevent independent abort (see F-FS05 interaction rules)
 - AC-27: SIGKILL sent 10s after SIGTERM if process still alive
 - AC-28: Changes reverted to baseline on timeout
 - AC-29: `iteration-timeout: 0` disables timeout entirely
@@ -775,25 +939,31 @@ This catches both uncommitted changes AND agent-made commits.
 - AC-57: `--force` flag overrides existing lock without PID check
 
 ### Cross-cutting
-- AC-51: Projects without scoring config behave exactly as before (no run loop change)
+- AC-51: Projects without scoring config behave exactly as before (no run loop change). Plan mode iterations skip scoring, validation, and timeout entirely — only the run lock applies.
 - AC-52: All new config fields have defaults in `defaults.ts`
-- AC-53: Config validation rejects: threshold outside 0.0–1.0, negative timeout, weights not summing to 1.0, cumulative-threshold outside 0.0–1.0
+- AC-53: Config validation rejects: threshold outside 0.0–1.0, negative timeout, weights not summing to 1.0, cumulative-threshold outside 0.0–1.0. Flag validation rejects: `--no-score` + `--simplify`, `--no-score` + `--baseline-score`, `--baseline-score` + `--mode plan`, `--simplify` + `--mode plan`.
 
 ### Hardening
 - AC-58: Default scorer includes `test_count` and `test_total` in metrics output
 - AC-59: `{score_context}` flags test count jumps >100% as suspicious
 - AC-60: After 3 consecutive discards, baseline recalibrates to best discarded score
 - AC-61: Recalibration logged in results.tsv description
-- AC-62: Cumulative regression check fires when `best_score - current_score > cumulative-threshold`
+- AC-62: Cumulative regression check fires when `best_score - current_score > cumulative_threshold` (strictly greater than). Uses `checkpoint.bestScore` as the reference.
 - AC-63: `.git/index.lock` removed before every `git reset --hard`
 - AC-64: `.ralph/keep` only honored if it existed before agent spawn
 - AC-65: Agent-created `.ralph/keep` ignored and deleted with warning
-- AC-66: Post-scoring `git status` detects and restores score script side effects
+- AC-66: Post-scoring check detects and restores score script side effects: both dirty file changes (`git status`) AND new commits (`git rev-parse HEAD` comparison)
 - AC-67: Metrics string sanitized: tabs replaced, length capped at 200, control chars removed
 - AC-68: `--baseline-score <float>` overrides first-iteration baseline
 - AC-69: `--baseline-score` stored in checkpoint for resume persistence
 - AC-70: Cumulative threshold configurable via `scoring.cumulative-threshold`
-- AC-71: Checkpoint loads missing scoring fields as null/0 (backward compat)
+- AC-71: Checkpoint loads missing scoring fields as null/0 (backward compat); `baselineCommit` defaults to null
+- AC-72: `auto-revert: false` logs regressions as `pass` with `[regression ignored]` annotation; no revert; cumulative check skipped
+- AC-73: Agent branch switching detected and restored before revert; warning logged
+- AC-74: `--no-score` + `--baseline-score` exits with error before loop starts
+- AC-75: `--baseline-score` + `--mode plan` exits with error before loop starts
+- AC-76: Checkpoint stores `baselineCommit`; resume uses it to restore clean state
+- AC-77: Regression check uses `checkpoint.lastScore` (not results.tsv lookup); checkpoint is authoritative for scoring state
 
 ## Edge Cases
 
@@ -825,6 +995,18 @@ This catches both uncommitted changes AND agent-made commits.
 | `.git/index.lock` exists from crashed agent | Removed before revert proceeds |
 | `--no-score` with validation failure | results.tsv entry written with status `fail`, score `—` |
 | Checkpoint from pre-scoring version loaded | Missing scoring fields default to null/0; no crash |
+| `auto-revert: false` with score regression | Status logged as `pass` with `[regression ignored: delta X]`. No revert. No cumulative check. |
+| Agent switches to different git branch | Branch detected post-agent, restored to original before `git reset --hard`. Warning logged. |
+| `regression-threshold: 1.0` | Effectively disables per-iteration regression detection (max possible drop is 1.0, strictly less than never fires). Cumulative threshold still applies. |
+| `--no-score` with `--baseline-score` | Error: baseline-score is meaningless without scoring. Exit before loop. |
+| `--baseline-score` with `--mode plan` | Error: plan mode does not use scoring. Exit before loop. |
+| `--simplify` with `--mode plan` | Error: simplification requires build mode. Exit before loop. |
+| Plan mode iteration | Scoring, validation, and timeout all skipped. Run lock still acquired. |
+| Resume after crash with partial agent commits | Checkpoint's `baselineCommit` used to restore clean state before next iteration. |
+| Score script creates git commits | Post-scoring check detects HEAD change, resets to pre-scoring HEAD with warning. |
+| `RALPH_ITERATION` in standalone `ralph score` | Set to `"0"` (sentinel for standalone execution). |
+| Test count jumps from 0 to 50 | Test count monitoring skipped (previous count is 0, increase from zero is expected). |
+| Coverage report-path points to lcov.info (default) | Default scorer cannot parse lcov as JSON — coverage signal unavailable, test-only scoring. |
 
 ## Out of Scope
 
