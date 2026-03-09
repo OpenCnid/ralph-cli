@@ -32,6 +32,8 @@ architecture:
       path: src/commands/hooks
     - name: ci
       path: src/commands/ci
+    - name: run
+      path: src/commands/run
   cross-cutting:
     - src/utils
   rules:
