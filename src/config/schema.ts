@@ -126,6 +126,26 @@ export interface RunConfig {
   git: GitConfig;
 }
 
+export interface ReviewContextConfig {
+  'include-specs': boolean;
+  'include-architecture': boolean;
+  'include-diff-context': number;
+  'max-diff-lines': number;
+}
+
+export interface ReviewOutputConfig {
+  format: 'text' | 'json' | 'markdown';
+  file: string | null;
+  'severity-threshold': 'info' | 'warn' | 'error';
+}
+
+export interface ReviewConfig {
+  agent: AgentConfig | null;
+  scope: 'staged' | 'commit' | 'range' | 'working';
+  context: ReviewContextConfig;
+  output: ReviewOutputConfig;
+}
+
 export interface RalphConfig {
   project: ProjectConfig;
   runner?: RunnerConfig | undefined;
@@ -137,6 +157,7 @@ export interface RalphConfig {
   references: ReferencesConfig;
   ci?: CiOverrides | undefined;
   run?: RunConfig | undefined;
+  review?: ReviewConfig | undefined;
 }
 
 /**
@@ -184,4 +205,10 @@ export interface RawRalphConfig {
   paths?: Partial<PathsConfig>;
   references?: Partial<ReferencesConfig>;
   ci?: CiOverrides;
+  review?: Partial<{
+    agent: Partial<AgentConfig> | null;
+    scope: 'staged' | 'commit' | 'range' | 'working';
+    context: Partial<ReviewContextConfig>;
+    output: Partial<ReviewOutputConfig>;
+  }>;
 }

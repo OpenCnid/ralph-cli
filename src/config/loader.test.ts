@@ -424,6 +424,94 @@ describe('mergeWithDefaults run config', () => {
   });
 });
 
+describe('mergeWithDefaults review config', () => {
+  it('populates review with all defaults when review is absent', () => {
+    const config = mergeWithDefaults({ project: { name: 'test', language: 'typescript' } });
+
+    expect(config.review).toBeDefined();
+    expect(config.review!.agent).toBeNull();
+    expect(config.review!.scope).toBe('staged');
+    expect(config.review!.context['include-specs']).toBe(true);
+    expect(config.review!.context['include-architecture']).toBe(true);
+    expect(config.review!.context['include-diff-context']).toBe(5);
+    expect(config.review!.context['max-diff-lines']).toBe(2000);
+    expect(config.review!.output.format).toBe('text');
+    expect(config.review!.output.file).toBeNull();
+    expect(config.review!.output['severity-threshold']).toBe('info');
+  });
+
+  it('merges partial review config with defaults', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      review: {
+        scope: 'commit',
+        context: { 'max-diff-lines': 500 },
+        output: { format: 'json' },
+      },
+    });
+
+    expect(config.review!.scope).toBe('commit');
+    expect(config.review!.context['max-diff-lines']).toBe(500);
+    expect(config.review!.context['include-specs']).toBe(true); // default
+    expect(config.review!.output.format).toBe('json');
+    expect(config.review!.output['severity-threshold']).toBe('info'); // default
+  });
+
+  it('handles review.agent explicitly set to null', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      review: { agent: null },
+    });
+
+    expect(config.review!.agent).toBeNull();
+  });
+
+  it('handles review.agent with partial config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      review: { agent: { cli: 'amp', timeout: 600 } },
+    });
+
+    expect(config.review!.agent).not.toBeNull();
+    expect(config.review!.agent!.cli).toBe('amp');
+    expect(config.review!.agent!.timeout).toBe(600);
+    expect(config.review!.agent!.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
+  });
+
+  it('preserves fully specified review config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      review: {
+        agent: { cli: 'cursor', args: ['--headless'], timeout: 300 },
+        scope: 'working',
+        context: {
+          'include-specs': false,
+          'include-architecture': false,
+          'include-diff-context': 10,
+          'max-diff-lines': 5000,
+        },
+        output: {
+          format: 'markdown',
+          file: 'review.md',
+          'severity-threshold': 'error',
+        },
+      },
+    });
+
+    expect(config.review!.agent!.cli).toBe('cursor');
+    expect(config.review!.agent!.args).toEqual(['--headless']);
+    expect(config.review!.agent!.timeout).toBe(300);
+    expect(config.review!.scope).toBe('working');
+    expect(config.review!.context['include-specs']).toBe(false);
+    expect(config.review!.context['include-architecture']).toBe(false);
+    expect(config.review!.context['include-diff-context']).toBe(10);
+    expect(config.review!.context['max-diff-lines']).toBe(5000);
+    expect(config.review!.output.format).toBe('markdown');
+    expect(config.review!.output.file).toBe('review.md');
+    expect(config.review!.output['severity-threshold']).toBe('error');
+  });
+});
+
 describe('detectCiEnvironment', () => {
   const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
 

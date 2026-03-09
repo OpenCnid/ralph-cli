@@ -696,6 +696,123 @@ describe('validate', () => {
     expect(result.errors).toEqual([]);
   });
 
+  // review validation
+  it('accepts valid review config', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: {
+        agent: { cli: 'claude', args: ['--print'], timeout: 600 },
+        scope: 'staged',
+        context: {
+          'include-specs': true,
+          'include-architecture': true,
+          'include-diff-context': 5,
+          'max-diff-lines': 2000,
+        },
+        output: {
+          format: 'text',
+          file: null,
+          'severity-threshold': 'info',
+        },
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts review with null agent', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { agent: null },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('errors on invalid review.scope', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { scope: 'invalid' },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.scope');
+  });
+
+  it('errors on invalid review.output.format', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { output: { format: 'xml' } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.output.format');
+  });
+
+  it('errors on invalid review.output.severity-threshold', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { output: { 'severity-threshold': 'critical' } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.output.severity-threshold');
+  });
+
+  it('errors on negative review.context.include-diff-context', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { context: { 'include-diff-context': -1 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.context.include-diff-context');
+  });
+
+  it('errors on zero review.context.max-diff-lines', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { context: { 'max-diff-lines': 0 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.context.max-diff-lines');
+  });
+
+  it('warns on unknown keys in review', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { unknown_key: true },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('review.unknown_key');
+  });
+
+  it('warns on unknown keys in review.context', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { context: { 'extra-key': 1 } },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('review.context.extra-key');
+  });
+
+  it('warns on unknown keys in review.output', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { output: { unknown: 'x' } },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('review.output.unknown');
+  });
+
+  it('errors on invalid review.agent shape', () => {
+    const result = validate({
+      ...MINIMAL,
+      review: { agent: { args: [], timeout: 300 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('review.agent.cli');
+  });
+
   it('reports multiple errors simultaneously', () => {
     const result = validate({
       ...MINIMAL,

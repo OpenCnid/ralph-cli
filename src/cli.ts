@@ -15,6 +15,7 @@ import { gcCommand } from './commands/gc/index.js';
 import { hooksInstallCommand, hooksUninstallCommand } from './commands/hooks/index.js';
 import { ciGenerateCommand } from './commands/ci/index.js';
 import { runCommand } from './commands/run/index.js';
+import { reviewCommand } from './commands/review/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -300,6 +301,31 @@ program
       resume: options.resume,
       verbose: options.verbose,
     });
+  });
+
+// ralph review
+program
+  .command('review [target]')
+  .description('Feed code changes to a coding agent for semantic review')
+  .option('--scope <scope>', 'What to review: staged, commit, range, or working')
+  .option('--agent <cli>', 'Override agent CLI')
+  .option('--model <model>', 'Inject/override model in agent args')
+  .option('--format <fmt>', 'Output format: text, json, or markdown')
+  .option('--output <path>', 'Write review output to file')
+  .option('--dry-run', 'Show generated prompt without executing')
+  .option('--verbose', 'Show full agent output')
+  .option('--diff-only', 'Omit architecture/specs/rules from prompt')
+  .action(async (target: string | undefined, options: {
+    scope?: string;
+    agent?: string;
+    model?: string;
+    format?: string;
+    output?: string;
+    dryRun?: boolean;
+    verbose?: boolean;
+    diffOnly?: boolean;
+  }) => {
+    await reviewCommand(target, options);
   });
 
 program.parse();

@@ -11,6 +11,7 @@ export interface AgentResult {
   exitCode: number;
   durationMs: number;
   error?: string | undefined;
+  output?: string | undefined;
 }
 
 export type RunMode = 'plan' | 'build';

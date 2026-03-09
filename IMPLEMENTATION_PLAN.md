@@ -2,15 +2,17 @@
 
 ## Current State
 
-- **Version**: 0.2.1
-- **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate
-- **Tests**: 503 across 21 files — all passing
+- **Version**: 0.2.2
+- **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate. `ralph review` not yet started.
+- **Tests**: 524 across 21 files — all passing
+- **Next**: v0.3.0 (`ralph review`)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
 | 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
 | 0.2.0 | 2026-03-09 | `ralph run` autonomous build loop — agent abstraction, prompt engine, checkpoint, auto-detect, 80+ tests |
 | 0.1.1 | 2026-03-08 | Interactive init/doctor/ref, prompt utils, grade crash fix, GC orphan fix, custom YAML autofix, README + AGENTS.md |
@@ -363,3 +365,176 @@ After all tasks:
 npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
 ```
 Expected: all tests pass, doctor 10/10, every domain A on docs dimension, `ralph gc` reports 0 items.
+
+---
+
+## v0.2.2 — Fix `ref` Domain Grade
+
+**Spec:** Repair pre-existing `ralph grade --ci` failure. The `ref` domain is at D (43% line coverage), below the configured minimum of C. The implementation is complete; only tests are missing.
+
+**Baseline:** 503 tests passing. Doctor 10/10. `ralph grade --ci` exits non-zero (1 domain below C).
+
+### Task 1: Add tests for `refListCommand`
+
+- [x] Add tests for `refListCommand` in `src/commands/ref/ref.test.ts`.
+  - Empty references directory → info message, no output entries.
+  - Directory does not exist → info message, early return.
+  - With one or more reference files → prints name, size, date (from metadata comment), source.
+  - With `--sizes` option → prints bar chart and total.
+  - Files without metadata comment → prints name and size only (no source/date).
+
+### Task 2: Add tests for `refUpdateCommand`
+
+- [x] Add tests for `refUpdateCommand` in `src/commands/ref/ref.test.ts`.
+  - No references directory → error message, returns without crash.
+  - References directory with no HTTP-sourced files → reports "No references were updated."
+  - A file with an HTTP source URL → mock `fetch`, verify file content is rewritten with new content and updated `fetched=` date.
+  - `name` argument provided → only the matching file is updated, others are skipped.
+  - Fetch returns non-OK status → warn message, file is not modified.
+  - Fetch throws → warn message, file is not modified.
+
+### Task 3: Add tests for URL-based `refAddCommand` and error paths
+
+- [x] Add tests in `src/commands/ref/ref.test.ts` for paths not yet covered.
+  - URL argument → mock `fetch`, verify file written with correct content and metadata, name derived from hostname.
+  - URL fetch returns 404 → `error()` called, `process.exit(1)` triggered.
+  - URL fetch throws network error → `error()` called, `process.exit(1)` triggered.
+  - Local file argument where file does not exist → `error()` called, `process.exit(1)` triggered.
+  - Size warning: add a file large enough to exceed `warn-single-file-kb` → `warn()` output includes warning.
+
+### Task 4: Add tests for `refDiscoverCommand` pyproject.toml and go.mod paths
+
+- [x] Add tests in `src/commands/ref/ref.test.ts` for dependency discovery from non-npm lockfiles.
+  - `pyproject.toml` with `[tool.poetry.dependencies]` → dependencies extracted and scanned.
+  - `go.mod` with `require` block → modules extracted and scanned.
+  - Both files present → deps from both are unioned.
+  - Successful fetch of `llms.txt` from a discovered dependency (mock fetch) → ref appears in "Found" list.
+
+### Dependency Graph
+
+```
+Tasks 1–4 are independent of each other and can run in any order.
+All four must complete before the validation command passes.
+```
+
+### Validation
+
+After all tasks:
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --ci` exits 0.
+
+---
+
+## v0.3.0 — `ralph review` (Agent-Powered Code Review)
+
+**Spec:** `docs/product-specs/ralph-review.md`
+**Goal:** Feed code changes to a configurable coding agent for semantic review — architectural drift, logic errors, spec violations.
+
+**Baseline:** v0.2.2 complete. 528 tests passing. Doctor 10/10. `ralph grade --ci` exits 0. No `src/commands/review/` directory exists.
+
+### Task 1: Config schema + defaults for `ReviewConfig`
+
+- [x] Add `ReviewContextConfig`, `ReviewOutputConfig`, `ReviewConfig` interfaces to `src/config/schema.ts`. Add `review?: ReviewConfig | undefined` to `RalphConfig` and corresponding partial to `RawRalphConfig`.
+- [x] Add `DEFAULT_REVIEW` to `src/config/defaults.ts` with all defaults from spec's Defaults Table (`scope: 'staged'`, `context.include-specs: true`, `context.include-architecture: true`, `context.include-diff-context: 5`, `context.max-diff-lines: 2000`, `output.format: 'text'`, `output.file: null`, `output.severity-threshold: 'info'`).
+- [x] Add `review` merge to `mergeWithDefaults()` in `src/config/loader.ts` (same pattern as `run`).
+- [x] Files: `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/loader.ts`
+- [x] Tests: Add to `tests/config.test.ts` — `loadConfig()` returns fully-populated `review` field when absent, partially specified, and fully specified. Verify `review.agent` null handling.
+- [x] Done when: `loadConfig()` returns a `RalphConfig` with a fully-populated `review` field. All existing tests pass.
+
+### Task 2: Config validation for `review.*` fields
+
+- [x] Add `'review'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
+- [x] Validate: `review.agent` (null or valid AgentConfig), `review.scope` (one of staged/commit/range/working), `review.context.include-diff-context` (non-negative integer), `review.context.max-diff-lines` (positive integer), `review.output.format` (one of text/json/markdown), `review.output.file` (null or string), `review.output.severity-threshold` (one of info/warn/error).
+- [x] Warn on unknown keys within `review.*` sub-objects.
+- [x] Files: `src/config/validate.ts`
+- [x] Tests: Add to `tests/config.test.ts` — valid review config passes, invalid `review.scope` errors, invalid `review.output.format` errors, unknown keys produce warnings.
+- [x] Done when: `ralph config validate` validates all `review.*` fields per spec.
+
+### Task 3: Review types (`types.ts`)
+
+- [x] Create `src/commands/review/types.ts`.
+- [x] Re-export `ReviewConfig`, `ReviewContextConfig`, `ReviewOutputConfig` from `src/config/schema.ts`.
+- [x] Define `ReviewOptions` interface: `{ scope?: string, agent?: string, model?: string, format?: string, output?: string, dryRun?: boolean, verbose?: boolean, diffOnly?: boolean }`.
+- [x] Define `ReviewContext` interface: `{ diff: string, diffStat: string, changedFiles: string[], architecture: string, specs: string[], rules: string, projectName: string, scope: string, durationMs?: number }`.
+- [x] Files: `src/commands/review/types.ts`
+- [x] Tests: None (type-only). Verified by TypeScript compilation.
+- [x] Done when: `npx tsc --noEmit` passes with new types.
+
+### Task 4: Diff extraction + context assembly (`context.ts`)
+
+- [x] Create `src/commands/review/context.ts`.
+- [x] `resolveScope(target: string | undefined, scopeFlag: string | undefined, configScope: string): { gitArgs: string[], scopeLabel: string }` — implement all 6 scope cases from the spec table. Error on `--scope range` with no target.
+- [x] `extractDiff(gitArgs: string[], contextLines: number): { diff: string, diffStat: string, changedFiles: string[], binaryCount: number }` — run `git diff --unified={n}` and `git diff --stat`, parse changed files from stat output, skip binary files.
+- [x] `findRelevantSpecs(changedFiles: string[], specsDir: string): string[]` — extract directory names from changed files, fuzzy-match against spec filenames (up to 3 results).
+- [x] `assembleContext(config: RalphConfig, diff: string, diffStat: string, changedFiles: string[], options: { diffOnly: boolean, maxDiffLines: number }): ReviewContext` — load ARCHITECTURE.md, matched specs, AGENTS.md rules section, truncate diff at maxDiffLines with warning.
+- [x] Files: `src/commands/review/context.ts`
+- [x] Tests: `tests/review-context.test.ts` — all 6 scope resolution cases, spec matching (exact, fuzzy, no match), diff truncation at maxDiffLines with warning emitted, binary file count, empty diff detection, not-a-git-repo error.
+- [x] Done when: All scope resolution + context assembly cases pass tests.
+
+### Task 5: Review prompt template (`prompts.ts`)
+
+- [x] Create `src/commands/review/prompts.ts`.
+- [x] Define `REVIEW_TEMPLATE` string constant matching the spec's prompt template exactly (all 6 sections: project context, architecture, specs, rules, diff stat, diff, review instructions).
+- [x] `generateReviewPrompt(context: ReviewContext, options: { diffOnly: boolean }): string` — substitute all template variables: `{project_name}`, `{architecture_content}`, `{specs_content}`, `{rules_content}`, `{diff_stat}`, `{diff_content}`. When `diffOnly`, omit architecture/specs/rules sections.
+- [x] Files: `src/commands/review/prompts.ts`
+- [x] Tests: `tests/review-prompts.test.ts` — all variables substituted, `--diff-only` excludes context sections, template matches spec structure.
+- [x] Done when: `generateReviewPrompt()` produces a complete prompt with all variables filled.
+
+### Task 6: Command entry point (`index.ts`)
+
+- [x] Create `src/commands/review/index.ts`.
+- [x] `reviewCommand(target: string | undefined, options: ReviewOptions): Promise<void>` — orchestrates: load config → resolve scope → extract diff → handle edge cases (no diff, not git repo, empty diff) → assemble context → generate prompt → `--dry-run` path (print prompt, exit) → resolve agent (reuse `resolveAgent` from `../run/agent.js` with `review.agent` falling back to `run.agent`) → spawn agent → format output (text/markdown/JSON) → write to file or stdout.
+- [x] Edge cases: no staged changes, not a git repo, agent not installed, `--scope range` with no target.
+- [x] Output formatting: text (pass through), markdown (add header with date/scope/files), JSON (`{ project, date, scope, files, review, model, durationMs }`).
+- [x] Files: `src/commands/review/index.ts`
+- [x] Tests: `tests/review.test.ts` — mock `spawnAgent` and git commands. Test: staged review default flow, commit SHA review, range review, `--dry-run` prints prompt without agent, `--format json` produces JSON structure, `--format markdown` adds header, `--diff-only` excludes context, no changes error, large diff truncation warning.
+- [x] Done when: All review scenarios pass. `ralph review --dry-run` works end-to-end.
+
+### Task 7: CLI registration
+
+- [x] Add `import { reviewCommand } from './commands/review/index.js'` to `src/cli.ts`.
+- [x] Register `ralph review [target]` with all options: `--scope <scope>`, `--agent <cli>`, `--model <model>`, `--format <fmt>`, `--output <path>`, `--dry-run`, `--verbose`, `--diff-only`.
+- [x] Files: `src/cli.ts`
+- [x] Tests: Verify `ralph review --help` shows correct usage. Verify option parsing via commander parse.
+- [x] Done when: `ralph review`, `ralph review HEAD`, `ralph review --dry-run` all parse correctly and invoke `reviewCommand`.
+
+### Task 8: ARCHITECTURE.md update
+
+- [x] Add `review` domain row to ARCHITECTURE.md domain table: `review | src/commands/review | Agent-powered code review (diff extraction, context assembly, prompt)`.
+- [x] Document cross-command import exception: `review/index.ts` imports from `run/agent.ts` (documented exception, same as doctor→init pattern).
+- [x] Files: `ARCHITECTURE.md`
+- [x] Tests: Verify `ralph doctor` still passes (checks ARCHITECTURE.md consistency).
+- [x] Done when: ARCHITECTURE.md updated. `ralph doctor` passes.
+
+### Task 9: Domain docs for `review`
+
+- [x] Create `src/commands/review/DESIGN.md`, `docs/design-docs/review.md`, `docs/design-docs/review/DESIGN.md` covering diff extraction, context assembly, prompt generation, output formats, and agent reuse from `run`.
+- [x] Each file 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions.
+- [x] Files: 3 new doc files.
+- [x] Done when: `ralph grade` shows A for `review` docs dimension.
+
+### Dependency Graph
+
+```
+Task 1 (config schema + defaults)
+  └→ Task 2 (config validation)
+  └→ Task 3 (types.ts)
+       └→ Task 4 (context.ts)
+       └→ Task 5 (prompts.ts)
+            └→ Task 6 (index.ts — uses context + prompts + agent)
+                 └→ Task 7 (CLI registration)
+                 └→ Task 8 (ARCHITECTURE.md)
+                 └→ Task 9 (domain docs)
+```
+
+Tasks 1 → 3 sequential. Tasks 4 and 5 parallel once 3 is done. Task 6 needs 4+5. Tasks 7, 8, and 9 parallel once 6 is done.
+
+### Validation
+
+After all tasks:
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: all tests pass, doctor 10/10, `ralph review` command functional, all acceptance criteria from spec satisfied.

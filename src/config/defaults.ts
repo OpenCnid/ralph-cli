@@ -1,4 +1,4 @@
-import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, LoopConfig, PromptsConfig, RunConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
+import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -91,4 +91,20 @@ export const DEFAULT_RUN: RunConfig = {
   loop: DEFAULT_LOOP,
   validation: DEFAULT_VALIDATION,
   git: DEFAULT_GIT,
+};
+
+export const DEFAULT_REVIEW: ReviewConfig = {
+  agent: null,
+  scope: 'staged',
+  context: {
+    'include-specs': true,
+    'include-architecture': true,
+    'include-diff-context': 5,
+    'max-diff-lines': 2000,
+  },
+  output: {
+    format: 'text',
+    file: null,
+    'severity-threshold': 'info',
+  },
 };

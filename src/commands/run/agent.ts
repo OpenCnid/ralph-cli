@@ -21,7 +21,7 @@ function formatSpawnError(cli: string, err: unknown): string {
 export async function spawnAgent(
   config: AgentConfig,
   prompt: string,
-  options?: { verbose?: boolean | undefined },
+  options?: { verbose?: boolean | undefined; capture?: boolean | undefined },
 ): Promise<AgentResult> {
   const start = Date.now();
   const controller = new AbortController();
@@ -39,13 +39,14 @@ export async function spawnAgent(
     };
 
     const verbose = options?.verbose === true;
-    const stdioOut: 'inherit' | 'ignore' = verbose ? 'inherit' : 'ignore';
+    const capture = options?.capture === true;
+    const stdioOut: 'pipe' | 'inherit' | 'ignore' = capture ? 'pipe' : (verbose ? 'inherit' : 'ignore');
 
     let proc: ReturnType<typeof spawn>;
     try {
       proc = spawn(config.cli, config.args, {
         signal,
-        stdio: ['pipe', stdioOut, stdioOut],
+        stdio: ['pipe', stdioOut, verbose ? 'inherit' : 'ignore'],
       });
     } catch (err) {
       done({ exitCode: 1, durationMs: Date.now() - start, error: formatSpawnError(config.cli, err) });
@@ -55,16 +56,22 @@ export async function spawnAgent(
     proc.stdin?.write(prompt);
     proc.stdin?.end();
 
+    const chunks: Buffer[] = [];
+    if (capture) {
+      proc.stdout?.on('data', (chunk: Buffer) => chunks.push(chunk));
+    }
+
     proc.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'ABORT_ERR') return;
       done({ exitCode: 1, durationMs: Date.now() - start, error: formatSpawnError(config.cli, err) });
     });
 
     proc.on('close', (code: number | null) => {
+      const output = capture ? Buffer.concat(chunks).toString('utf-8') : undefined;
       if (signal.aborted) {
-        done({ exitCode: 1, durationMs: Date.now() - start, error: `Agent timed out after ${config.timeout}s` });
+        done({ exitCode: 1, durationMs: Date.now() - start, error: `Agent timed out after ${config.timeout}s`, output });
       } else {
-        done({ exitCode: code ?? 1, durationMs: Date.now() - start });
+        done({ exitCode: code ?? 1, durationMs: Date.now() - start, output });
       }
     });
   });

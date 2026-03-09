@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN } from './defaults.js';
+import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -154,6 +154,30 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
         'auto-push': raw.run?.git?.['auto-push'] ?? DEFAULT_RUN.git['auto-push'],
         'commit-prefix': raw.run?.git?.['commit-prefix'] ?? DEFAULT_RUN.git['commit-prefix'],
         branch: raw.run?.git?.branch ?? DEFAULT_RUN.git.branch,
+      },
+    },
+    review: {
+      // null and undefined are distinct: null = explicitly no agent (fall back to run.agent), undefined = inherit default
+      agent: raw.review?.agent === null
+        ? null
+        : raw.review?.agent !== undefined
+          ? {
+              cli: raw.review.agent.cli ?? DEFAULT_REVIEW.agent?.cli ?? DEFAULT_RUN.agent.cli,
+              args: raw.review.agent.args ?? DEFAULT_REVIEW.agent?.args ?? DEFAULT_RUN.agent.args,
+              timeout: raw.review.agent.timeout ?? DEFAULT_REVIEW.agent?.timeout ?? DEFAULT_RUN.agent.timeout,
+            }
+          : DEFAULT_REVIEW.agent,
+      scope: raw.review?.scope ?? DEFAULT_REVIEW.scope,
+      context: {
+        'include-specs': raw.review?.context?.['include-specs'] ?? DEFAULT_REVIEW.context['include-specs'],
+        'include-architecture': raw.review?.context?.['include-architecture'] ?? DEFAULT_REVIEW.context['include-architecture'],
+        'include-diff-context': raw.review?.context?.['include-diff-context'] ?? DEFAULT_REVIEW.context['include-diff-context'],
+        'max-diff-lines': raw.review?.context?.['max-diff-lines'] ?? DEFAULT_REVIEW.context['max-diff-lines'],
+      },
+      output: {
+        format: raw.review?.output?.format ?? DEFAULT_REVIEW.output.format,
+        file: raw.review?.output?.file ?? DEFAULT_REVIEW.output.file,
+        'severity-threshold': raw.review?.output?.['severity-threshold'] ?? DEFAULT_REVIEW.output['severity-threshold'],
       },
     },
   };

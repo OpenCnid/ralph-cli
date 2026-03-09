@@ -40,6 +40,11 @@ src/
     │   ├── detect.ts   — Auto-detect test/typecheck/task completion
     │   ├── progress.ts — Checkpoint I/O, banners, iteration display
     │   └── types.ts    — RunMode, RunOptions, AgentResult types
+    ├── review/         — Agent-powered code review
+    │   ├── index.ts    — reviewCommand entry point
+    │   ├── context.ts  — Diff extraction and context assembly
+    │   ├── prompts.ts  — Review prompt template engine
+    │   └── types.ts    — ReviewOptions, ReviewContext types
     └── config-validate.ts — Standalone config validation command
 ```
 
@@ -68,6 +73,7 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 | hooks | `src/commands/hooks` | Git hook generation |
 | ci | `src/commands/ci` | CI pipeline generation |
 | run | `src/commands/run` | Autonomous build loop (agent spawn, prompts, progress) |
+| review | `src/commands/review` | Agent-powered code review (diff extraction, context assembly, prompt) |
 
 ## Cross-Cutting Concerns
 
@@ -75,10 +81,11 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 
 ## Cross-Command Exceptions
 
-Two intentional cross-command imports exist:
+Three intentional cross-command imports exist:
 
 1. **doctor → init** — `doctor --fix` calls init's scaffolding to repair missing structure.
 2. **promote → lint engine** — `promote` imports the lint engine to count violations when tracking escalation.
+3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
 
 These are documented exceptions, not violations.
 

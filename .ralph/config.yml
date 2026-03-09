@@ -34,6 +34,8 @@ architecture:
       path: src/commands/ci
     - name: run
       path: src/commands/run
+    - name: review
+      path: src/commands/review
   cross-cutting:
     - src/utils
   rules:
