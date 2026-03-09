@@ -8,7 +8,13 @@ const VALID_RUNNERS = ['codex', 'claude', 'amp', 'aider', 'cursor', 'other'];
 const VALID_COVERAGE_TOOLS = ['vitest', 'jest', 'pytest', 'go-test', 'none'];
 const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 
-const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run'];
+const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review'];
+const KNOWN_REVIEW_KEYS = ['agent', 'scope', 'context', 'output'];
+const KNOWN_REVIEW_CONTEXT_KEYS = ['include-specs', 'include-architecture', 'include-diff-context', 'max-diff-lines'];
+const KNOWN_REVIEW_OUTPUT_KEYS = ['format', 'file', 'severity-threshold'];
+const VALID_REVIEW_SCOPES = ['staged', 'commit', 'range', 'working'];
+const VALID_REVIEW_FORMATS = ['text', 'json', 'markdown'];
+const VALID_REVIEW_SEVERITY_THRESHOLDS = ['info', 'warn', 'error'];
 const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git'];
 const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
 const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
@@ -430,6 +436,77 @@ export function validate(raw: unknown): ValidationResult {
           }
           if (git['branch'] !== undefined && git['branch'] !== null && typeof git['branch'] !== 'string') {
             errors.push('"run.git.branch" must be null or a string.');
+          }
+        }
+      }
+    }
+  }
+
+  // review (optional)
+  if (obj['review'] !== undefined) {
+    if (typeof obj['review'] !== 'object' || obj['review'] === null) {
+      errors.push('"review" must be an object.');
+    } else {
+      const review = obj['review'] as Record<string, unknown>;
+      warnUnknownKeys(review, KNOWN_REVIEW_KEYS, 'review.', warnings);
+
+      // agent
+      if (review['agent'] !== undefined && review['agent'] !== null) {
+        if (typeof review['agent'] !== 'object') {
+          errors.push('"review.agent" must be null or an object.');
+        } else {
+          validateAgentConfig(review['agent'] as Record<string, unknown>, 'review.agent', errors, warnings);
+        }
+      }
+
+      // scope
+      if (review['scope'] !== undefined) {
+        if (!VALID_REVIEW_SCOPES.includes(review['scope'] as string)) {
+          errors.push(`Invalid "review.scope": "${review['scope']}". Valid values: ${VALID_REVIEW_SCOPES.join(', ')}.`);
+        }
+      }
+
+      // context
+      if (review['context'] !== undefined) {
+        if (typeof review['context'] !== 'object' || review['context'] === null) {
+          errors.push('"review.context" must be an object.');
+        } else {
+          const context = review['context'] as Record<string, unknown>;
+          warnUnknownKeys(context, KNOWN_REVIEW_CONTEXT_KEYS, 'review.context.', warnings);
+          if (context['include-diff-context'] !== undefined) {
+            const v = context['include-diff-context'];
+            if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+              errors.push('"review.context.include-diff-context" must be a non-negative integer.');
+            }
+          }
+          if (context['max-diff-lines'] !== undefined) {
+            const v = context['max-diff-lines'];
+            if (typeof v !== 'number' || !Number.isInteger(v) || v <= 0) {
+              errors.push('"review.context.max-diff-lines" must be a positive integer.');
+            }
+          }
+        }
+      }
+
+      // output
+      if (review['output'] !== undefined) {
+        if (typeof review['output'] !== 'object' || review['output'] === null) {
+          errors.push('"review.output" must be an object.');
+        } else {
+          const output = review['output'] as Record<string, unknown>;
+          warnUnknownKeys(output, KNOWN_REVIEW_OUTPUT_KEYS, 'review.output.', warnings);
+          if (output['format'] !== undefined) {
+            if (!VALID_REVIEW_FORMATS.includes(output['format'] as string)) {
+              errors.push(`Invalid "review.output.format": "${output['format']}". Valid values: ${VALID_REVIEW_FORMATS.join(', ')}.`);
+            }
+          }
+          if (output['file'] !== undefined && output['file'] !== null && typeof output['file'] !== 'string') {
+            errors.push('"review.output.file" must be null or a string.');
+          }
+          if (output['severity-threshold'] !== undefined) {
+            if (!VALID_REVIEW_SEVERITY_THRESHOLDS.includes(output['severity-threshold'] as string)) {
+              errors.push(`Invalid "review.output.severity-threshold": "${output['severity-threshold']}". Valid values: ${VALID_REVIEW_SEVERITY_THRESHOLDS.join(', ')}.`);
+            }
           }
         }
       }

@@ -445,12 +445,12 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 2: Config validation for `review.*` fields
 
-- [ ] Add `'review'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
-- [ ] Validate: `review.agent` (null or valid AgentConfig), `review.scope` (one of staged/commit/range/working), `review.context.include-diff-context` (non-negative integer), `review.context.max-diff-lines` (positive integer), `review.output.format` (one of text/json/markdown), `review.output.file` (null or string), `review.output.severity-threshold` (one of info/warn/error).
-- [ ] Warn on unknown keys within `review.*` sub-objects.
-- [ ] Files: `src/config/validate.ts`
+- [x] Add `'review'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
+- [x] Validate: `review.agent` (null or valid AgentConfig), `review.scope` (one of staged/commit/range/working), `review.context.include-diff-context` (non-negative integer), `review.context.max-diff-lines` (positive integer), `review.output.format` (one of text/json/markdown), `review.output.file` (null or string), `review.output.severity-threshold` (one of info/warn/error).
+- [x] Warn on unknown keys within `review.*` sub-objects.
+- [x] Files: `src/config/validate.ts`
 - [x] Tests: Add to `tests/config.test.ts` — valid review config passes, invalid `review.scope` errors, invalid `review.output.format` errors, unknown keys produce warnings.
-- [ ] Done when: `ralph config validate` validates all `review.*` fields per spec.
+- [x] Done when: `ralph config validate` validates all `review.*` fields per spec.
 
 ### Task 3: Review types (`types.ts`)
 
