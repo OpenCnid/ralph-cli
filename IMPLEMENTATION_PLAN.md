@@ -565,12 +565,12 @@ Add `HealConfig` and supporting types to the config system.
 
 Add validation for all `heal.*` fields to the validator.
 
-- [ ] Add `'heal'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
-- [ ] Validate: `heal.agent` (null or valid AgentConfig), `heal.commands` (array of strings, each one of `doctor`/`grade`/`gc`/`lint`), `heal.auto-commit` (boolean), `heal.commit-prefix` (non-empty string).
-- [ ] Warn on unknown keys within `heal.*` sub-objects.
-- [ ] Files: `src/config/validate.ts`
-- [ ] Tests: Add to `tests/config.test.ts` — valid heal config passes, invalid `heal.commands` entry errors, invalid `heal.auto-commit` type errors, unknown keys produce warnings.
-- [ ] Done when: `ralph config validate` validates all `heal.*` fields per spec.
+- [x] Add `'heal'` to `KNOWN_TOP_KEYS` in `src/config/validate.ts`.
+- [x] Validate: `heal.agent` (null or valid AgentConfig), `heal.commands` (array of strings, each one of `doctor`/`grade`/`gc`/`lint`), `heal.auto-commit` (boolean), `heal.commit-prefix` (non-empty string).
+- [x] Warn on unknown keys within `heal.*` sub-objects.
+- [x] Files: `src/config/validate.ts`
+- [x] Tests: Add to `tests/config.test.ts` — valid heal config passes, invalid `heal.commands` entry errors, invalid `heal.auto-commit` type errors, unknown keys produce warnings.
+- [x] Done when: `ralph config validate` validates all `heal.*` fields per spec.
 
 ### Task 3: Heal types (`types.ts`)
 

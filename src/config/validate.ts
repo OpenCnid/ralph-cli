@@ -8,13 +8,12 @@ const VALID_RUNNERS = ['codex', 'claude', 'amp', 'aider', 'cursor', 'other'];
 const VALID_COVERAGE_TOOLS = ['vitest', 'jest', 'pytest', 'go-test', 'none'];
 const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 
-const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review'];
+const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review', 'heal'];
+const KNOWN_HEAL_KEYS = ['agent', 'commands', 'auto-commit', 'commit-prefix'];
+const VALID_HEAL_COMMANDS = ['doctor', 'grade', 'gc', 'lint'];
 const KNOWN_REVIEW_KEYS = ['agent', 'scope', 'context', 'output'];
 const KNOWN_REVIEW_CONTEXT_KEYS = ['include-specs', 'include-architecture', 'include-diff-context', 'max-diff-lines'];
 const KNOWN_REVIEW_OUTPUT_KEYS = ['format', 'file', 'severity-threshold'];
-const VALID_REVIEW_SCOPES = ['staged', 'commit', 'range', 'working'];
-const VALID_REVIEW_FORMATS = ['text', 'json', 'markdown'];
-const VALID_REVIEW_SEVERITY_THRESHOLDS = ['info', 'warn', 'error'];
 const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git'];
 const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
 const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
@@ -70,6 +69,34 @@ function validateStringArray(
   return true;
 }
 
+function validateHealConfig(heal: Record<string, unknown>, errors: string[], warnings: string[]): void {
+  warnUnknownKeys(heal, KNOWN_HEAL_KEYS, 'heal.', warnings);
+  if (heal['agent'] !== undefined && heal['agent'] !== null) {
+    if (typeof heal['agent'] !== 'object') {
+      errors.push('"heal.agent" must be null or an object.');
+    } else {
+      validateAgentConfig(heal['agent'] as Record<string, unknown>, 'heal.agent', errors, warnings);
+    }
+  }
+  if (heal['commands'] !== undefined) {
+    if (!Array.isArray(heal['commands'])) {
+      errors.push('"heal.commands" must be an array.');
+    } else {
+      for (let i = 0; i < heal['commands'].length; i++) {
+        const cmd = heal['commands'][i];
+        if (typeof cmd !== 'string' || !VALID_HEAL_COMMANDS.includes(cmd)) {
+          errors.push(`"heal.commands[${i}]" must be one of: ${VALID_HEAL_COMMANDS.join(', ')}.`);
+        }
+      }
+    }
+  }
+  if (heal['auto-commit'] !== undefined && typeof heal['auto-commit'] !== 'boolean') {
+    errors.push('"heal.auto-commit" must be a boolean.');
+  }
+  if (heal['commit-prefix'] !== undefined && (typeof heal['commit-prefix'] !== 'string' || heal['commit-prefix'].length === 0)) {
+    errors.push('"heal.commit-prefix" must be a non-empty string.');
+  }
+}
 function validateAgentConfig(
   obj: Record<string, unknown>,
   prefix: string,
@@ -129,8 +156,6 @@ export function validate(raw: unknown): ValidationResult {
   if (project['framework'] !== undefined && typeof project['framework'] !== 'string') {
     errors.push('"project.framework" must be a string.');
   }
-
-  // runner (optional)
   if (obj['runner'] !== undefined) {
     if (typeof obj['runner'] !== 'object' || obj['runner'] === null) {
       errors.push('"runner" must be an object. Fix: `runner:\\n  cli: codex`');
@@ -150,13 +175,9 @@ export function validate(raw: unknown): ValidationResult {
     } else {
       const arch = obj['architecture'] as Record<string, unknown>;
       warnUnknownKeys(arch, KNOWN_ARCHITECTURE_KEYS, 'architecture.', warnings);
-
-      // layers
       if (arch['layers'] !== undefined) {
         validateStringArray(arch['layers'], 'architecture.layers', errors);
       }
-
-      // domains
       if (arch['domains'] !== undefined) {
         if (!Array.isArray(arch['domains'])) {
           errors.push('"architecture.domains" must be an array.');
@@ -176,32 +197,23 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
-      // cross-cutting
       if (arch['cross-cutting'] !== undefined) {
         validateStringArray(arch['cross-cutting'], 'architecture.cross-cutting', errors);
       }
-
-      // direction
       if (arch['direction'] !== undefined) {
         if (typeof arch['direction'] !== 'string' || !VALID_DIRECTIONS.includes(arch['direction'])) {
           errors.push(`Invalid "architecture.direction": "${arch['direction']}". Valid values: ${VALID_DIRECTIONS.join(', ')}.`);
         }
       }
-
-      // rules
       if (arch['rules'] !== undefined) {
         if (typeof arch['rules'] !== 'object' || arch['rules'] === null) {
           errors.push('"architecture.rules" must be an object.');
         } else {
           const rules = arch['rules'] as Record<string, unknown>;
           warnUnknownKeys(rules, KNOWN_RULES_KEYS, 'architecture.rules.', warnings);
-
           if (rules['max-lines'] !== undefined && (typeof rules['max-lines'] !== 'number' || rules['max-lines'] < 1)) {
             errors.push('"architecture.rules.max-lines" must be a positive number.');
           }
-
-          // naming
           if (rules['naming'] !== undefined) {
             if (typeof rules['naming'] !== 'object' || rules['naming'] === null) {
               errors.push('"architecture.rules.naming" must be an object.');
@@ -228,7 +240,6 @@ export function validate(raw: unknown): ValidationResult {
     } else {
       const quality = obj['quality'] as Record<string, unknown>;
       warnUnknownKeys(quality, KNOWN_QUALITY_KEYS, 'quality.', warnings);
-
       if (quality['minimum-grade'] !== undefined && !VALID_GRADES.includes(quality['minimum-grade'] as string)) {
         errors.push(`Invalid "quality.minimum-grade": "${quality['minimum-grade']}". Valid values: ${VALID_GRADES.join(', ')}.`);
       }
@@ -248,15 +259,12 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-
-  // doctor (optional)
   if (obj['doctor'] !== undefined) {
     if (typeof obj['doctor'] !== 'object' || obj['doctor'] === null) {
       errors.push('"doctor" must be an object.');
     } else {
       const doctor = obj['doctor'] as Record<string, unknown>;
       warnUnknownKeys(doctor, KNOWN_DOCTOR_KEYS, 'doctor.', warnings);
-
       if (doctor['minimum-score'] !== undefined) {
         const score = doctor['minimum-score'];
         if (typeof score !== 'number' || score < 0 || score > 10) {
@@ -268,15 +276,12 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-
-  // gc (optional)
   if (obj['gc'] !== undefined) {
     if (typeof obj['gc'] !== 'object' || obj['gc'] === null) {
       errors.push('"gc" must be an object.');
     } else {
       const gc = obj['gc'] as Record<string, unknown>;
       warnUnknownKeys(gc, KNOWN_GC_KEYS, 'gc.', warnings);
-
       if (gc['consistency-threshold'] !== undefined) {
         const threshold = gc['consistency-threshold'];
         if (typeof threshold !== 'number' || threshold < 0 || threshold > 100) {
@@ -323,7 +328,6 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-  // ci (optional)
   if (obj['ci'] !== undefined) {
     if (typeof obj['ci'] !== 'object' || obj['ci'] === null) {
       errors.push('"ci" must be an object.');
@@ -332,14 +336,12 @@ export function validate(raw: unknown): ValidationResult {
       warnUnknownKeys(ci, KNOWN_CI_KEYS, 'ci.', warnings);
     }
   }
-  // run (optional)
   if (obj['run'] !== undefined) {
     if (typeof obj['run'] !== 'object' || obj['run'] === null) {
       errors.push('"run" must be an object.');
     } else {
       const run = obj['run'] as Record<string, unknown>;
       warnUnknownKeys(run, KNOWN_RUN_KEYS, 'run.', warnings);
-      // agent
       if (run['agent'] !== undefined) {
         if (typeof run['agent'] !== 'object' || run['agent'] === null) {
           errors.push('"run.agent" must be an object.');
@@ -347,7 +349,6 @@ export function validate(raw: unknown): ValidationResult {
           validateAgentConfig(run['agent'] as Record<string, unknown>, 'run.agent', errors, warnings);
         }
       }
-      // plan-agent / build-agent
       for (const key of ['plan-agent', 'build-agent'] as const) {
         if (run[key] !== undefined && run[key] !== null) {
           if (typeof run[key] !== 'object') {
@@ -357,7 +358,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-      // prompts
       if (run['prompts'] !== undefined) {
         if (typeof run['prompts'] !== 'object' || run['prompts'] === null) {
           errors.push('"run.prompts" must be an object.');
@@ -372,7 +372,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-      // loop
       if (run['loop'] !== undefined) {
         if (typeof run['loop'] !== 'object' || run['loop'] === null) {
           errors.push('"run.loop" must be an object.');
@@ -393,7 +392,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-      // validation
       if (run['validation'] !== undefined) {
         if (typeof run['validation'] !== 'object' || run['validation'] === null) {
           errors.push('"run.validation" must be an object.');
@@ -433,7 +431,6 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-  // review (optional)
   if (obj['review'] !== undefined) {
     if (typeof obj['review'] !== 'object' || obj['review'] === null) {
       errors.push('"review" must be an object.');
@@ -487,6 +484,13 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
+    }
+  }
+  if (obj['heal'] !== undefined) {
+    if (typeof obj['heal'] !== 'object' || obj['heal'] === null) {
+      errors.push('"heal" must be an object.');
+    } else {
+      validateHealConfig(obj['heal'] as Record<string, unknown>, errors, warnings);
     }
   }
   return { errors, warnings };
