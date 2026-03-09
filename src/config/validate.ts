@@ -323,7 +323,6 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-
   // ci (optional)
   if (obj['ci'] !== undefined) {
     if (typeof obj['ci'] !== 'object' || obj['ci'] === null) {
@@ -333,7 +332,6 @@ export function validate(raw: unknown): ValidationResult {
       warnUnknownKeys(ci, KNOWN_CI_KEYS, 'ci.', warnings);
     }
   }
-
   // run (optional)
   if (obj['run'] !== undefined) {
     if (typeof obj['run'] !== 'object' || obj['run'] === null) {
@@ -341,7 +339,6 @@ export function validate(raw: unknown): ValidationResult {
     } else {
       const run = obj['run'] as Record<string, unknown>;
       warnUnknownKeys(run, KNOWN_RUN_KEYS, 'run.', warnings);
-
       // agent
       if (run['agent'] !== undefined) {
         if (typeof run['agent'] !== 'object' || run['agent'] === null) {
@@ -350,7 +347,6 @@ export function validate(raw: unknown): ValidationResult {
           validateAgentConfig(run['agent'] as Record<string, unknown>, 'run.agent', errors, warnings);
         }
       }
-
       // plan-agent / build-agent
       for (const key of ['plan-agent', 'build-agent'] as const) {
         if (run[key] !== undefined && run[key] !== null) {
@@ -361,7 +357,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
       // prompts
       if (run['prompts'] !== undefined) {
         if (typeof run['prompts'] !== 'object' || run['prompts'] === null) {
@@ -377,7 +372,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
       // loop
       if (run['loop'] !== undefined) {
         if (typeof run['loop'] !== 'object' || run['loop'] === null) {
@@ -399,7 +393,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
       // validation
       if (run['validation'] !== undefined) {
         if (typeof run['validation'] !== 'object' || run['validation'] === null) {
@@ -415,7 +408,6 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
       // git
       if (run['git'] !== undefined) {
         if (typeof run['git'] !== 'object' || run['git'] === null) {
@@ -441,7 +433,6 @@ export function validate(raw: unknown): ValidationResult {
       }
     }
   }
-
   // review (optional)
   if (obj['review'] !== undefined) {
     if (typeof obj['review'] !== 'object' || obj['review'] === null) {
@@ -449,8 +440,6 @@ export function validate(raw: unknown): ValidationResult {
     } else {
       const review = obj['review'] as Record<string, unknown>;
       warnUnknownKeys(review, KNOWN_REVIEW_KEYS, 'review.', warnings);
-
-      // agent
       if (review['agent'] !== undefined && review['agent'] !== null) {
         if (typeof review['agent'] !== 'object') {
           errors.push('"review.agent" must be null or an object.');
@@ -458,15 +447,9 @@ export function validate(raw: unknown): ValidationResult {
           validateAgentConfig(review['agent'] as Record<string, unknown>, 'review.agent', errors, warnings);
         }
       }
-
-      // scope
-      if (review['scope'] !== undefined) {
-        if (!VALID_REVIEW_SCOPES.includes(review['scope'] as string)) {
-          errors.push(`Invalid "review.scope": "${review['scope']}". Valid values: ${VALID_REVIEW_SCOPES.join(', ')}.`);
-        }
+      if (review['scope'] !== undefined && !['staged', 'commit', 'range', 'working'].includes(review['scope'] as string)) {
+        errors.push(`Invalid "review.scope": "${review['scope']}". Valid values: staged, commit, range, working.`);
       }
-
-      // context
       if (review['context'] !== undefined) {
         if (typeof review['context'] !== 'object' || review['context'] === null) {
           errors.push('"review.context" must be an object.');
@@ -487,31 +470,24 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
-
-      // output
       if (review['output'] !== undefined) {
         if (typeof review['output'] !== 'object' || review['output'] === null) {
           errors.push('"review.output" must be an object.');
         } else {
           const output = review['output'] as Record<string, unknown>;
           warnUnknownKeys(output, KNOWN_REVIEW_OUTPUT_KEYS, 'review.output.', warnings);
-          if (output['format'] !== undefined) {
-            if (!VALID_REVIEW_FORMATS.includes(output['format'] as string)) {
-              errors.push(`Invalid "review.output.format": "${output['format']}". Valid values: ${VALID_REVIEW_FORMATS.join(', ')}.`);
-            }
+          if (output['format'] !== undefined && !['text', 'json', 'markdown'].includes(output['format'] as string)) {
+            errors.push(`Invalid "review.output.format": "${output['format']}". Valid values: text, json, markdown.`);
           }
           if (output['file'] !== undefined && output['file'] !== null && typeof output['file'] !== 'string') {
             errors.push('"review.output.file" must be null or a string.');
           }
-          if (output['severity-threshold'] !== undefined) {
-            if (!VALID_REVIEW_SEVERITY_THRESHOLDS.includes(output['severity-threshold'] as string)) {
-              errors.push(`Invalid "review.output.severity-threshold": "${output['severity-threshold']}". Valid values: ${VALID_REVIEW_SEVERITY_THRESHOLDS.join(', ')}.`);
-            }
+          if (output['severity-threshold'] !== undefined && !['info', 'warn', 'error'].includes(output['severity-threshold'] as string)) {
+            errors.push(`Invalid "review.output.severity-threshold": "${output['severity-threshold']}". Valid values: info, warn, error.`);
           }
         }
       }
     }
   }
-
   return { errors, warnings };
 }

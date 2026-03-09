@@ -454,13 +454,13 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 3: Review types (`types.ts`)
 
-- [ ] Create `src/commands/review/types.ts`.
-- [ ] Re-export `ReviewConfig`, `ReviewContextConfig`, `ReviewOutputConfig` from `src/config/schema.ts`.
-- [ ] Define `ReviewOptions` interface: `{ scope?: string, agent?: string, model?: string, format?: string, output?: string, dryRun?: boolean, verbose?: boolean, diffOnly?: boolean }`.
-- [ ] Define `ReviewContext` interface: `{ diff: string, diffStat: string, changedFiles: string[], architecture: string, specs: string[], rules: string, projectName: string, scope: string, durationMs?: number }`.
-- [ ] Files: `src/commands/review/types.ts`
-- [ ] Tests: None (type-only). Verified by TypeScript compilation.
-- [ ] Done when: `npx tsc --noEmit` passes with new types.
+- [x] Create `src/commands/review/types.ts`.
+- [x] Re-export `ReviewConfig`, `ReviewContextConfig`, `ReviewOutputConfig` from `src/config/schema.ts`.
+- [x] Define `ReviewOptions` interface: `{ scope?: string, agent?: string, model?: string, format?: string, output?: string, dryRun?: boolean, verbose?: boolean, diffOnly?: boolean }`.
+- [x] Define `ReviewContext` interface: `{ diff: string, diffStat: string, changedFiles: string[], architecture: string, specs: string[], rules: string, projectName: string, scope: string, durationMs?: number }`.
+- [x] Files: `src/commands/review/types.ts`
+- [x] Tests: None (type-only). Verified by TypeScript compilation.
+- [x] Done when: `npx tsc --noEmit` passes with new types.
 
 ### Task 4: Diff extraction + context assembly (`context.ts`)
 
