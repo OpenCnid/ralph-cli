@@ -5,6 +5,7 @@
 - **Version**: 0.2.1
 - **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate
 - **Tests**: 503 across 21 files — all passing
+- **Known failure**: `ralph grade --ci` exits non-zero — `ref` domain at D (43% line coverage), minimum is C
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
