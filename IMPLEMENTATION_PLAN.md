@@ -280,10 +280,10 @@ Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 ar
 
 ### Task 2: Domain docs for `init` and `lint`
 
-- [ ] Create `src/commands/init/DESIGN.md`, `docs/design-docs/init.md`, `docs/design-docs/init/DESIGN.md` covering project scaffolding, language detection, template generation.
-- [ ] Create `src/commands/lint/DESIGN.md`, `docs/design-docs/lint.md`, `docs/design-docs/lint/DESIGN.md` covering lint engine, built-in rules (5), custom YAML/JS rules, `--fix` autofix.
-- [ ] Files: 6 new doc files.
-- [ ] Done when: `ralph grade` shows A for `init` and `lint` docs dimension.
+- [x] Create `src/commands/init/DESIGN.md`, `docs/design-docs/init.md`, `docs/design-docs/init/DESIGN.md` covering project scaffolding, language detection, template generation.
+- [x] Create `src/commands/lint/DESIGN.md`, `docs/design-docs/lint.md`, `docs/design-docs/lint/DESIGN.md` covering lint engine, built-in rules (5), custom YAML/JS rules, `--fix` autofix.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `init` and `lint` docs dimension.
 
 ### Task 3: Domain docs for `grade` and `gc`
 
