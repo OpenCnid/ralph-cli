@@ -436,12 +436,12 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 1: Config schema + defaults for `ReviewConfig`
 
-- [ ] Add `ReviewContextConfig`, `ReviewOutputConfig`, `ReviewConfig` interfaces to `src/config/schema.ts`. Add `review?: ReviewConfig | undefined` to `RalphConfig` and corresponding partial to `RawRalphConfig`.
-- [ ] Add `DEFAULT_REVIEW` to `src/config/defaults.ts` with all defaults from spec's Defaults Table (`scope: 'staged'`, `context.include-specs: true`, `context.include-architecture: true`, `context.include-diff-context: 5`, `context.max-diff-lines: 2000`, `output.format: 'text'`, `output.file: null`, `output.severity-threshold: 'info'`).
-- [ ] Add `review` merge to `mergeWithDefaults()` in `src/config/loader.ts` (same pattern as `run`).
-- [ ] Files: `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/loader.ts`
-- [ ] Tests: Add to `tests/config.test.ts` — `loadConfig()` returns fully-populated `review` field when absent, partially specified, and fully specified. Verify `review.agent` null handling.
-- [ ] Done when: `loadConfig()` returns a `RalphConfig` with a fully-populated `review` field. All existing tests pass.
+- [x] Add `ReviewContextConfig`, `ReviewOutputConfig`, `ReviewConfig` interfaces to `src/config/schema.ts`. Add `review?: ReviewConfig | undefined` to `RalphConfig` and corresponding partial to `RawRalphConfig`.
+- [x] Add `DEFAULT_REVIEW` to `src/config/defaults.ts` with all defaults from spec's Defaults Table (`scope: 'staged'`, `context.include-specs: true`, `context.include-architecture: true`, `context.include-diff-context: 5`, `context.max-diff-lines: 2000`, `output.format: 'text'`, `output.file: null`, `output.severity-threshold: 'info'`).
+- [x] Add `review` merge to `mergeWithDefaults()` in `src/config/loader.ts` (same pattern as `run`).
+- [x] Files: `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/loader.ts`
+- [x] Tests: Add to `tests/config.test.ts` — `loadConfig()` returns fully-populated `review` field when absent, partially specified, and fully specified. Verify `review.agent` null handling.
+- [x] Done when: `loadConfig()` returns a `RalphConfig` with a fully-populated `review` field. All existing tests pass.
 
 ### Task 2: Config validation for `review.*` fields
 
