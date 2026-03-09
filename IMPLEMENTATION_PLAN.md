@@ -494,11 +494,11 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 7: CLI registration
 
-- [ ] Add `import { reviewCommand } from './commands/review/index.js'` to `src/cli.ts`.
-- [ ] Register `ralph review [target]` with all options: `--scope <scope>`, `--agent <cli>`, `--model <model>`, `--format <fmt>`, `--output <path>`, `--dry-run`, `--verbose`, `--diff-only`.
-- [ ] Files: `src/cli.ts`
-- [ ] Tests: Verify `ralph review --help` shows correct usage. Verify option parsing via commander parse.
-- [ ] Done when: `ralph review`, `ralph review HEAD`, `ralph review --dry-run` all parse correctly and invoke `reviewCommand`.
+- [x] Add `import { reviewCommand } from './commands/review/index.js'` to `src/cli.ts`.
+- [x] Register `ralph review [target]` with all options: `--scope <scope>`, `--agent <cli>`, `--model <model>`, `--format <fmt>`, `--output <path>`, `--dry-run`, `--verbose`, `--diff-only`.
+- [x] Files: `src/cli.ts`
+- [x] Tests: Verify `ralph review --help` shows correct usage. Verify option parsing via commander parse.
+- [x] Done when: `ralph review`, `ralph review HEAD`, `ralph review --dry-run` all parse correctly and invoke `reviewCommand`.
 
 ### Task 8: ARCHITECTURE.md update
 
