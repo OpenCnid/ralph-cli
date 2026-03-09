@@ -301,12 +301,12 @@ Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 ar
 
 ### Task 5: Domain docs for `promote`, `ref`, `hooks`, and `ci`
 
-- [ ] Create `src/commands/promote/DESIGN.md`, `docs/design-docs/promote.md`, `docs/design-docs/promote/DESIGN.md` covering the escalation ladder (review → docs → lint → code patterns).
-- [ ] Create `src/commands/ref/DESIGN.md`, `docs/design-docs/ref.md`, `docs/design-docs/ref/DESIGN.md` covering LLM-friendly external doc management, `llms.txt` discovery.
-- [ ] Create `src/commands/hooks/DESIGN.md`, `docs/design-docs/hooks.md`, `docs/design-docs/hooks/DESIGN.md` covering git hook installation (pre-commit, post-commit, pre-push).
-- [ ] Create `src/commands/ci/DESIGN.md`, `docs/design-docs/ci.md`, `docs/design-docs/ci/DESIGN.md` covering CI template generation (GitHub Actions, GitLab CI).
-- [ ] Files: 12 new doc files.
-- [ ] Done when: `ralph grade` shows A for `promote`, `ref`, `hooks`, `ci` docs dimension.
+- [x] Create `src/commands/promote/DESIGN.md`, `docs/design-docs/promote.md`, `docs/design-docs/promote/DESIGN.md` covering the escalation ladder (review → docs → lint → code patterns).
+- [x] Create `src/commands/ref/DESIGN.md`, `docs/design-docs/ref.md`, `docs/design-docs/ref/DESIGN.md` covering LLM-friendly external doc management, `llms.txt` discovery.
+- [x] Create `src/commands/hooks/DESIGN.md`, `docs/design-docs/hooks.md`, `docs/design-docs/hooks/DESIGN.md` covering git hook installation (pre-commit, post-commit, pre-push).
+- [x] Create `src/commands/ci/DESIGN.md`, `docs/design-docs/ci.md`, `docs/design-docs/ci/DESIGN.md` covering CI template generation (GitHub Actions, GitLab CI).
+- [x] Files: 12 new doc files.
+- [x] Done when: `ralph grade` shows A for `promote`, `ref`, `hooks`, `ci` docs dimension.
 
 ### Task 6: GC false positives — comments and exclusions
 
