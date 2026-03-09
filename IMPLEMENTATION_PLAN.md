@@ -2,17 +2,17 @@
 
 ## Current State
 
-- **Version**: 0.2.1
+- **Version**: 0.2.2
 - **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate. `ralph review` not yet started.
-- **Tests**: 503 across 21 files — all passing
-- **Known failure**: `ralph grade --ci` exits non-zero — `ref` domain at D (43% line coverage), minimum is C
-- **Next**: v0.2.2 (fix `ref` test coverage), then v0.3.0 (`ralph review`)
+- **Tests**: 528 across 21 files — all passing
+- **Next**: v0.3.0 (`ralph review`)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
 | 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
 | 0.2.0 | 2026-03-09 | `ralph run` autonomous build loop — agent abstraction, prompt engine, checkpoint, auto-detect, 80+ tests |
 | 0.1.1 | 2026-03-08 | Interactive init/doctor/ref, prompt utils, grade crash fix, GC orphan fix, custom YAML autofix, README + AGENTS.md |
@@ -432,7 +432,7 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 **Spec:** `docs/product-specs/ralph-review.md`
 **Goal:** Feed code changes to a configurable coding agent for semantic review — architectural drift, logic errors, spec violations.
 
-**Baseline:** v0.2.2 complete. 503+ tests passing. Doctor 10/10. `ralph grade --ci` exits 0. No `src/commands/review/` directory exists.
+**Baseline:** v0.2.2 complete. 528 tests passing. Doctor 10/10. `ralph grade --ci` exits 0. No `src/commands/review/` directory exists.
 
 ### Task 1: Config schema + defaults for `ReviewConfig`
 
@@ -508,6 +508,13 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 - [ ] Tests: Verify `ralph doctor` still passes (checks ARCHITECTURE.md consistency).
 - [ ] Done when: ARCHITECTURE.md updated. `ralph doctor` passes.
 
+### Task 9: Domain docs for `review`
+
+- [ ] Create `src/commands/review/DESIGN.md`, `docs/design-docs/review.md`, `docs/design-docs/review/DESIGN.md` covering diff extraction, context assembly, prompt generation, output formats, and agent reuse from `run`.
+- [ ] Each file 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions.
+- [ ] Files: 3 new doc files.
+- [ ] Done when: `ralph grade` shows A for `review` docs dimension.
+
 ### Dependency Graph
 
 ```
@@ -519,9 +526,10 @@ Task 1 (config schema + defaults)
             └→ Task 6 (index.ts — uses context + prompts + agent)
                  └→ Task 7 (CLI registration)
                  └→ Task 8 (ARCHITECTURE.md)
+                 └→ Task 9 (domain docs)
 ```
 
-Tasks 1 → 3 sequential. Tasks 4 and 5 parallel once 3 is done. Task 6 needs 4+5. Tasks 7 and 8 parallel once 6 is done.
+Tasks 1 → 3 sequential. Tasks 4 and 5 parallel once 3 is done. Task 6 needs 4+5. Tasks 7, 8, and 9 parallel once 6 is done.
 
 ### Validation
 
