@@ -10,9 +10,9 @@ Last updated: 2026-03-09
 | lint | B | A | A | A | A | **B** |
 | grade | B | A | A | A | A | **B** |
 | gc | A | A | A | A | A | **A** |
-| doctor | A | F | A | A | A | **F** |
+| doctor | A | A | A | A | A | **A** |
 | init | B | A | A | A | A | **B** |
-| plan | B | F | A | A | A | **F** |
+| plan | B | A | A | A | A | **B** |
 | promote | B | F | A | A | A | **F** |
 | ref | D | F | A | A | A | **F** |
 | hooks | B | F | A | A | A | **F** |
@@ -61,11 +61,11 @@ Last updated: 2026-03-09
 ### doctor
 
 - **Tests**: A — 95% line coverage
-- **Docs**: F — 0/3 domain documentation files present
+- **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 309 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: F
+- **Overall**: A
 
 ### init
 
@@ -79,11 +79,11 @@ Last updated: 2026-03-09
 ### plan
 
 - **Tests**: B — 87% line coverage
-- **Docs**: F — 0/3 domain documentation files present
+- **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 451 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: F
+- **Overall**: B
 
 ### promote
 
@@ -166,11 +166,11 @@ Last updated: 2026-03-09
 - gc/staleness: A (stable) — Median 0d since last change
 - gc/overall: A (stable)
 - doctor/tests: A (stable) — 95% line coverage
-- doctor/docs: F (stable) — 0/3 domain documentation files present
+- doctor/docs: A (was F today) — improved — 3/3 domain documentation files present
 - doctor/architecture: A (stable) — No architectural violations
 - doctor/fileHealth: A (stable) — Avg 309 lines, no oversized files
 - doctor/staleness: A (stable) — Median 0d since last change
-- doctor/overall: F (stable)
+- doctor/overall: A (was F today) — improved
 - init/tests: B (stable) — 88% line coverage
 - init/docs: A (stable) — 3/3 domain documentation files present
 - init/architecture: A (stable) — No architectural violations
@@ -178,11 +178,11 @@ Last updated: 2026-03-09
 - init/staleness: A (stable) — Median 1d since last change
 - init/overall: B (stable)
 - plan/tests: B (stable) — 87% line coverage
-- plan/docs: F (stable) — 0/3 domain documentation files present
+- plan/docs: A (was F today) — improved — 3/3 domain documentation files present
 - plan/architecture: A (stable) — No architectural violations
 - plan/fileHealth: A (stable) — Avg 451 lines, no oversized files
 - plan/staleness: A (stable) — Median 0d since last change
-- plan/overall: F (stable)
+- plan/overall: B (was F today) — improved
 - promote/tests: B (stable) — 82% line coverage
 - promote/docs: F (stable) — 0/3 domain documentation files present
 - promote/architecture: A (stable) — No architectural violations
@@ -222,8 +222,6 @@ Last updated: 2026-03-09
 
 ## Action Items
 
-- [ ] doctor: Add missing documentation (0/3 domain documentation files present)
-- [ ] plan: Add missing documentation (0/3 domain documentation files present)
 - [ ] promote: Add missing documentation (0/3 domain documentation files present)
 - [ ] ref: Improve test coverage (currently 43% line coverage)
 - [ ] ref: Add missing documentation (0/3 domain documentation files present)
