@@ -404,7 +404,7 @@ Expected: all tests pass, doctor 10/10, every domain A on docs dimension, `ralph
 
 ### Task 4: Add tests for `refDiscoverCommand` pyproject.toml and go.mod paths
 
-- [ ] Add tests in `src/commands/ref/ref.test.ts` for dependency discovery from non-npm lockfiles.
+- [x] Add tests in `src/commands/ref/ref.test.ts` for dependency discovery from non-npm lockfiles.
   - `pyproject.toml` with `[tool.poetry.dependencies]` → dependencies extracted and scanned.
   - `go.mod` with `require` block → modules extracted and scanned.
   - Both files present → deps from both are unioned.

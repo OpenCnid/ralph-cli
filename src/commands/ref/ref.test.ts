@@ -166,6 +166,96 @@ describe('ref commands', () => {
     expect(refFiles.length).toBe(0);
   });
 
+  describe('refDiscoverCommand pyproject.toml and go.mod', () => {
+    it('extracts dependencies from pyproject.toml [tool.poetry.dependencies]', async () => {
+      writeFileSync(join(tempDir, 'pyproject.toml'), [
+        '[tool.poetry.dependencies]',
+        '"requests" = "^2.28.0"',
+        '"flask" = "^2.0.0"',
+      ].join('\n'));
+
+      const output: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { output.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('no network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = output.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toContain('2 dependencies');
+    });
+
+    it('extracts modules from go.mod require block', async () => {
+      writeFileSync(join(tempDir, 'go.mod'), [
+        'module myproject',
+        '',
+        'go 1.21',
+        '',
+        'require (',
+        '\tgithub.com/gin-gonic/gin v1.9.0',
+        '\tgolang.org/x/crypto v0.14.0',
+        ')',
+      ].join('\n'));
+
+      const output: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { output.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('no network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = output.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toContain('2 dependencies');
+    });
+
+    it('unions deps from both pyproject.toml and go.mod when both present', async () => {
+      writeFileSync(join(tempDir, 'pyproject.toml'), [
+        '[tool.poetry.dependencies]',
+        '"httpx" = "^0.24.0"',
+      ].join('\n'));
+      writeFileSync(join(tempDir, 'go.mod'), [
+        'module myproject',
+        '',
+        'require (',
+        '\tgithub.com/spf13/cobra v1.7.0',
+        ')',
+      ].join('\n'));
+
+      const output: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { output.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('no network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = output.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toContain('2 dependencies');
+    });
+
+    it('shows discovered ref in Found list when fetch succeeds', async () => {
+      writeFileSync(join(tempDir, 'go.mod'), [
+        'module myproject',
+        '',
+        'require (',
+        '\tgithub.com/gin-gonic/gin v1.9.0',
+        ')',
+      ].join('\n'));
+
+      const output: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { output.push(args.join(' ')); });
+      // Mock fetch to succeed for the first URL attempted
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 200 }));
+      setStdinIsTty(false);
+
+      await refDiscoverCommand();
+
+      const foundMsg = output.find(l => l.includes('Found') && l.includes('reference'));
+      expect(foundMsg).toBeDefined();
+      const refLine = output.find(l => l.includes('gin') || l.includes('github'));
+      expect(refLine).toBeDefined();
+    });
+  });
+
   describe('refListCommand', () => {
     it('shows info message when references directory does not exist', () => {
       rmSync(join(tempDir, 'docs', 'references'), { recursive: true, force: true });
@@ -280,6 +370,92 @@ describe('ref commands', () => {
       await refAddCommand('big-ref.txt', { name: 'big' });
 
       expect(warnLines.some(l => l.includes('KB') && (l.includes('warning') || l.includes('Warning') || l.includes('threshold') || l.includes('big-llms.txt')))).toBe(true);
+    });
+  });
+
+  describe('refDiscoverCommand pyproject.toml and go.mod', () => {
+    it('extracts dependencies from pyproject.toml with poetry format', async () => {
+      writeFileSync(
+        join(tempDir, 'pyproject.toml'),
+        '[tool.poetry.dependencies]\npython = "^3.9"\n"requests" = "^2.28"\n"fastapi" = "^0.95"\n',
+      );
+
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = lines.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toMatch(/Scanning \d+ dependencies/);
+    });
+
+    it('extracts modules from go.mod require block', async () => {
+      writeFileSync(
+        join(tempDir, 'go.mod'),
+        'module example.com/myapp\n\ngo 1.21\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.9.0\n\tgolang.org/x/net v0.10.0\n)\n',
+      );
+
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = lines.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toContain('2 dependencies');
+    });
+
+    it('unions deps from both pyproject.toml and go.mod when both are present', async () => {
+      writeFileSync(
+        join(tempDir, 'pyproject.toml'),
+        '[tool.poetry.dependencies]\n"requests" = "^2.28"\n',
+      );
+      writeFileSync(
+        join(tempDir, 'go.mod'),
+        'module example.com/myapp\n\ngo 1.21\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.9.0\n)\n',
+      );
+
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network'));
+
+      await refDiscoverCommand();
+
+      const scanMsg = lines.find(l => l.includes('Scanning'));
+      expect(scanMsg).toBeDefined();
+      expect(scanMsg).toContain('2 dependencies');
+    });
+
+    it('shows Found list when llms.txt fetch succeeds for a discovered dependency', async () => {
+      // go.mod with github.com/mylib/sdk: depToUrls generates https://github.com/mylib/llms.txt
+      // (host = first 2 path segments: github.com/mylib)
+      writeFileSync(
+        join(tempDir, 'go.mod'),
+        'module example.com/myapp\n\ngo 1.21\n\nrequire (\n\tgithub.com/mylib/sdk v1.0.0\n)\n',
+      );
+
+      setStdinIsTty(false);
+      const lines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { lines.push(args.join(' ')); });
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: string | URL | Request) => {
+        const urlStr = typeof url === 'string' ? url : url instanceof URL ? url.href : (url as Request).url;
+        if (urlStr === 'https://github.com/mylib/llms.txt') {
+          return new Response('', { status: 200 });
+        }
+        return new Response('', { status: 404 });
+      });
+
+      await refDiscoverCommand();
+
+      const foundMsg = lines.find(l => l.includes('Found'));
+      expect(foundMsg).toBeDefined();
+      expect(foundMsg).toContain('1');
+      const refLine = lines.find(l => l.includes('github.com/mylib/llms.txt'));
+      expect(refLine).toBeDefined();
     });
   });
 
