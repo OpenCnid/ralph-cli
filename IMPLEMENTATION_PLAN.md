@@ -502,11 +502,11 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 8: ARCHITECTURE.md update
 
-- [ ] Add `review` domain row to ARCHITECTURE.md domain table: `review | src/commands/review | Agent-powered code review (diff extraction, context assembly, prompt)`.
-- [ ] Document cross-command import exception: `review/index.ts` imports from `run/agent.ts` (documented exception, same as doctor→init pattern).
-- [ ] Files: `ARCHITECTURE.md`
-- [ ] Tests: Verify `ralph doctor` still passes (checks ARCHITECTURE.md consistency).
-- [ ] Done when: ARCHITECTURE.md updated. `ralph doctor` passes.
+- [x] Add `review` domain row to ARCHITECTURE.md domain table: `review | src/commands/review | Agent-powered code review (diff extraction, context assembly, prompt)`.
+- [x] Document cross-command import exception: `review/index.ts` imports from `run/agent.ts` (documented exception, same as doctor→init pattern).
+- [x] Files: `ARCHITECTURE.md`
+- [x] Tests: Verify `ralph doctor` still passes (checks ARCHITECTURE.md consistency).
+- [x] Done when: ARCHITECTURE.md updated. `ralph doctor` passes.
 
 ### Task 9: Domain docs for `review`
 
