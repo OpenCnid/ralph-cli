@@ -1,154 +1,21 @@
 {
   "version": 1,
   "phase": "build",
-  "startedAt": "2026-03-09T09:01:16.983Z",
-  "iteration": 21,
+  "startedAt": "2026-03-09T09:05:00.332Z",
+  "iteration": 2,
   "history": [
     {
       "iteration": 1,
-      "durationMs": 8468,
+      "durationMs": 15538,
       "exitCode": 0,
-      "commit": "01ae91c",
+      "commit": "0007629",
       "error": null
     },
     {
       "iteration": 2,
-      "durationMs": 10815,
+      "durationMs": 27831,
       "exitCode": 0,
-      "commit": "938f054",
-      "error": null
-    },
-    {
-      "iteration": 3,
-      "durationMs": 10201,
-      "exitCode": 0,
-      "commit": "9af6df3",
-      "error": null
-    },
-    {
-      "iteration": 4,
-      "durationMs": 19396,
-      "exitCode": 0,
-      "commit": "0c4d226",
-      "error": null
-    },
-    {
-      "iteration": 5,
-      "durationMs": 18303,
-      "exitCode": 0,
-      "commit": "1ebfed6",
-      "error": null
-    },
-    {
-      "iteration": 6,
-      "durationMs": 11952,
-      "exitCode": 0,
-      "commit": "7334347",
-      "error": null
-    },
-    {
-      "iteration": 7,
-      "durationMs": 13488,
-      "exitCode": 0,
-      "commit": "62d8978",
-      "error": null
-    },
-    {
-      "iteration": 8,
-      "durationMs": 12910,
-      "exitCode": 0,
-      "commit": "51b51a9",
-      "error": null
-    },
-    {
-      "iteration": 9,
-      "durationMs": 17867,
-      "exitCode": 0,
-      "commit": "06a1fcc",
-      "error": null
-    },
-    {
-      "iteration": 10,
-      "durationMs": 13642,
-      "exitCode": 0,
-      "commit": "b441b36",
-      "error": null
-    },
-    {
-      "iteration": 11,
-      "durationMs": 9130,
-      "exitCode": 0,
-      "commit": "cc93cc4",
-      "error": null
-    },
-    {
-      "iteration": 12,
-      "durationMs": 13908,
-      "exitCode": 0,
-      "commit": "c9d2959",
-      "error": null
-    },
-    {
-      "iteration": 13,
-      "durationMs": 9349,
-      "exitCode": 0,
-      "commit": "0330593",
-      "error": null
-    },
-    {
-      "iteration": 14,
-      "durationMs": 10200,
-      "exitCode": 0,
-      "commit": "f9d866f",
-      "error": null
-    },
-    {
-      "iteration": 15,
-      "durationMs": 14715,
-      "exitCode": 0,
-      "commit": "68322f5",
-      "error": null
-    },
-    {
-      "iteration": 16,
-      "durationMs": 12984,
-      "exitCode": 0,
-      "commit": "2df02ac",
-      "error": null
-    },
-    {
-      "iteration": 17,
-      "durationMs": 10096,
-      "exitCode": 0,
-      "commit": "c13b0d8",
-      "error": null
-    },
-    {
-      "iteration": 18,
-      "durationMs": 9872,
-      "exitCode": 0,
-      "commit": "65c9cdd",
-      "error": null
-    },
-    {
-      "iteration": 19,
-      "durationMs": 11982,
-      "exitCode": 0,
-      "commit": "b560648",
-      "error": null
-    },
-    {
-      "iteration": 20,
-      "durationMs": 10630,
-      "exitCode": 0,
-      "commit": "b07cc3c",
-      "error": null
-    },
-    {
-      "iteration": 21,
-      "durationMs": 14760,
-      "exitCode": 0,
-      "commit": "d69d793",
+      "commit": "857d5bb",
       "error": null
     }
   ]
