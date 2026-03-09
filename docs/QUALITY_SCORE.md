@@ -6,7 +6,7 @@ Last updated: 2026-03-09
 
 | Domain | Tests | Docs | Architecture | File Health | Staleness | Overall |
 |--------|-------|------|--------------|-------------|-----------|----------|
-| config | A | F | A | A | A | **F** |
+| config | A | A | A | A | A | **A** |
 | lint | B | F | A | A | A | **F** |
 | grade | B | F | A | A | A | **F** |
 | gc | A | F | A | A | A | **F** |
@@ -17,6 +17,7 @@ Last updated: 2026-03-09
 | ref | D | F | A | A | A | **F** |
 | hooks | B | F | A | A | A | **F** |
 | ci | B | F | A | A | A | **F** |
+| run | C | A | A | A | A | **C** |
 | ralph-cli | B | A | A | A | A | **B** |
 
 ## Details
@@ -24,11 +25,11 @@ Last updated: 2026-03-09
 ### config
 
 - **Tests**: A — 97% line coverage
-- **Docs**: F — 0/3 domain documentation files present
+- **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 196 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: F
+- **Overall**: A
 
 ### lint
 
@@ -120,6 +121,15 @@ Last updated: 2026-03-09
 - **Staleness**: A — Median 0d since last change
 - **Overall**: F
 
+### run
+
+- **Tests**: C — No coverage data for domain path src/commands/run
+- **Docs**: A — 3/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 156 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: C
+
 ### ralph-cli
 
 - **Tests**: B — 84% line coverage
@@ -132,11 +142,11 @@ Last updated: 2026-03-09
 ## Trends
 
 - config/tests: A (stable) — 97% line coverage
-- config/docs: F (stable) — 0/3 domain documentation files present
+- config/docs: A (was F today) — improved — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
 - config/fileHealth: A (stable) — Avg 196 lines, no oversized files
 - config/staleness: A (stable) — Median 0d since last change
-- config/overall: F (stable)
+- config/overall: A (was F today) — improved
 - lint/tests: B (stable) — 83% line coverage
 - lint/docs: F (stable) — 0/3 domain documentation files present
 - lint/architecture: A (stable) — No architectural violations
@@ -206,7 +216,6 @@ Last updated: 2026-03-09
 
 ## Action Items
 
-- [ ] config: Add missing documentation (0/3 domain documentation files present)
 - [ ] lint: Add missing documentation (0/3 domain documentation files present)
 - [ ] grade: Add missing documentation (0/3 domain documentation files present)
 - [ ] gc: Add missing documentation (0/3 domain documentation files present)
