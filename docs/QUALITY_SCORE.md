@@ -135,7 +135,7 @@ Last updated: 2026-03-09
 - **Tests**: B — 86% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 179 lines, no oversized files
+- **File Health**: A — Avg 176 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
 - **Overall**: B
 
@@ -216,7 +216,7 @@ Last updated: 2026-03-09
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: A (stable) — Avg 179 lines, no oversized files
+- ralph-cli/fileHealth: A (stable) — Avg 176 lines, no oversized files
 - ralph-cli/staleness: A (stable) — Median 0d since last change
 - ralph-cli/overall: B (stable)
 
