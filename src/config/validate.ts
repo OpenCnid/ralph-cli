@@ -8,7 +8,13 @@ const VALID_RUNNERS = ['codex', 'claude', 'amp', 'aider', 'cursor', 'other'];
 const VALID_COVERAGE_TOOLS = ['vitest', 'jest', 'pytest', 'go-test', 'none'];
 const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 
-const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci'];
+const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run'];
+const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git'];
+const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
+const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
+const KNOWN_RUN_LOOP_KEYS = ['max-iterations', 'stall-threshold'];
+const KNOWN_RUN_VALIDATION_KEYS = ['test-command', 'typecheck-command'];
+const KNOWN_RUN_GIT_KEYS = ['auto-commit', 'auto-push', 'commit-prefix', 'branch'];
 const KNOWN_PROJECT_KEYS = ['name', 'language', 'description', 'framework'];
 const KNOWN_RUNNER_KEYS = ['cli'];
 const KNOWN_ARCHITECTURE_KEYS = ['layers', 'direction', 'domains', 'cross-cutting', 'rules'];
@@ -56,6 +62,27 @@ function validateStringArray(
     }
   }
   return true;
+}
+
+function validateAgentConfig(
+  obj: Record<string, unknown>,
+  prefix: string,
+  errors: string[],
+  warnings: string[],
+): void {
+  warnUnknownKeys(obj, KNOWN_RUN_AGENT_KEYS, `${prefix}.`, warnings);
+  if (typeof obj['cli'] !== 'string' || obj['cli'].length === 0) {
+    errors.push(`"${prefix}.cli" is required and must be a non-empty string.`);
+  }
+  if (obj['args'] !== undefined) {
+    validateStringArray(obj['args'], `${prefix}.args`, errors);
+  }
+  if (obj['timeout'] !== undefined) {
+    const t = obj['timeout'];
+    if (typeof t !== 'number' || !Number.isInteger(t) || t <= 0) {
+      errors.push(`"${prefix}.timeout" must be a positive integer.`);
+    }
+  }
 }
 
 export function validate(raw: unknown): ValidationResult {
@@ -297,6 +324,114 @@ export function validate(raw: unknown): ValidationResult {
     } else {
       const ci = obj['ci'] as Record<string, unknown>;
       warnUnknownKeys(ci, KNOWN_CI_KEYS, 'ci.', warnings);
+    }
+  }
+
+  // run (optional)
+  if (obj['run'] !== undefined) {
+    if (typeof obj['run'] !== 'object' || obj['run'] === null) {
+      errors.push('"run" must be an object.');
+    } else {
+      const run = obj['run'] as Record<string, unknown>;
+      warnUnknownKeys(run, KNOWN_RUN_KEYS, 'run.', warnings);
+
+      // agent
+      if (run['agent'] !== undefined) {
+        if (typeof run['agent'] !== 'object' || run['agent'] === null) {
+          errors.push('"run.agent" must be an object.');
+        } else {
+          validateAgentConfig(run['agent'] as Record<string, unknown>, 'run.agent', errors, warnings);
+        }
+      }
+
+      // plan-agent / build-agent
+      for (const key of ['plan-agent', 'build-agent'] as const) {
+        if (run[key] !== undefined && run[key] !== null) {
+          if (typeof run[key] !== 'object') {
+            errors.push(`"run.${key}" must be null or an object.`);
+          } else {
+            validateAgentConfig(run[key] as Record<string, unknown>, `run.${key}`, errors, warnings);
+          }
+        }
+      }
+
+      // prompts
+      if (run['prompts'] !== undefined) {
+        if (typeof run['prompts'] !== 'object' || run['prompts'] === null) {
+          errors.push('"run.prompts" must be an object.');
+        } else {
+          const prompts = run['prompts'] as Record<string, unknown>;
+          warnUnknownKeys(prompts, KNOWN_RUN_PROMPTS_KEYS, 'run.prompts.', warnings);
+          if (prompts['plan'] !== undefined && prompts['plan'] !== null && typeof prompts['plan'] !== 'string') {
+            errors.push('"run.prompts.plan" must be null or a string.');
+          }
+          if (prompts['build'] !== undefined && prompts['build'] !== null && typeof prompts['build'] !== 'string') {
+            errors.push('"run.prompts.build" must be null or a string.');
+          }
+        }
+      }
+
+      // loop
+      if (run['loop'] !== undefined) {
+        if (typeof run['loop'] !== 'object' || run['loop'] === null) {
+          errors.push('"run.loop" must be an object.');
+        } else {
+          const loop = run['loop'] as Record<string, unknown>;
+          warnUnknownKeys(loop, KNOWN_RUN_LOOP_KEYS, 'run.loop.', warnings);
+          if (loop['max-iterations'] !== undefined) {
+            const v = loop['max-iterations'];
+            if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+              errors.push('"run.loop.max-iterations" must be a non-negative integer.');
+            }
+          }
+          if (loop['stall-threshold'] !== undefined) {
+            const v = loop['stall-threshold'];
+            if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+              errors.push('"run.loop.stall-threshold" must be a non-negative integer.');
+            }
+          }
+        }
+      }
+
+      // validation
+      if (run['validation'] !== undefined) {
+        if (typeof run['validation'] !== 'object' || run['validation'] === null) {
+          errors.push('"run.validation" must be an object.');
+        } else {
+          const validation = run['validation'] as Record<string, unknown>;
+          warnUnknownKeys(validation, KNOWN_RUN_VALIDATION_KEYS, 'run.validation.', warnings);
+          if (validation['test-command'] !== undefined && validation['test-command'] !== null && typeof validation['test-command'] !== 'string') {
+            errors.push('"run.validation.test-command" must be null or a string.');
+          }
+          if (validation['typecheck-command'] !== undefined && validation['typecheck-command'] !== null && typeof validation['typecheck-command'] !== 'string') {
+            errors.push('"run.validation.typecheck-command" must be null or a string.');
+          }
+        }
+      }
+
+      // git
+      if (run['git'] !== undefined) {
+        if (typeof run['git'] !== 'object' || run['git'] === null) {
+          errors.push('"run.git" must be an object.');
+        } else {
+          const git = run['git'] as Record<string, unknown>;
+          warnUnknownKeys(git, KNOWN_RUN_GIT_KEYS, 'run.git.', warnings);
+          if (git['commit-prefix'] !== undefined) {
+            if (typeof git['commit-prefix'] !== 'string' || git['commit-prefix'].length === 0) {
+              errors.push('"run.git.commit-prefix" must be a non-empty string.');
+            }
+          }
+          if (git['auto-commit'] !== undefined && typeof git['auto-commit'] !== 'boolean') {
+            errors.push('"run.git.auto-commit" must be a boolean.');
+          }
+          if (git['auto-push'] !== undefined && typeof git['auto-push'] !== 'boolean') {
+            errors.push('"run.git.auto-push" must be a boolean.');
+          }
+          if (git['branch'] !== undefined && git['branch'] !== null && typeof git['branch'] !== 'string') {
+            errors.push('"run.git.branch" must be null or a string.');
+          }
+        }
+      }
     }
   }
 

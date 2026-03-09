@@ -33,6 +33,13 @@ src/
     ├── ref/            — Reference management (external docs)
     ├── hooks/          — Git hooks (pre-commit on staged files)
     ├── ci/             — CI config generation (GitHub Actions, GitLab CI)
+    ├── run/            — Autonomous build loop
+    │   ├── index.ts    — Loop orchestration (runCommand entry point)
+    │   ├── agent.ts    — Agent spawn, timeout, resolveAgent, presets
+    │   ├── prompts.ts  — Template engine (plan/build built-in + custom)
+    │   ├── detect.ts   — Auto-detect test/typecheck/task completion
+    │   ├── progress.ts — Checkpoint I/O, banners, iteration display
+    │   └── types.ts    — RunMode, RunOptions, AgentResult types
     └── config-validate.ts — Standalone config validation command
 ```
 
@@ -60,6 +67,7 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 | ref | `src/commands/ref` | External reference management |
 | hooks | `src/commands/hooks` | Git hook generation |
 | ci | `src/commands/ci` | CI pipeline generation |
+| run | `src/commands/run` | Autonomous build loop (agent spawn, prompts, progress) |
 
 ## Cross-Cutting Concerns
 

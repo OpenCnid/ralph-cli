@@ -320,6 +320,110 @@ ci:
   });
 });
 
+describe('mergeWithDefaults run config', () => {
+  it('populates run with all defaults when run is absent', () => {
+    const config = mergeWithDefaults({ project: { name: 'test', language: 'typescript' } });
+
+    expect(config.run).toBeDefined();
+    expect(config.run!.agent.cli).toBe('claude');
+    expect(config.run!.agent.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
+    expect(config.run!.agent.timeout).toBe(1800);
+    expect(config.run!['plan-agent']).toBeNull();
+    expect(config.run!['build-agent']).toBeNull();
+    expect(config.run!.prompts.plan).toBeNull();
+    expect(config.run!.prompts.build).toBeNull();
+    expect(config.run!.loop['max-iterations']).toBe(0);
+    expect(config.run!.loop['stall-threshold']).toBe(3);
+    expect(config.run!.validation['test-command']).toBeNull();
+    expect(config.run!.validation['typecheck-command']).toBeNull();
+    expect(config.run!.git['auto-commit']).toBe(true);
+    expect(config.run!.git['auto-push']).toBe(false);
+    expect(config.run!.git['commit-prefix']).toBe('ralph:');
+    expect(config.run!.git.branch).toBeNull();
+  });
+
+  it('merges partial run config with defaults', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      run: {
+        agent: { cli: 'amp', timeout: 600 },
+        git: { 'auto-push': true, 'commit-prefix': 'bot:' },
+        loop: { 'max-iterations': 5 },
+      },
+    });
+
+    expect(config.run!.agent.cli).toBe('amp');
+    expect(config.run!.agent.timeout).toBe(600);
+    // default args still applied when not specified
+    expect(config.run!.agent.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
+    expect(config.run!.git['auto-push']).toBe(true);
+    expect(config.run!.git['commit-prefix']).toBe('bot:');
+    expect(config.run!.git['auto-commit']).toBe(true); // default
+    expect(config.run!.loop['max-iterations']).toBe(5);
+    expect(config.run!.loop['stall-threshold']).toBe(3); // default
+  });
+
+  it('handles plan-agent explicitly set to null', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      run: { 'plan-agent': null },
+    });
+
+    expect(config.run!['plan-agent']).toBeNull();
+  });
+
+  it('handles plan-agent with partial config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      run: { 'plan-agent': { cli: 'aider' } },
+    });
+
+    expect(config.run!['plan-agent']).not.toBeNull();
+    expect(config.run!['plan-agent']!.cli).toBe('aider');
+    // falls back to agent defaults for unspecified fields
+    expect(config.run!['plan-agent']!.timeout).toBe(1800);
+  });
+
+  it('handles build-agent with partial config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      run: { 'build-agent': { cli: 'cursor', timeout: 900 } },
+    });
+
+    expect(config.run!['build-agent']!.cli).toBe('cursor');
+    expect(config.run!['build-agent']!.timeout).toBe(900);
+    expect(config.run!['build-agent']!.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
+  });
+
+  it('preserves fully specified run config', () => {
+    const customArgs = ['--headless'];
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      run: {
+        agent: { cli: 'other', args: customArgs, timeout: 300 },
+        prompts: { plan: 'custom-plan.md', build: 'custom-build.md' },
+        loop: { 'max-iterations': 10, 'stall-threshold': 5 },
+        validation: { 'test-command': 'npm test', 'typecheck-command': 'npx tsc' },
+        git: { 'auto-commit': false, 'auto-push': true, 'commit-prefix': 'ai:', branch: 'feature/x' },
+      },
+    });
+
+    expect(config.run!.agent.cli).toBe('other');
+    expect(config.run!.agent.args).toEqual(customArgs);
+    expect(config.run!.agent.timeout).toBe(300);
+    expect(config.run!.prompts.plan).toBe('custom-plan.md');
+    expect(config.run!.prompts.build).toBe('custom-build.md');
+    expect(config.run!.loop['max-iterations']).toBe(10);
+    expect(config.run!.loop['stall-threshold']).toBe(5);
+    expect(config.run!.validation['test-command']).toBe('npm test');
+    expect(config.run!.validation['typecheck-command']).toBe('npx tsc');
+    expect(config.run!.git['auto-commit']).toBe(false);
+    expect(config.run!.git['auto-push']).toBe(true);
+    expect(config.run!.git['commit-prefix']).toBe('ai:');
+    expect(config.run!.git.branch).toBe('feature/x');
+  });
+});
+
 describe('detectCiEnvironment', () => {
   const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
 

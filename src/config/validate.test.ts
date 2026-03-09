@@ -554,6 +554,148 @@ describe('validate', () => {
     }
   });
 
+  // run validation
+  it('accepts valid run config', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: {
+        agent: { cli: 'claude', args: ['--dangerously-skip-permissions'], timeout: 300 },
+        'plan-agent': null,
+        'build-agent': { cli: 'claude', args: [], timeout: 600 },
+        prompts: { plan: 'prompts/plan.md', build: null },
+        loop: { 'max-iterations': 10, 'stall-threshold': 3 },
+        validation: { 'test-command': 'npm test', 'typecheck-command': 'npx tsc --noEmit' },
+        git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('errors on missing run.agent.cli', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { args: [], timeout: 300 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.agent.cli');
+  });
+
+  it('errors on empty run.agent.cli', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: '', timeout: 300 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.agent.cli');
+  });
+
+  it('errors on negative run.agent.timeout', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude', timeout: -1 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.agent.timeout');
+  });
+
+  it('errors on zero run.agent.timeout', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude', timeout: 0 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.agent.timeout');
+  });
+
+  it('errors on negative run.loop.max-iterations', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, loop: { 'max-iterations': -1 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.loop.max-iterations');
+  });
+
+  it('accepts zero run.loop.max-iterations', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, loop: { 'max-iterations': 0 } },
+    });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('warns on unknown keys in run', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, unknown_run_key: true },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('run.unknown_run_key');
+  });
+
+  it('warns on unknown keys in run.agent', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude', extra: true } },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('run.agent.extra');
+  });
+
+  it('errors on plan-agent with invalid shape (missing cli)', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, 'plan-agent': { args: [], timeout: 300 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.plan-agent.cli');
+  });
+
+  it('errors on non-boolean run.git.auto-commit', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, git: { 'auto-commit': 'yes' } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.git.auto-commit');
+  });
+
+  it('errors on empty run.git.commit-prefix', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, git: { 'commit-prefix': '' } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.git.commit-prefix');
+  });
+
+  it('errors on invalid run.prompts.plan type', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { agent: { cli: 'claude' }, prompts: { plan: 42 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.prompts.plan');
+  });
+
+  it('accepts null values for nullable run fields', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: {
+        agent: { cli: 'claude' },
+        'plan-agent': null,
+        'build-agent': null,
+        prompts: { plan: null, build: null },
+        validation: { 'test-command': null, 'typecheck-command': null },
+        git: { branch: null },
+      },
+    });
+    expect(result.errors).toEqual([]);
+  });
+
   it('reports multiple errors simultaneously', () => {
     const result = validate({
       ...MINIMAL,

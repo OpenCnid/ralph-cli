@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES } from './defaults.js';
+import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -111,6 +111,49 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
       'warn-single-file-kb': raw.references?.['warn-single-file-kb'] ?? DEFAULT_REFERENCES['warn-single-file-kb'],
     },
     ci: raw.ci,
+    run: {
+      agent: {
+        cli: raw.run?.agent?.cli ?? DEFAULT_RUN.agent.cli,
+        args: raw.run?.agent?.args ?? DEFAULT_RUN.agent.args,
+        timeout: raw.run?.agent?.timeout ?? DEFAULT_RUN.agent.timeout,
+      },
+      'plan-agent': raw.run?.['plan-agent'] === null
+        ? null
+        : raw.run?.['plan-agent'] !== undefined
+          ? {
+              cli: raw.run['plan-agent'].cli ?? DEFAULT_RUN.agent.cli,
+              args: raw.run['plan-agent'].args ?? DEFAULT_RUN.agent.args,
+              timeout: raw.run['plan-agent'].timeout ?? DEFAULT_RUN.agent.timeout,
+            }
+          : DEFAULT_RUN['plan-agent'],
+      'build-agent': raw.run?.['build-agent'] === null
+        ? null
+        : raw.run?.['build-agent'] !== undefined
+          ? {
+              cli: raw.run['build-agent'].cli ?? DEFAULT_RUN.agent.cli,
+              args: raw.run['build-agent'].args ?? DEFAULT_RUN.agent.args,
+              timeout: raw.run['build-agent'].timeout ?? DEFAULT_RUN.agent.timeout,
+            }
+          : DEFAULT_RUN['build-agent'],
+      prompts: {
+        plan: raw.run?.prompts?.plan ?? DEFAULT_RUN.prompts.plan,
+        build: raw.run?.prompts?.build ?? DEFAULT_RUN.prompts.build,
+      },
+      loop: {
+        'max-iterations': raw.run?.loop?.['max-iterations'] ?? DEFAULT_RUN.loop['max-iterations'],
+        'stall-threshold': raw.run?.loop?.['stall-threshold'] ?? DEFAULT_RUN.loop['stall-threshold'],
+      },
+      validation: {
+        'test-command': raw.run?.validation?.['test-command'] ?? DEFAULT_RUN.validation['test-command'],
+        'typecheck-command': raw.run?.validation?.['typecheck-command'] ?? DEFAULT_RUN.validation['typecheck-command'],
+      },
+      git: {
+        'auto-commit': raw.run?.git?.['auto-commit'] ?? DEFAULT_RUN.git['auto-commit'],
+        'auto-push': raw.run?.git?.['auto-push'] ?? DEFAULT_RUN.git['auto-push'],
+        'commit-prefix': raw.run?.git?.['commit-prefix'] ?? DEFAULT_RUN.git['commit-prefix'],
+        branch: raw.run?.git?.branch ?? DEFAULT_RUN.git.branch,
+      },
+    },
   };
 
   // Apply CI overrides when running in CI
