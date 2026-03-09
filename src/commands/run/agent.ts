@@ -97,7 +97,7 @@ export function resolveAgent(
 
   // Tier 2: phase-specific overrides default
   const phaseAgent = mode === 'plan' ? runConfig['plan-agent'] : runConfig['build-agent'];
-  if (phaseAgent !== null) {
+  if (phaseAgent !== null) { // null and undefined are distinct: null = no phase override, undefined not possible here
     base = phaseAgent;
   }
 

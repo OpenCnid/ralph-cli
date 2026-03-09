@@ -9,7 +9,7 @@ export function configValidateCommand(): void {
       warn(w);
     }
 
-    if (result.configPath === null) {
+    if (result.configPath === null) { // null and undefined are distinct: null = no config file found
       error('No .ralph/config.yml found. Run `ralph init` to create one.');
       process.exit(1);
     }

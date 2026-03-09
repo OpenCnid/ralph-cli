@@ -2,15 +2,17 @@
 
 ## Current State
 
-- **Version**: 0.1.1
-- **Commands**: All 10 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci) + config validate
-- **Tests**: 312 across 14 files — all passing
+- **Version**: 0.2.1
+- **Commands**: All 11 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run) + config validate
+- **Tests**: 503 across 21 files — all passing
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.2.1 | 2026-03-09 | Dogfood cleanup — per-domain docs (12 domains), GC drift resolved (5 items), version bump |
+| 0.2.0 | 2026-03-09 | `ralph run` autonomous build loop — agent abstraction, prompt engine, checkpoint, auto-detect, 80+ tests |
 | 0.1.1 | 2026-03-08 | Interactive init/doctor/ref, prompt utils, grade crash fix, GC orphan fix, custom YAML autofix, README + AGENTS.md |
 | 0.0.28–0.0.32 | 2026-03-07 | GC git context, config schema rename (`files`→`rules`), direction field, script rules, trend reasons, spec alignment |
 | 0.0.23–0.0.27 | 2026-03-06 | Doctor spec compliance, CI auto-detection, GC dedup + temporal context, Python/Go linter detection, per-dimension trends |
@@ -257,3 +259,107 @@ Task 1 (schema/defaults/loader)
 ```
 
 Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 are independent of each other and can be parallelized once tasks 1–2 are done. Tasks 10 and 11 can be parallelized. Task 13 is last to capture final state.
+
+---
+
+## v0.2.1 — Dogfood Cleanup
+
+**Spec:** `docs/product-specs/dogfood-v0.2.1.md`
+**Goal:** Make ralph-cli pass its own quality bar — every domain graded B or above, zero persistent GC drift.
+
+**Baseline:** 503 tests passing. Doctor 10/10. Grade: 11/12 domains fail docs (F). GC: 5 persistent drift items.
+
+**Domain docs scoring:** `ralph grade` checks 3 files per domain — `{domain.path}/DESIGN.md`, `docs/design-docs/{domain.name}.md`, `docs/design-docs/{domain.name}/DESIGN.md`. All 3 must exist (3/3 = 100% = A). Each file should be 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions.
+
+### Task 1: Add `run` to config domains + docs for `config` and `run`
+
+- [x] Add `run` domain (`path: src/commands/run`) to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it.
+- [x] Create `src/config/DESIGN.md`, `docs/design-docs/config.md`, `docs/design-docs/config/DESIGN.md` covering config loader, schema, validation, defaults.
+- [x] Create `src/commands/run/DESIGN.md`, `docs/design-docs/run.md`, `docs/design-docs/run/DESIGN.md` covering the autonomous build loop, agent abstraction, prompt engine, checkpoint.
+- [x] Files: `.ralph/config.yml`, 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `config` and `run` docs dimension.
+
+### Task 2: Domain docs for `init` and `lint`
+
+- [x] Create `src/commands/init/DESIGN.md`, `docs/design-docs/init.md`, `docs/design-docs/init/DESIGN.md` covering project scaffolding, language detection, template generation.
+- [x] Create `src/commands/lint/DESIGN.md`, `docs/design-docs/lint.md`, `docs/design-docs/lint/DESIGN.md` covering lint engine, built-in rules (5), custom YAML/JS rules, `--fix` autofix.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `init` and `lint` docs dimension.
+
+### Task 3: Domain docs for `grade` and `gc`
+
+- [x] Create `src/commands/grade/DESIGN.md`, `docs/design-docs/grade.md`, `docs/design-docs/grade/DESIGN.md` covering 5 scoring dimensions, per-domain scoring, trend tracking.
+- [x] Create `src/commands/gc/DESIGN.md`, `docs/design-docs/gc.md`, `docs/design-docs/gc/DESIGN.md` covering 4 drift categories (principles, dead code, stale docs, patterns), history tracking, custom anti-patterns.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `grade` and `gc` docs dimension.
+
+### Task 4: Domain docs for `doctor` and `plan`
+
+- [x] Create `src/commands/doctor/DESIGN.md`, `docs/design-docs/doctor.md`, `docs/design-docs/doctor/DESIGN.md` covering 4 check categories (structure, content, backpressure, operational), scoring, `--fix`.
+- [x] Create `src/commands/plan/DESIGN.md`, `docs/design-docs/plan.md`, `docs/design-docs/plan/DESIGN.md` covering execution plan lifecycle (create/complete/abandon/list/status), decision logging, tech-debt tracking.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `doctor` and `plan` docs dimension.
+
+### Task 5: Domain docs for `promote`, `ref`, `hooks`, and `ci`
+
+- [x] Create `src/commands/promote/DESIGN.md`, `docs/design-docs/promote.md`, `docs/design-docs/promote/DESIGN.md` covering the escalation ladder (review → docs → lint → code patterns).
+- [x] Create `src/commands/ref/DESIGN.md`, `docs/design-docs/ref.md`, `docs/design-docs/ref/DESIGN.md` covering LLM-friendly external doc management, `llms.txt` discovery.
+- [x] Create `src/commands/hooks/DESIGN.md`, `docs/design-docs/hooks.md`, `docs/design-docs/hooks/DESIGN.md` covering git hook installation (pre-commit, post-commit, pre-push).
+- [x] Create `src/commands/ci/DESIGN.md`, `docs/design-docs/ci.md`, `docs/design-docs/ci/DESIGN.md` covering CI template generation (GitHub Actions, GitLab CI).
+- [x] Files: 12 new doc files.
+- [x] Done when: `ralph grade` shows A for `promote`, `ref`, `hooks`, `ci` docs dimension.
+
+### Task 6: GC false positives — comments and exclusions
+
+Resolves spec items 2a, 2b, 2c.
+
+- [x] `src/config/loader.ts` lines 78–79: Add inline comment explaining that optional chaining is safe here because `validate()` is called before `mergeWithDefaults()`. Example: `// validated upstream — optional chaining is defensive, not necessary`
+- [x] `src/utils/output.ts`: Add a comment block at the top explaining that `console.log` calls here are intentional — this is the structured output boundary layer. Example: `// output.ts is the logging boundary; direct console.log usage here is by design`
+- [x] `.ralph/config.yml` `gc.exclude`: Add `vitest.config.ts` (config file loaded by vitest directly, never imported). This removes the "dead code" false positive.
+- [x] Files: `src/config/loader.ts`, `src/utils/output.ts`, `.ralph/config.yml`.
+- [x] Done when: `ralph gc` no longer reports items 2a, 2b, 2c.
+
+### Task 7: GC null-checking migration
+
+Resolves spec items 2d, 2e.
+
+- [x] Identify all files using explicit `=== null` or `!== null` checks (reported by `ralph gc`).
+- [x] For each occurrence, determine if migration to nullish coalescing (`??`) or optional chaining (`?.`) is safe. Migrate where safe. Where null/undefined distinction matters (`exactOptionalPropertyTypes`), add a brief comment: `// null and undefined are distinct here`.
+- [x] Regression test: `npm test && npx tsc --noEmit` must pass after all changes.
+- [x] Files: `src/commands/config-validate.ts`, `src/commands/gc/scanners.ts`, and any other affected files identified by `ralph gc`.
+- [x] Done when: `ralph gc` no longer reports pattern inconsistency for null-checking. All tests pass.
+
+### Task 8: Version bump + CHANGELOG
+
+- [x] Bump `package.json` version from `0.2.0` to `0.2.1`.
+- [x] Add v0.2.1 section to `CHANGELOG.md` summarising: per-domain docs (12 domains), GC drift resolved (5 items), version bump.
+- [x] Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.2.1`, add `0.2.1` row to Release History.
+- [x] Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`.
+- [x] Done when: `ralph --version` prints `0.2.1`. CHANGELOG has a v0.2.1 entry. All validation passes.
+
+### Dependency Graph
+
+```
+Task 1 (config + run docs)
+  └→ independent of other doc tasks
+
+Tasks 2–5 (remaining domain docs) — all independent of each other
+  └→ all independent, can run in any order
+
+Task 6 (GC false positives — comments/exclusions)
+  └→ independent
+
+Task 7 (GC null-checking migration)
+  └→ independent (but run after task 6 to verify gc count drops)
+
+Task 8 (version bump + CHANGELOG)
+  └→ must be last (summarises all prior tasks)
+```
+
+### Validation
+
+After all tasks:
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: all tests pass, doctor 10/10, every domain A on docs dimension, `ralph gc` reports 0 items.

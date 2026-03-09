@@ -41,6 +41,7 @@ function hasChanges(): boolean {
 }
 
 function gitCommit(prefix: string, task: string | null, mode: RunMode, iteration: number): string | null {
+  // null and undefined are distinct: null = no completed task detected, use iteration fallback
   const msg = task !== null
     ? `${prefix} ${task}`
     : mode === 'plan'
@@ -84,7 +85,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
   const existing = loadCheckpoint();
   let checkpoint: Checkpoint;
 
-  if (options.resume === true && existing !== null) {
+  if (options.resume === true && existing !== null) { // null = no checkpoint file found
     if (existing.phase !== mode) {
       if (isTTY()) {
         output.warn(`Checkpoint is from a "${existing.phase}" run, but running "${mode}" mode.`);

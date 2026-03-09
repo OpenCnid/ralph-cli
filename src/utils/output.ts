@@ -1,3 +1,5 @@
+// output.ts is the logging boundary; direct console.log usage here is by design.
+// All other modules call these functions instead of using console.log directly.
 import pc from 'picocolors';
 
 export function success(msg: string): void {
