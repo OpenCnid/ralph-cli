@@ -813,6 +813,67 @@ describe('validate', () => {
     expect(result.errors[0]).toContain('review.agent.cli');
   });
 
+  // heal validation
+  it('accepts valid heal config', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: {
+        agent: { cli: 'claude', args: [], timeout: 300 },
+        commands: ['doctor', 'grade', 'gc', 'lint'],
+        'auto-commit': true,
+        'commit-prefix': 'ralph-heal:',
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts heal with null agent', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: { agent: null },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('errors on invalid heal.commands entry', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: { commands: ['doctor', 'invalid-cmd'] },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('heal.commands[1]');
+  });
+
+  it('errors on invalid heal.auto-commit type', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: { 'auto-commit': 'yes' },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('heal.auto-commit');
+  });
+
+  it('errors on empty heal.commit-prefix', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: { 'commit-prefix': '' },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('heal.commit-prefix');
+  });
+
+  it('warns on unknown keys within heal', () => {
+    const result = validate({
+      ...MINIMAL,
+      heal: { unknown_key: true },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('heal.unknown_key');
+  });
+
   it('reports multiple errors simultaneously', () => {
     const result = validate({
       ...MINIMAL,

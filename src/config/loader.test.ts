@@ -512,6 +512,68 @@ describe('mergeWithDefaults review config', () => {
   });
 });
 
+describe('mergeWithDefaults heal config', () => {
+  it('populates heal with all defaults when heal is absent', () => {
+    const config = mergeWithDefaults({ project: { name: 'test', language: 'typescript' } });
+    expect(config.heal).toBeDefined();
+    expect(config.heal!.agent).toBeNull();
+    expect(config.heal!.commands).toEqual(['doctor', 'grade', 'gc', 'lint']);
+    expect(config.heal!['auto-commit']).toBe(true);
+    expect(config.heal!['commit-prefix']).toBe('ralph: heal');
+  });
+
+  it('merges partial heal config with defaults', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      heal: {
+        'auto-commit': false,
+        commands: ['doctor', 'lint'],
+      },
+    });
+    expect(config.heal!['auto-commit']).toBe(false);
+    expect(config.heal!.commands).toEqual(['doctor', 'lint']);
+    expect(config.heal!['commit-prefix']).toBe('ralph: heal'); // default
+    expect(config.heal!.agent).toBeNull(); // default
+  });
+
+  it('handles heal.agent explicitly set to null', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      heal: { agent: null },
+    });
+    expect(config.heal!.agent).toBeNull();
+  });
+
+  it('handles heal.agent with partial config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      heal: { agent: { cli: 'amp', timeout: 600 } },
+    });
+    expect(config.heal!.agent).not.toBeNull();
+    expect(config.heal!.agent!.cli).toBe('amp');
+    expect(config.heal!.agent!.timeout).toBe(600);
+    expect(config.heal!.agent!.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
+  });
+
+  it('preserves fully specified heal config', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      heal: {
+        agent: { cli: 'aider', args: ['--yes'], timeout: 900 },
+        commands: ['doctor'],
+        'auto-commit': false,
+        'commit-prefix': 'fix:',
+      },
+    });
+    expect(config.heal!.agent!.cli).toBe('aider');
+    expect(config.heal!.agent!.args).toEqual(['--yes']);
+    expect(config.heal!.agent!.timeout).toBe(900);
+    expect(config.heal!.commands).toEqual(['doctor']);
+    expect(config.heal!['auto-commit']).toBe(false);
+    expect(config.heal!['commit-prefix']).toBe('fix:');
+  });
+});
+
 describe('detectCiEnvironment', () => {
   const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
 

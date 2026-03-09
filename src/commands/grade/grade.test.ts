@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execSync } from 'node:child_process';
 import { scoreProject, scoreDomain, parseLcov, parseLcovForDomain, parseCoberturaXml, parseGoCoverage, parseGoCoverageForDomain, generateQualityMd, gradeCommand } from './index.js';
+import { gradeRuntime } from './scorers.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
 
@@ -20,12 +20,6 @@ function makeConfig(overrides?: Partial<{ name: string; language: string }>): Ra
       language: (overrides?.language ?? 'typescript') as 'typescript',
     },
   });
-}
-
-function initGitRepo(dir: string): void {
-  execSync('git init', { cwd: dir, stdio: 'pipe' });
-  execSync('git config user.email "test@test.com"', { cwd: dir, stdio: 'pipe' });
-  execSync('git config user.name "Test"', { cwd: dir, stdio: 'pipe' });
 }
 
 describe('scoreProject', () => {
@@ -102,15 +96,18 @@ describe('scoreProject', () => {
   });
 
   it('staleness grades recently committed files as A', () => {
-    initGitRepo(tempDir);
     writeFileSync(join(tempDir, 'app.ts'), 'export const x = 1;\n');
-    execSync('git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const execSyncSpy = vi.spyOn(gradeRuntime, 'execSync').mockReturnValue(`${nowSeconds}\n`);
 
     const config = makeConfig();
     const score = scoreProject(tempDir, config);
 
     expect(score.staleness.grade).toBe('A');
     expect(score.staleness.detail).toContain('Median');
+
+    execSyncSpy.mockRestore();
   });
 
   it('staleness returns C when no git history is available', () => {

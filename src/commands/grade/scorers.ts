@@ -24,6 +24,10 @@ export interface DomainScore {
   overall: Grade;
 }
 
+export const gradeRuntime = {
+  execSync,
+};
+
 export const GRADE_ORDER: Grade[] = ['A', 'B', 'C', 'D', 'F'];
 
 export function gradeFromPercentage(pct: number): Grade {
@@ -290,7 +294,7 @@ function scoreStalenessForFiles(projectRoot: string, files: string[]): Dimension
 
   for (const file of files) {
     try {
-      const lastCommit = execSync(
+      const lastCommit = gradeRuntime.execSync(
         `git log -1 --format=%at -- "${file}"`,
         { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
       ).trim();

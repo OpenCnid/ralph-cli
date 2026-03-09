@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runAllChecks, doctorCommand } from './index.js';
+import { doctorRuntime } from './checks.js';
 import type { RalphConfig } from '../../config/schema.js';
 import { mergeWithDefaults } from '../../config/loader.js';
 import * as initModule from '../init/index.js';
@@ -184,11 +185,19 @@ describe('doctor checks', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
     writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("ok", () => {});\n');
 
+    const execSyncSpy = vi.spyOn(doctorRuntime, 'execSync').mockImplementation((command: string) => {
+      if (command === 'npm test') return Buffer.from('');
+      if (command === 'git rev-list --count HEAD') return Buffer.from('1\n');
+      throw new Error(`Unexpected execSync command: ${command}`);
+    });
+
     const checks = runAllChecks(tempDir, makeConfig());
     const testRunCheck = checks.find(c => c.name === 'Tests run successfully');
     expect(testRunCheck).toBeDefined();
     expect(testRunCheck!.pass).toBe(true);
     expect(testRunCheck!.detail).toContain('exits 0');
+
+    execSyncSpy.mockRestore();
   });
 
   it('runs tests and reports failure when test command fails', () => {
@@ -200,12 +209,24 @@ describe('doctor checks', () => {
     mkdirSync(join(tempDir, 'src'), { recursive: true });
     writeFileSync(join(tempDir, 'src', 'app.test.ts'), 'test("ok", () => {});\n');
 
+    const execSyncSpy = vi.spyOn(doctorRuntime, 'execSync').mockImplementation((command: string) => {
+      if (command === 'git rev-list --count HEAD') return Buffer.from('1\n');
+      if (command === 'npm test') {
+        const err = new Error('npm test failed') as Error & { status?: number };
+        err.status = 1;
+        throw err;
+      }
+      throw new Error(`Unexpected execSync command: ${command}`);
+    });
+
     const checks = runAllChecks(tempDir, makeConfig());
     const testRunCheck = checks.find(c => c.name === 'Tests run successfully');
     expect(testRunCheck).toBeDefined();
     expect(testRunCheck!.pass).toBe(false);
     expect(testRunCheck!.detail).toContain('failed');
     expect(testRunCheck!.fix).toContain('Fix failing tests');
+
+    execSyncSpy.mockRestore();
   });
 
   it('detects LLM references with line number', () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -7,7 +7,7 @@ import type { LintRule, LintContext, LintViolation } from './engine.js';
 import { lintCommand } from './index.js';
 import { createFileSizeRule } from './rules/file-size.js';
 import { createNamingConventionRule } from './rules/naming-convention.js';
-import { loadCustomRules } from './rules/custom-rules.js';
+import { customRulesRuntime, loadCustomRules } from './rules/custom-rules.js';
 import { collectFiles } from './files.js';
 import { parseImports } from './imports.js';
 import { createDomainIsolationRule } from './rules/domain-isolation.js';
@@ -330,33 +330,9 @@ async function fetchData() {
     const rulesDir = join(tempDir, '.ralph', 'rules');
     mkdirSync(rulesDir, { recursive: true });
 
-    // Create a JS script rule that detects "TODO" comments
+    // Create a JS script rule file; execution is stubbed in this test.
     writeFileSync(join(rulesDir, 'no-todos.js'), `
-const input = [];
-process.stdin.on('data', d => input.push(d));
-process.stdin.on('end', () => {
-  const { files } = JSON.parse(input.join(''));
-  const fs = require('fs');
-  const path = require('path');
-  const violations = [];
-  for (const file of files) {
-    const content = fs.readFileSync(file, 'utf-8');
-    const lines = content.split('\\n');
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes('TODO')) {
-        violations.push({
-          file: path.relative(process.cwd(), file),
-          line: i + 1,
-          what: 'TODO comment found',
-          rule: 'no-todos',
-          fix: 'Resolve the TODO',
-          severity: 'warning'
-        });
-      }
-    }
-  }
-  console.log(JSON.stringify({ name: 'no-todos', violations }));
-});
+export {};
 `);
 
     const sourceFile = join(tempDir, 'src', 'app.ts');
@@ -367,10 +343,28 @@ process.stdin.on('end', () => {
     const scriptRule = rules.find(r => r.name === 'no-todos');
     expect(scriptRule).toBeDefined();
 
+    const execFileSyncSpy = vi.spyOn(customRulesRuntime, 'execFileSync').mockReturnValue(
+      JSON.stringify({
+        name: 'no-todos',
+        violations: [
+          {
+            file: 'src/app.ts',
+            line: 1,
+            what: 'TODO comment found',
+            rule: 'no-todos',
+            fix: 'Resolve the TODO',
+            severity: 'warning',
+          },
+        ],
+      }),
+    );
+
     const violations = scriptRule!.run({ projectRoot: tempDir, files: [sourceFile] });
     expect(violations.length).toBe(1);
     expect(violations[0]!.what).toContain('TODO');
     expect(violations[0]!.severity).toBe('warning');
+
+    execFileSyncSpy.mockRestore();
   });
 });
 

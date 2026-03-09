@@ -36,6 +36,8 @@ architecture:
       path: src/commands/run
     - name: review
       path: src/commands/review
+    - name: heal
+      path: src/commands/heal
   cross-cutting:
     - src/utils
   rules:

@@ -2,6 +2,30 @@
 
 All notable changes to ralph-cli are documented here. Reverse chronological.
 
+## [0.4.0] — 2026-03-09
+
+Spec: `docs/product-specs/ralph-heal.md`. 9 tasks.
+
+### Added
+
+- **`ralph heal` command**: Automated self-repair flow that runs ralph diagnostics, builds a heal prompt, spawns a coding agent, optionally commits fixes, and reruns diagnostics for verification.
+- **Heal diagnostics module** (`src/commands/heal/diagnostics.ts`): command execution, issue parsing, `--only` / `--skip` filtering, and stable test hooks for diagnostics mocking.
+- **Heal prompt engine** (`src/commands/heal/prompts.ts`): built-in `HEAL_TEMPLATE` with project context, aggregated diagnostic output, validation command, and explicit repair priority (`doctor` → `lint` → `gc` → `grade`).
+- **Heal CLI integration**: `ralph heal` registered in `src/cli.ts` with `--agent`, `--model`, `--only`, `--skip`, `--dry-run`, `--no-commit`, and `--verbose`.
+- **Heal domain docs**: `src/commands/heal/DESIGN.md`, `docs/design-docs/heal.md`, and `docs/design-docs/heal/DESIGN.md`, plus architecture/config registration so doctor and grade score the new domain.
+
+### Changed
+
+- **Architecture metadata** updated for 13 commands, including the `heal` domain row and the documented `heal -> run/agent + run/detect` cross-command exception.
+- **Release metadata** updated to v0.4.0 across `package.json`, `CHANGELOG.md`, and `IMPLEMENTATION_PLAN.md`.
+
+### Stats
+
+- 685 tests across 30 files.
+- 9 `ralph heal` tasks completed from the v0.4.0 spec.
+
+---
+
 ## [0.2.1] — 2026-03-09
 
 Spec: `docs/product-specs/dogfood-v0.2.1.md`. 8 tasks (dogfood cleanup).

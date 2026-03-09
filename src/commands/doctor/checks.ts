@@ -11,10 +11,12 @@ export interface Check {
   fix?: string | undefined;
 }
 
+export const doctorRuntime = {
+  execSync,
+};
+
 function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
   const checks: Check[] = [];
-
-  // AGENTS.md exists and under 100 lines
   const agentsPath = join(projectRoot, config.paths['agents-md']);
   if (existsSync(agentsPath)) {
     const lines = readFileSync(agentsPath, 'utf-8').split('\n').length;
@@ -35,7 +37,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
   }
 
-  // ARCHITECTURE.md exists
   const archPath = join(projectRoot, config.paths['architecture-md']);
   checks.push({
     name: 'ARCHITECTURE.md exists',
@@ -45,7 +46,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     fix: existsSync(archPath) ? undefined : 'Run `ralph init` to create ARCHITECTURE.md',
   });
 
-  // docs/ directories
   const docDirs = ['design-docs', 'product-specs', 'references', 'generated'] as const;
   for (const dir of docDirs) {
     const dirKey = dir === 'design-docs' ? 'design-docs' :
@@ -54,7 +54,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     const dirPath = join(projectRoot, config.paths[dirKey as keyof typeof config.paths] as string);
     if (existsSync(dirPath)) {
       let detail = 'Present';
-      // For product-specs, show file count per spec example
       if (dir === 'product-specs') {
         try {
           const specFiles = readdirSync(dirPath).filter(f => f.endsWith('.md'));
@@ -78,7 +77,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     }
   }
 
-  // exec-plans with active/ and completed/
   const plansPath = join(projectRoot, config.paths.plans);
   const activePath = join(plansPath, 'active');
   const completedPath = join(plansPath, 'completed');
@@ -90,7 +88,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     fix: !existsSync(plansPath) ? 'Run `ralph init` to create exec-plans structure' : undefined,
   });
 
-  // .ralph/config.yml
   const configPath = join(projectRoot, '.ralph', 'config.yml');
   checks.push({
     name: '.ralph/config.yml valid',
@@ -100,7 +97,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     fix: existsSync(configPath) ? undefined : 'Run `ralph init` to create .ralph/config.yml',
   });
 
-  // Domain docs
   for (const doc of ['DESIGN.md', 'RELIABILITY.md', 'SECURITY.md']) {
     const docPath = join(projectRoot, config.paths.docs, doc);
     checks.push({
@@ -112,7 +108,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
   }
 
-  // QUALITY_SCORE.md
   const qualityPath = join(projectRoot, config.paths.quality);
   checks.push({
     name: 'QUALITY_SCORE.md exists',
@@ -122,7 +117,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
     fix: existsSync(qualityPath) ? undefined : 'Run `ralph grade` to generate QUALITY_SCORE.md',
   });
 
-  // core-beliefs.md
   const beliefsPath = join(projectRoot, config.paths['design-docs'], 'core-beliefs.md');
   checks.push({
     name: 'core-beliefs.md exists',
@@ -137,7 +131,6 @@ function runStructureChecks(projectRoot: string, config: RalphConfig): Check[] {
 
 function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
   const checks: Check[] = [];
-  // AGENTS.md contains build/test/lint commands
   const agentsPath = join(projectRoot, config.paths['agents-md']);
   if (existsSync(agentsPath)) {
     const content = readFileSync(agentsPath, 'utf-8').toLowerCase();
@@ -150,7 +143,6 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
       fix: hasCommands ? undefined : 'Add build, test, and lint commands to AGENTS.md',
     });
 
-    // No LLM refs
     const llmTerms = ['openai', 'anthropic', 'gpt-4', 'gpt-3', 'chatgpt', 'gemini', 'claude', 'copilot'];
     const agentsLines = readFileSync(agentsPath, 'utf-8').split('\n');
     let llmLineNum: number | undefined;
@@ -173,7 +165,6 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
       fix: hasLlmRefs ? `Remove LLM-specific references from AGENTS.md (line ${llmLineNum})` : undefined,
     });
 
-    // ToC structure (not monolith)
     const lines = readFileSync(agentsPath, 'utf-8').split('\n');
     const headingCount = lines.filter(l => l.startsWith('#')).length;
     checks.push({
@@ -185,13 +176,11 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
   }
 
-  // ARCHITECTURE.md describes domain boundaries
   const archPath = join(projectRoot, config.paths['architecture-md']);
   if (existsSync(archPath)) {
     const archContent = readFileSync(archPath, 'utf-8');
     const archLower = archContent.toLowerCase();
     const hasDomains = archLower.includes('domain') || archLower.includes('boundary') || archLower.includes('layer');
-    // Count domain-like headings/entries (## Domain, ### domain-name, - **domain**)
     const domainHeadings = archContent.match(/^#{2,3}\s+\S+/gm) ?? [];
     const domainCount = domainHeadings.length;
     checks.push({
@@ -203,7 +192,6 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
   }
 
-  // core-beliefs.md has at least 3 beliefs
   const beliefsPath = join(projectRoot, config.paths['design-docs'], 'core-beliefs.md');
   if (existsSync(beliefsPath)) {
     const content = readFileSync(beliefsPath, 'utf-8');
@@ -218,7 +206,6 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
     });
   }
 
-  // tech-debt-tracker.md exists
   const trackerPath = join(projectRoot, config.paths.plans, 'tech-debt-tracker.md');
   checks.push({
     name: 'tech-debt-tracker.md exists',
@@ -233,7 +220,6 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
 
 function runBackpressureChecks(projectRoot: string): Check[] {
   const checks: Check[] = [];
-  // Test runner configured
   const pkgPath = join(projectRoot, 'package.json');
   let hasTestRunner = false;
   let hasLinter = false;
@@ -251,12 +237,10 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     } catch { /* ignore */ }
   }
 
-  // Python
   const pyprojectPath = join(projectRoot, 'pyproject.toml');
   if (existsSync(pyprojectPath)) {
-    hasTestRunner = true; // pytest is standard
-    hasTypeChecker = true; // mypy common
-    // Check for Python linters in pyproject.toml
+    hasTestRunner = true;
+    hasTypeChecker = true;
     if (!hasLinter) {
       try {
         const pyContent = readFileSync(pyprojectPath, 'utf-8');
@@ -270,11 +254,9 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     }
   }
 
-  // Go
   if (existsSync(join(projectRoot, 'go.mod'))) {
-    hasTestRunner = true; // go test built-in
-    hasTypeChecker = true; // go compiler
-    // Check for Go linter (golangci-lint config or in go.sum)
+    hasTestRunner = true;
+    hasTypeChecker = true;
     if (!hasLinter) {
       const golangciConfigs = ['.golangci.yml', '.golangci.yaml', '.golangci.toml', '.golangci.json'];
       hasLinter = golangciConfigs.some(f => existsSync(join(projectRoot, f)));
@@ -305,7 +287,6 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     fix: hasTypeChecker ? undefined : 'Add a type checker (typescript, mypy)',
   });
 
-  // Test files exist (verifies tests are real, not just a runner configured)
   let hasTestFiles = false;
   try {
     const findTestFiles = (dir: string, depth: number): boolean => {
@@ -315,7 +296,6 @@ function runBackpressureChecks(projectRoot: string): Check[] {
       for (const entry of entries) {
         if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
         if (entry.isFile()) {
-          // Match common test file patterns across languages
           if (/\.(test|spec)\.[jt]sx?$/.test(entry.name) ||
               /^test_.*\.py$/.test(entry.name) ||
               /.*_test\.py$/.test(entry.name) ||
@@ -340,10 +320,8 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     fix: hasTestFiles ? undefined : 'Add test files (e.g., *.test.ts, *_test.go, test_*.py)',
   });
 
-  // Tests actually run successfully
   if (hasTestRunner && hasTestFiles) {
     let testCmd = '';
-    // Detect test command
     if (existsSync(pkgPath)) {
       try {
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
@@ -364,10 +342,10 @@ function runBackpressureChecks(projectRoot: string): Check[] {
       let testsPass = false;
       let testDetail = '';
       try {
-        execSync(testCmd, {
+        doctorRuntime.execSync(testCmd, {
           cwd: projectRoot,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          timeout: 60000, // 60 second timeout
+          stdio: 'ignore',
+          timeout: 60000,
         });
         testsPass = true;
         testDetail = `\`${testCmd}\` exits 0`;
@@ -389,7 +367,6 @@ function runBackpressureChecks(projectRoot: string): Check[] {
     }
   }
 
-  // Ralph lint rules configured
   const configPath = join(projectRoot, '.ralph', 'config.yml');
   let hasLintRules = false;
   if (existsSync(configPath)) {
@@ -398,7 +375,6 @@ function runBackpressureChecks(projectRoot: string): Check[] {
       hasLintRules = configContent.includes('layers:') || configContent.includes('domains:');
     } catch { /* ignore */ }
   }
-  // Also check for custom rules
   const rulesDir = join(projectRoot, '.ralph', 'rules');
   let customRuleCount = 0;
   if (existsSync(rulesDir)) {
@@ -420,7 +396,6 @@ function runBackpressureChecks(projectRoot: string): Check[] {
 
 function runOperationalChecks(projectRoot: string): Check[] {
   const checks: Check[] = [];
-  // Git repo
   const isGitRepo = existsSync(join(projectRoot, '.git'));
   checks.push({
     name: 'Git repository',
@@ -430,14 +405,15 @@ function runOperationalChecks(projectRoot: string): Check[] {
     fix: isGitRepo ? undefined : 'Run `git init`',
   });
 
-  // At least one commit
   if (isGitRepo) {
     let commitCount = 0;
     try {
-      const output = execSync('git rev-list --count HEAD', { cwd: projectRoot, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+      const output = doctorRuntime.execSync(
+        'git rev-list --count HEAD',
+        { cwd: projectRoot, stdio: ['pipe', 'pipe', 'pipe'] },
+      ).toString().trim();
       commitCount = parseInt(output, 10) || 0;
     } catch {
-      // No commits yet (empty repo)
     }
     checks.push({
       name: 'At least one commit',
@@ -448,7 +424,6 @@ function runOperationalChecks(projectRoot: string): Check[] {
     });
   }
 
-  // .gitignore exists
   const hasGitignore = existsSync(join(projectRoot, '.gitignore'));
   checks.push({
     name: '.gitignore exists',
@@ -458,7 +433,6 @@ function runOperationalChecks(projectRoot: string): Check[] {
     fix: hasGitignore ? undefined : 'Create a .gitignore file',
   });
 
-  // Build artifacts excluded
   if (hasGitignore) {
     const gitignore = readFileSync(join(projectRoot, '.gitignore'), 'utf-8');
     const excludesBuild = gitignore.includes('dist') || gitignore.includes('build') || gitignore.includes('__pycache__');
@@ -474,20 +448,7 @@ function runOperationalChecks(projectRoot: string): Check[] {
   return checks;
 }
 
-export function calculateScore(checks: Check[]): number {
-  const total = checks.length;
-  if (total === 0) return 0;
-  const passed = checks.filter(c => c.pass).length;
-  return Math.round((passed / total) * 10);
-}
-
-export function scoreLabel(score: number): string {
-  if (score === 10) return 'Excellent';
-  if (score >= 7) return 'Good';
-  if (score >= 4) return 'Fair';
-  if (score >= 1) return 'Poor';
-  return 'Not Ready';
-}
+export { calculateScore, scoreLabel } from './scoring.js';
 
 export function runAllChecks(projectRoot: string, config: RalphConfig): Check[] {
   return [

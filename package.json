@@ -1,6 +1,6 @@
 {
   "name": "ralph-cli",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "description": "CLI tool that prepares and maintains repositories for AI agent development",
   "type": "module",
   "bin": {

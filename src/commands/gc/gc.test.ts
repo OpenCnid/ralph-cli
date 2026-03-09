@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { gcCommand } from './index.js';
+import { gcRuntime } from './scanners.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-gc-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -169,11 +169,6 @@ describe('gc command', () => {
   });
 
   it('includes git context in dead code description when available', () => {
-    // Initialize a git repo so git log can find history
-    execSync('git init', { cwd: tempDir, stdio: 'pipe' });
-    execSync('git config user.email "test@test.com"', { cwd: tempDir, stdio: 'pipe' });
-    execSync('git config user.name "Test"', { cwd: tempDir, stdio: 'pipe' });
-
     mkdirSync(join(tempDir, 'src'), { recursive: true });
     // Create orphan file and a consumer that imports it
     writeFileSync(join(tempDir, 'src', 'utils.ts'),
@@ -182,13 +177,19 @@ describe('gc command', () => {
     writeFileSync(join(tempDir, 'src', 'app.ts'),
       `import { helper } from './utils.js';\nexport function run() { return helper(); }\n`
     );
-    execSync('git add -A && git commit -m "initial"', { cwd: tempDir, stdio: 'pipe' });
 
     // Remove the import so utils.ts becomes orphaned
     writeFileSync(join(tempDir, 'src', 'app.ts'),
       `export function run() { return 'no imports'; }\n`
     );
-    execSync('git add -A && git commit -m "remove import"', { cwd: tempDir, stdio: 'pipe' });
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const execSyncSpy = vi.spyOn(gcRuntime, 'execSync').mockImplementation((command: string) => {
+      if (command.includes('git log -1 --format="%h %at" -S "utils"')) {
+        return `abc1234 ${nowSeconds}\n`;
+      }
+      throw new Error(`Unexpected execSync command: ${command}`);
+    });
 
     const result = captureJson(() => gcCommand({ json: true }));
     const deadItems = (result.items as Array<{ category: string; file: string; description: string }>).filter(i =>
@@ -196,6 +197,8 @@ describe('gc command', () => {
     expect(deadItems.length).toBe(1);
     // Should contain git reference context
     expect(deadItems[0]!.description).toMatch(/last referenced in commit \w+/);
+
+    execSyncSpy.mockRestore();
   });
 
   it('produces fix-descriptions markdown file', () => {

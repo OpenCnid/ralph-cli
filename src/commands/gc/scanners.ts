@@ -27,6 +27,10 @@ export interface AntiPattern {
   fix: string;
 }
 
+export const gcRuntime = {
+  execSync,
+};
+
 export const ANTI_PATTERNS: AntiPattern[] = [
   {
     name: 'empty-catch',
@@ -264,7 +268,7 @@ export function scanDeadCode(projectRoot: string, config: RalphConfig): DriftIte
       try {
         // Search git log for the last commit that changed a reference to this file's base name
         const baseName = exportingFile.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
-        const gitOutput = execSync(
+        const gitOutput = gcRuntime.execSync(
           `git log -1 --format="%h %at" -S "${baseName}" -- "*.ts" "*.tsx" "*.js" "*.jsx"`,
           { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
         ).trim();
@@ -367,7 +371,7 @@ export function scanStaleDocumentation(projectRoot: string, config: RalphConfig)
               // Try to find when the file was deleted using git
               let gitContext = '';
               try {
-                const gitOutput = execSync(
+                const gitOutput = gcRuntime.execSync(
                   `git log -1 --format="%h %at" --diff-filter=D -- "${path}"`,
                   { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
                 ).trim();

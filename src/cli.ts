@@ -16,6 +16,7 @@ import { hooksInstallCommand, hooksUninstallCommand } from './commands/hooks/ind
 import { ciGenerateCommand } from './commands/ci/index.js';
 import { runCommand } from './commands/run/index.js';
 import { reviewCommand } from './commands/review/index.js';
+import { healCommand } from './commands/heal/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -326,6 +327,37 @@ program
     diffOnly?: boolean;
   }) => {
     await reviewCommand(target, options);
+  });
+
+// ralph heal
+program
+  .command('heal')
+  .description('Run ralph diagnostics, generate a repair prompt, and apply fixes with an agent')
+  .option('--agent <cli>', 'Override agent CLI')
+  .option('--model <model>', 'Inject/override model in agent args')
+  .option('--only <cmds>', 'Only run specific diagnostics (comma-separated)')
+  .option('--skip <cmds>', 'Skip specific diagnostics (comma-separated)')
+  .option('--dry-run', 'Show generated prompt without executing')
+  .option('--no-commit', 'Skip git commits')
+  .option('--verbose', 'Show full agent output')
+  .action(async (options: {
+    agent?: string;
+    model?: string;
+    only?: string;
+    skip?: string;
+    dryRun?: boolean;
+    commit: boolean;
+    verbose?: boolean;
+  }) => {
+    await healCommand({
+      agent: options.agent,
+      model: options.model,
+      only: options.only,
+      skip: options.skip,
+      dryRun: options.dryRun,
+      noCommit: options.commit === false ? true : undefined,
+      verbose: options.verbose,
+    });
   });
 
 program.parse();
