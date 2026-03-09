@@ -5,7 +5,7 @@
 - **Version**: 0.4.0
 - **Commands**: All 13 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal) + config validate.
 - **Tests**: 685 across 30 files
-- **Next**: v0.5.0 — `ralph score` fitness scoring + run loop hardening
+- **Next**: v0.5.0 — `ralph score` fitness scoring + run loop hardening (17 tasks)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ## Release History
@@ -802,8 +802,30 @@ Unit tests for lock, timeout, validation, and scoring integration in the run dom
 
 Update project documentation to reflect the new `score/` domain and run loop hardening.
 
-- [ ] Update `ARCHITECTURE.md`, `AGENTS.md`, `docs/design-docs/score/` domain docs, and `docs/RELIABILITY.md` for the fitness scoring feature.
-  Add `score` as a new domain in `ARCHITECTURE.md` (layer, dependencies: score → config). Add `ralph score` to the commands list in `AGENTS.md`. Create `docs/design-docs/score/` with the three standard domain doc files. Update `docs/RELIABILITY.md` to document the auto-revert safety net and run lock. Update `IMPLEMENTATION_PLAN.md` version table for 0.5.0 release.
+- [ ] Update `ARCHITECTURE.md`, `AGENTS.md`, `docs/design-docs/score/` domain docs, `src/commands/score/DESIGN.md`, `.ralph/config.yml`, and `docs/RELIABILITY.md` for the fitness scoring feature.
+  Add `score` as a new domain in `ARCHITECTURE.md` (layer, dependencies: score → config). Add `ralph score` to the commands list in `AGENTS.md`. Create `src/commands/score/DESIGN.md` and `docs/design-docs/score/` with the three standard domain doc files (each 30–100 lines, sections: Purpose, Usage, Config, Architecture, Design Decisions). Add `score` domain (`path: src/commands/score`) to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it. Update `docs/RELIABILITY.md` to document the auto-revert safety net and run lock. Update `IMPLEMENTATION_PLAN.md` version table for 0.5.0 release.
+
+### Task 17: Version Bump + CHANGELOG
+
+- [ ] Bump `package.json` version to `0.5.0`. Add v0.5.0 section to `CHANGELOG.md` summarising: `ralph score` command, fitness scoring in run loop (scoring, revert, timeout, validation, score context), run lock, 16 implementation tasks. Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.5.0`, commands → 14, add `0.5.0` row to Release History, add `ralph score` row to Command Status table.
+  Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`. Done when: `ralph --version` prints `0.5.0`. All validation passes.
+
+### Dependency Graph
+
+```
+Tasks 1–3 sequential (schema → types)
+  └→ Tasks 4–7 parallel (results, scorer, default-scorer, trend)
+       └→ Task 8 (ralph score CLI — needs 4–7)
+  └→ Task 9 (run lock — independent)
+  └→ Task 10 (timeout — needs Task 1 for AgentResult.timedOut)
+  └→ Task 11 (validation — independent)
+       └→ Task 12 (run loop integration — needs 8–11)
+            └→ Task 13 (new run flags — needs 12)
+            └→ Task 14 (score/ tests — needs 4–8)
+            └→ Task 15 (run loop tests — needs 9–12)
+                 └→ Task 16 (docs)
+                      └→ Task 17 (version bump)
+```
 
 ### Validation
 
