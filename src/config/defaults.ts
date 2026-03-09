@@ -1,4 +1,4 @@
-import type { ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig } from './schema.js';
+import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, LoopConfig, PromptsConfig, RunConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -53,4 +53,42 @@ export const DEFAULT_PATHS: PathsConfig = {
 export const DEFAULT_REFERENCES: ReferencesConfig = {
   'max-total-kb': 200,
   'warn-single-file-kb': 80,
+};
+
+export const DEFAULT_AGENT: AgentConfig = {
+  cli: 'claude',
+  args: ['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose'],
+  timeout: 1800,
+};
+
+const DEFAULT_PROMPTS: PromptsConfig = {
+  plan: null,
+  build: null,
+};
+
+const DEFAULT_LOOP: LoopConfig = {
+  'max-iterations': 0,
+  'stall-threshold': 3,
+};
+
+const DEFAULT_VALIDATION: ValidationConfig = {
+  'test-command': null,
+  'typecheck-command': null,
+};
+
+const DEFAULT_GIT: GitConfig = {
+  'auto-commit': true,
+  'auto-push': false,
+  'commit-prefix': 'ralph:',
+  branch: null,
+};
+
+export const DEFAULT_RUN: RunConfig = {
+  agent: DEFAULT_AGENT,
+  'plan-agent': null,
+  'build-agent': null,
+  prompts: DEFAULT_PROMPTS,
+  loop: DEFAULT_LOOP,
+  validation: DEFAULT_VALIDATION,
+  git: DEFAULT_GIT,
 };

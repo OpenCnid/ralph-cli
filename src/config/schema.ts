@@ -88,6 +88,44 @@ export interface CiOverrides {
   doctor?: Partial<DoctorConfig>;
 }
 
+export interface AgentConfig {
+  cli: string;
+  args: string[];
+  timeout: number;
+}
+
+export interface PromptsConfig {
+  plan: string | null;
+  build: string | null;
+}
+
+export interface LoopConfig {
+  'max-iterations': number;
+  'stall-threshold': number;
+}
+
+export interface ValidationConfig {
+  'test-command': string | null;
+  'typecheck-command': string | null;
+}
+
+export interface GitConfig {
+  'auto-commit': boolean;
+  'auto-push': boolean;
+  'commit-prefix': string;
+  branch: string | null;
+}
+
+export interface RunConfig {
+  agent: AgentConfig;
+  'plan-agent': AgentConfig | null;
+  'build-agent': AgentConfig | null;
+  prompts: PromptsConfig;
+  loop: LoopConfig;
+  validation: ValidationConfig;
+  git: GitConfig;
+}
+
 export interface RalphConfig {
   project: ProjectConfig;
   runner?: RunnerConfig | undefined;
@@ -98,6 +136,7 @@ export interface RalphConfig {
   paths: PathsConfig;
   references: ReferencesConfig;
   ci?: CiOverrides | undefined;
+  run?: RunConfig | undefined;
 }
 
 /**
@@ -111,6 +150,15 @@ export interface RawRalphConfig {
     framework?: string;
   };
   runner?: Partial<RunnerConfig>;
+  run?: Partial<{
+    agent: Partial<AgentConfig>;
+    'plan-agent': Partial<AgentConfig> | null;
+    'build-agent': Partial<AgentConfig> | null;
+    prompts: Partial<PromptsConfig>;
+    loop: Partial<LoopConfig>;
+    validation: Partial<ValidationConfig>;
+    git: Partial<GitConfig>;
+  }>;
   architecture?: Partial<{
     layers: string[];
     direction: DirectionMode;
