@@ -484,13 +484,13 @@ Expected: all tests pass, doctor 10/10, `ref` domain C or above, `ralph grade --
 
 ### Task 6: Command entry point (`index.ts`)
 
-- [ ] Create `src/commands/review/index.ts`.
-- [ ] `reviewCommand(target: string | undefined, options: ReviewOptions): Promise<void>` — orchestrates: load config → resolve scope → extract diff → handle edge cases (no diff, not git repo, empty diff) → assemble context → generate prompt → `--dry-run` path (print prompt, exit) → resolve agent (reuse `resolveAgent` from `../run/agent.js` with `review.agent` falling back to `run.agent`) → spawn agent → format output (text/markdown/JSON) → write to file or stdout.
-- [ ] Edge cases: no staged changes, not a git repo, agent not installed, `--scope range` with no target.
-- [ ] Output formatting: text (pass through), markdown (add header with date/scope/files), JSON (`{ project, date, scope, files, review, model, durationMs }`).
-- [ ] Files: `src/commands/review/index.ts`
-- [ ] Tests: `tests/review.test.ts` — mock `spawnAgent` and git commands. Test: staged review default flow, commit SHA review, range review, `--dry-run` prints prompt without agent, `--format json` produces JSON structure, `--format markdown` adds header, `--diff-only` excludes context, no changes error, large diff truncation warning.
-- [ ] Done when: All review scenarios pass. `ralph review --dry-run` works end-to-end.
+- [x] Create `src/commands/review/index.ts`.
+- [x] `reviewCommand(target: string | undefined, options: ReviewOptions): Promise<void>` — orchestrates: load config → resolve scope → extract diff → handle edge cases (no diff, not git repo, empty diff) → assemble context → generate prompt → `--dry-run` path (print prompt, exit) → resolve agent (reuse `resolveAgent` from `../run/agent.js` with `review.agent` falling back to `run.agent`) → spawn agent → format output (text/markdown/JSON) → write to file or stdout.
+- [x] Edge cases: no staged changes, not a git repo, agent not installed, `--scope range` with no target.
+- [x] Output formatting: text (pass through), markdown (add header with date/scope/files), JSON (`{ project, date, scope, files, review, model, durationMs }`).
+- [x] Files: `src/commands/review/index.ts`
+- [x] Tests: `tests/review.test.ts` — mock `spawnAgent` and git commands. Test: staged review default flow, commit SHA review, range review, `--dry-run` prints prompt without agent, `--format json` produces JSON structure, `--format markdown` adds header, `--diff-only` excludes context, no changes error, large diff truncation warning.
+- [x] Done when: All review scenarios pass. `ralph review --dry-run` works end-to-end.
 
 ### Task 7: CLI registration
 
