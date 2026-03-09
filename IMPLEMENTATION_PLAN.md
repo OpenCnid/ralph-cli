@@ -637,11 +637,11 @@ Orchestrate the full heal workflow.
 
 Wire `ralph heal` into the commander CLI.
 
-- [ ] Add `import { healCommand } from './commands/heal/index.js'` to `src/cli.ts`.
-- [ ] Register `ralph heal` with all options: `--agent <cli>`, `--model <model>`, `--only <cmds>`, `--skip <cmds>`, `--dry-run`, `--no-commit`, `--verbose`.
-- [ ] Files: `src/cli.ts`
-- [ ] Tests: Verify `ralph heal --help` shows correct usage. Verify option parsing via commander parse.
-- [ ] Done when: `ralph heal`, `ralph heal --dry-run`, and all option combinations parse correctly and invoke `healCommand`.
+- [x] Add `import { healCommand } from './commands/heal/index.js'` to `src/cli.ts`.
+- [x] Register `ralph heal` with all options: `--agent <cli>`, `--model <model>`, `--only <cmds>`, `--skip <cmds>`, `--dry-run`, `--no-commit`, `--verbose`.
+- [x] Files: `src/cli.ts`
+- [x] Tests: Verify `ralph heal --help` shows correct usage. Verify option parsing via commander parse.
+- [x] Done when: `ralph heal`, `ralph heal --dry-run`, and all option combinations parse correctly and invoke `healCommand`.
 
 ### Task 8: ARCHITECTURE.md update + domain docs for `heal`
 
