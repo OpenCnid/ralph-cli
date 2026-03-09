@@ -42,7 +42,7 @@ Last updated: 2026-03-09
 
 ### grade
 
-- **Tests**: B — 80% line coverage
+- **Tests**: B — 81% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 277 lines, no oversized files
@@ -153,7 +153,7 @@ Last updated: 2026-03-09
 - lint/fileHealth: A (stable) — Avg 108 lines, no oversized files
 - lint/staleness: A (stable) — Median 1d since last change
 - lint/overall: B (stable)
-- grade/tests: B (stable) — 80% line coverage
+- grade/tests: B (stable) — 81% line coverage
 - grade/docs: A (stable) — 3/3 domain documentation files present
 - grade/architecture: A (stable) — No architectural violations
 - grade/fileHealth: A (stable) — Avg 277 lines, no oversized files

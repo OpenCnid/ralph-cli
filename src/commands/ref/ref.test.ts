@@ -5,6 +5,16 @@ import { tmpdir } from 'node:os';
 import { refAddCommand, refListCommand, refRemoveCommand, refDiscoverCommand } from './index.js';
 import * as prompt from '../../utils/prompt.js';
 
+function captureOutput(fn: () => void): string[] {
+  const lines: string[] = [];
+  const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+    lines.push(args.join(' '));
+  });
+  fn();
+  spy.mockRestore();
+  return lines;
+}
+
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-ref-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
@@ -154,5 +164,54 @@ describe('ref commands', () => {
     expect(askSpy).not.toHaveBeenCalled();
     const refFiles = readdirSync(join(tempDir, 'docs', 'references')).filter(f => !f.startsWith('.'));
     expect(refFiles.length).toBe(0);
+  });
+
+  describe('refListCommand', () => {
+    it('shows info message when references directory does not exist', () => {
+      rmSync(join(tempDir, 'docs', 'references'), { recursive: true, force: true });
+      const lines = captureOutput(() => refListCommand({}));
+      expect(lines.some(l => l.includes('No references directory found'))).toBe(true);
+    });
+
+    it('shows info message when references directory is empty', () => {
+      const lines = captureOutput(() => refListCommand({}));
+      expect(lines.some(l => l.includes('No references found'))).toBe(true);
+    });
+
+    it('lists files with name, size, date, and source from metadata comment', () => {
+      const content = '<!-- ralph-ref: source=https://example.com/llms.txt fetched=2026-01-15 -->\nReference content here.';
+      writeFileSync(join(tempDir, 'docs', 'references', 'example-llms.txt'), content);
+
+      const lines = captureOutput(() => refListCommand({}));
+      const nameLine = lines.find(l => l.includes('example-llms.txt'));
+      expect(nameLine).toBeDefined();
+      expect(nameLine).toContain('added 2026-01-15');
+      const sourceLine = lines.find(l => l.includes('Source:'));
+      expect(sourceLine).toBeDefined();
+      expect(sourceLine).toContain('https://example.com/llms.txt');
+    });
+
+    it('lists files without source/date when no metadata comment', () => {
+      writeFileSync(join(tempDir, 'docs', 'references', 'plain-llms.txt'), 'Just plain content, no metadata.');
+
+      const lines = captureOutput(() => refListCommand({}));
+      const nameLine = lines.find(l => l.includes('plain-llms.txt'));
+      expect(nameLine).toBeDefined();
+      expect(nameLine).not.toContain('added');
+      expect(lines.some(l => l.includes('Source:'))).toBe(false);
+    });
+
+    it('shows bar chart and totals with --sizes option', () => {
+      const content = '<!-- ralph-ref: source=https://example.com/llms.txt fetched=2026-01-15 -->\n' + 'x'.repeat(10 * 1024);
+      writeFileSync(join(tempDir, 'docs', 'references', 'example-llms.txt'), content);
+
+      const lines = captureOutput(() => refListCommand({ sizes: true }));
+      const barLine = lines.find(l => l.includes('example-llms.txt') && l.includes('█'));
+      expect(barLine).toBeDefined();
+      expect(barLine).toContain('%');
+      const totalLine = lines.find(l => l.includes('Total:'));
+      expect(totalLine).toBeDefined();
+      expect(totalLine).toContain('KB /');
+    });
   });
 });
