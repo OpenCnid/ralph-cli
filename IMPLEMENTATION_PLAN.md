@@ -287,10 +287,10 @@ Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 ar
 
 ### Task 3: Domain docs for `grade` and `gc`
 
-- [ ] Create `src/commands/grade/DESIGN.md`, `docs/design-docs/grade.md`, `docs/design-docs/grade/DESIGN.md` covering 5 scoring dimensions, per-domain scoring, trend tracking.
-- [ ] Create `src/commands/gc/DESIGN.md`, `docs/design-docs/gc.md`, `docs/design-docs/gc/DESIGN.md` covering 4 drift categories (principles, dead code, stale docs, patterns), history tracking, custom anti-patterns.
-- [ ] Files: 6 new doc files.
-- [ ] Done when: `ralph grade` shows A for `grade` and `gc` docs dimension.
+- [x] Create `src/commands/grade/DESIGN.md`, `docs/design-docs/grade.md`, `docs/design-docs/grade/DESIGN.md` covering 5 scoring dimensions, per-domain scoring, trend tracking.
+- [x] Create `src/commands/gc/DESIGN.md`, `docs/design-docs/gc.md`, `docs/design-docs/gc/DESIGN.md` covering 4 drift categories (principles, dead code, stale docs, patterns), history tracking, custom anti-patterns.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `grade` and `gc` docs dimension.
 
 ### Task 4: Domain docs for `doctor` and `plan`
 
