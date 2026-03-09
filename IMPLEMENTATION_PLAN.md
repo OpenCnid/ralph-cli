@@ -645,13 +645,13 @@ Wire `ralph heal` into the commander CLI.
 
 ### Task 8: ARCHITECTURE.md update + domain docs for `heal`
 
-- [ ] Add `heal` domain row to ARCHITECTURE.md domain table: `heal | src/commands/heal | Automated self-repair (diagnostics, prompt, agent-driven fixes)`.
-- [ ] Document cross-command import exceptions: `heal/index.ts` imports from `run/agent.ts` and `run/detect.ts`.
-- [ ] Create `src/commands/heal/DESIGN.md`, `docs/design-docs/heal.md`, `docs/design-docs/heal/DESIGN.md` — each 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions (at least 2).
-- [ ] Add `heal` domain to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it.
-- [ ] Files: `ARCHITECTURE.md`, `.ralph/config.yml`, 3 new doc files.
-- [ ] Tests: Verify `ralph doctor --ci` still passes. Verify `ralph grade` shows A for `heal` docs dimension.
-- [ ] Done when: ARCHITECTURE.md updated. `ralph doctor` passes. `ralph grade --ci` exits 0.
+- [x] Add `heal` domain row to ARCHITECTURE.md domain table: `heal | src/commands/heal | Automated self-repair (diagnostics, prompt, agent-driven fixes)`.
+- [x] Document cross-command import exceptions: `heal/index.ts` imports from `run/agent.ts` and `run/detect.ts`.
+- [x] Create `src/commands/heal/DESIGN.md`, `docs/design-docs/heal.md`, `docs/design-docs/heal/DESIGN.md` — each 30–100 lines with sections: Purpose, Usage, Config, Architecture, Design Decisions (at least 2).
+- [x] Add `heal` domain to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it.
+- [x] Files: `ARCHITECTURE.md`, `.ralph/config.yml`, 3 new doc files.
+- [x] Tests: Verify `ralph doctor --ci` still passes. Verify `ralph grade` shows A for `heal` docs dimension.
+- [x] Done when: ARCHITECTURE.md updated. `ralph doctor` passes. `ralph grade --ci` exits 0.
 
 ### Task 9: Version bump + CHANGELOG
 

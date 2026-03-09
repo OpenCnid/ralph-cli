@@ -2,7 +2,7 @@
 
 ## Overview
 
-ralph-cli is a CLI tool that scaffolds and maintains agent-optimized repositories. It has 10 commands, each self-contained in its own directory under `src/commands/`.
+ralph-cli is a CLI tool that scaffolds and maintains agent-optimized repositories. It has 13 commands, each self-contained in its own directory under `src/commands/`.
 
 ## Directory Map
 
@@ -45,6 +45,11 @@ src/
     │   ├── context.ts  — Diff extraction and context assembly
     │   ├── prompts.ts  — Review prompt template engine
     │   └── types.ts    — ReviewOptions, ReviewContext types
+    ├── heal/           — Automated self-repair
+    │   ├── index.ts    — healCommand entry point
+    │   ├── diagnostics.ts — Diagnostic execution and issue parsing
+    │   ├── prompts.ts  — Heal prompt template engine
+    │   └── types.ts    — HealOptions, DiagnosticResult, HealContext types
     └── config-validate.ts — Standalone config validation command
 ```
 
@@ -74,6 +79,7 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 | ci | `src/commands/ci` | CI pipeline generation |
 | run | `src/commands/run` | Autonomous build loop (agent spawn, prompts, progress) |
 | review | `src/commands/review` | Agent-powered code review (diff extraction, context assembly, prompt) |
+| heal | `src/commands/heal` | Automated self-repair (diagnostics, prompt, agent-driven fixes) |
 
 ## Cross-Cutting Concerns
 
@@ -81,11 +87,12 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 
 ## Cross-Command Exceptions
 
-Three intentional cross-command imports exist:
+Four intentional cross-command imports exist:
 
 1. **doctor → init** — `doctor --fix` calls init's scaffolding to repair missing structure.
 2. **promote → lint engine** — `promote` imports the lint engine to count violations when tracking escalation.
 3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
+4. **heal → run/agent + run/detect** — `heal/index.ts` reuses agent resolution/spawn and validation command detection from the `run` domain.
 
 These are documented exceptions, not violations.
 
