@@ -8,8 +8,8 @@ Last updated: 2026-03-09
 |--------|-------|------|--------------|-------------|-----------|----------|
 | config | A | A | A | A | A | **A** |
 | lint | B | A | A | A | A | **B** |
-| grade | B | F | A | A | A | **F** |
-| gc | A | F | A | A | A | **F** |
+| grade | B | A | A | A | A | **B** |
+| gc | A | A | A | A | A | **A** |
 | doctor | A | F | A | A | A | **F** |
 | init | B | A | A | A | A | **B** |
 | plan | B | F | A | A | A | **F** |
@@ -43,20 +43,20 @@ Last updated: 2026-03-09
 ### grade
 
 - **Tests**: B — 80% line coverage
-- **Docs**: F — 0/3 domain documentation files present
+- **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 278 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: F
+- **Overall**: B
 
 ### gc
 
 - **Tests**: A — 94% line coverage
-- **Docs**: F — 0/3 domain documentation files present
+- **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 250 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: F
+- **Overall**: A
 
 ### doctor
 
@@ -154,17 +154,17 @@ Last updated: 2026-03-09
 - lint/staleness: A (stable) — Median 1d since last change
 - lint/overall: B (stable)
 - grade/tests: B (stable) — 80% line coverage
-- grade/docs: F (stable) — 0/3 domain documentation files present
+- grade/docs: A (stable) — 3/3 domain documentation files present
 - grade/architecture: A (stable) — No architectural violations
 - grade/fileHealth: A (stable) — Avg 278 lines, no oversized files
 - grade/staleness: A (stable) — Median 0d since last change
-- grade/overall: F (stable)
+- grade/overall: B (stable)
 - gc/tests: A (stable) — 94% line coverage
-- gc/docs: F (stable) — 0/3 domain documentation files present
+- gc/docs: A (stable) — 3/3 domain documentation files present
 - gc/architecture: A (stable) — No architectural violations
 - gc/fileHealth: A (stable) — Avg 250 lines, no oversized files
 - gc/staleness: A (stable) — Median 0d since last change
-- gc/overall: F (stable)
+- gc/overall: A (stable)
 - doctor/tests: A (stable) — 95% line coverage
 - doctor/docs: F (stable) — 0/3 domain documentation files present
 - doctor/architecture: A (stable) — No architectural violations
@@ -222,8 +222,6 @@ Last updated: 2026-03-09
 
 ## Action Items
 
-- [ ] grade: Add missing documentation (0/3 domain documentation files present)
-- [ ] gc: Add missing documentation (0/3 domain documentation files present)
 - [ ] doctor: Add missing documentation (0/3 domain documentation files present)
 - [ ] plan: Add missing documentation (0/3 domain documentation files present)
 - [ ] promote: Add missing documentation (0/3 domain documentation files present)
