@@ -14,6 +14,7 @@ import { refAddCommand, refListCommand, refUpdateCommand, refRemoveCommand, refD
 import { gcCommand } from './commands/gc/index.js';
 import { hooksInstallCommand, hooksUninstallCommand } from './commands/hooks/index.js';
 import { ciGenerateCommand } from './commands/ci/index.js';
+import { runCommand } from './commands/run/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -260,6 +261,45 @@ configCmd
   .description('Validate .ralph/config.yml')
   .action(() => {
     configValidateCommand();
+  });
+
+// ralph run
+program
+  .command('run [mode]')
+  .description('Run an AI agent loop (mode: plan or build, default: build)')
+  .option('--max <n>', 'Override max iterations', (v) => parseInt(v, 10))
+  .option('--agent <cli>', 'Override agent CLI')
+  .option('--model <model>', 'Inject/override model in agent args')
+  .option('--dry-run', 'Show generated prompt without executing')
+  .option('--no-commit', 'Skip git commits')
+  .option('--no-push', 'Skip git push')
+  .option('--resume', 'Resume from last checkpoint')
+  .option('--verbose', 'Show full agent output')
+  .action(async (mode: string | undefined, options: {
+    max?: number;
+    agent?: string;
+    model?: string;
+    dryRun?: boolean;
+    commit: boolean;
+    push: boolean;
+    resume?: boolean;
+    verbose?: boolean;
+  }) => {
+    const resolvedMode = mode ?? 'build';
+    if (resolvedMode !== 'plan' && resolvedMode !== 'build') {
+      process.stderr.write(`error: invalid mode '${resolvedMode}'. Must be 'plan' or 'build'.\n`);
+      process.exit(1);
+    }
+    await runCommand(resolvedMode, {
+      max: options.max,
+      agent: options.agent,
+      model: options.model,
+      dryRun: options.dryRun,
+      noCommit: options.commit === false ? true : undefined,
+      noPush: options.push === false ? true : undefined,
+      resume: options.resume,
+      verbose: options.verbose,
+    });
   });
 
 program.parse();
