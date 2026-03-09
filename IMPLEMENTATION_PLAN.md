@@ -294,10 +294,10 @@ Tasks 1 → 2 → 3 are sequential (each builds on the previous). Tasks 4–8 ar
 
 ### Task 4: Domain docs for `doctor` and `plan`
 
-- [ ] Create `src/commands/doctor/DESIGN.md`, `docs/design-docs/doctor.md`, `docs/design-docs/doctor/DESIGN.md` covering 4 check categories (structure, content, backpressure, operational), scoring, `--fix`.
-- [ ] Create `src/commands/plan/DESIGN.md`, `docs/design-docs/plan.md`, `docs/design-docs/plan/DESIGN.md` covering execution plan lifecycle (create/complete/abandon/list/status), decision logging, tech-debt tracking.
-- [ ] Files: 6 new doc files.
-- [ ] Done when: `ralph grade` shows A for `doctor` and `plan` docs dimension.
+- [x] Create `src/commands/doctor/DESIGN.md`, `docs/design-docs/doctor.md`, `docs/design-docs/doctor/DESIGN.md` covering 4 check categories (structure, content, backpressure, operational), scoring, `--fix`.
+- [x] Create `src/commands/plan/DESIGN.md`, `docs/design-docs/plan.md`, `docs/design-docs/plan/DESIGN.md` covering execution plan lifecycle (create/complete/abandon/list/status), decision logging, tech-debt tracking.
+- [x] Files: 6 new doc files.
+- [x] Done when: `ralph grade` shows A for `doctor` and `plan` docs dimension.
 
 ### Task 5: Domain docs for `promote`, `ref`, `hooks`, and `ci`
 
