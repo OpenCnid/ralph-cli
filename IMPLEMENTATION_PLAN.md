@@ -604,12 +604,12 @@ Run ralph diagnostic commands and parse their output into issue counts.
 
 Template for the heal agent prompt.
 
-- [ ] Create `src/commands/heal/prompts.ts`.
-- [ ] Define `HEAL_TEMPLATE` string constant: includes project context (`{project_name}`, `{project_path}`, `{date}`), diagnostic output (`{diagnostics_output}`), validate command (`{validate_command}`), and instructions (read output carefully, make minimal changes, don't lower quality bars, don't refactor unrelated code, run failing command after each fix to verify; fix priority: doctor > lint > gc > grade).
-- [ ] `generateHealPrompt(context: HealContext, validateCommand: string, projectPath: string, date: string): string` — substitute all template variables.
-- [ ] Files: `src/commands/heal/prompts.ts`
-- [ ] Tests: `tests/heal-prompts.test.ts` — all variables substituted, template contains priority instructions, `{diagnostics_output}` includes per-command sections.
-- [ ] Done when: `generateHealPrompt()` returns a complete prompt string with all variables filled.
+- [x] Create `src/commands/heal/prompts.ts`.
+- [x] Define `HEAL_TEMPLATE` string constant: includes project context (`{project_name}`, `{project_path}`, `{date}`), diagnostic output (`{diagnostics_output}`), validate command (`{validate_command}`), and instructions (read output carefully, make minimal changes, don't lower quality bars, don't refactor unrelated code, run failing command after each fix to verify; fix priority: doctor > lint > gc > grade).
+- [x] `generateHealPrompt(context: HealContext, validateCommand: string, projectPath: string, date: string): string` — substitute all template variables.
+- [x] Files: `src/commands/heal/prompts.ts`
+- [x] Tests: `tests/heal-prompts.test.ts` — all variables substituted, template contains priority instructions, `{diagnostics_output}` includes per-command sections.
+- [x] Done when: `generateHealPrompt()` returns a complete prompt string with all variables filled.
 
 ### Task 6: Command entry point (`index.ts`)
 
