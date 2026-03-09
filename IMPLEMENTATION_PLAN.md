@@ -395,7 +395,7 @@ Expected: all tests pass, doctor 10/10, every domain A on docs dimension, `ralph
 
 ### Task 3: Add tests for URL-based `refAddCommand` and error paths
 
-- [ ] Add tests in `src/commands/ref/ref.test.ts` for paths not yet covered.
+- [x] Add tests in `src/commands/ref/ref.test.ts` for paths not yet covered.
   - URL argument → mock `fetch`, verify file written with correct content and metadata, name derived from hostname.
   - URL fetch returns 404 → `error()` called, `process.exit(1)` triggered.
   - URL fetch throws network error → `error()` called, `process.exit(1)` triggered.

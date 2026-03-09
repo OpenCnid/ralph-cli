@@ -215,6 +215,74 @@ describe('ref commands', () => {
     });
   });
 
+  describe('refAddCommand URL and error paths', () => {
+    it('fetches URL and writes file with metadata and name derived from hostname', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Remote content here.', { status: 200 }));
+
+      await refAddCommand('https://vitest.dev/llms.txt', {});
+
+      const files = readdirSync(join(tempDir, 'docs', 'references')).filter(f => !f.startsWith('.'));
+      expect(files.length).toBe(1);
+      expect(files[0]).toContain('vitest');
+      expect(files[0]).toMatch(/-llms\.txt$/);
+
+      const content = readFileSync(join(tempDir, 'docs', 'references', files[0]!), 'utf-8');
+      expect(content).toContain('Remote content here.');
+      expect(content).toMatch(/<!-- ralph-ref: source=https:\/\/vitest\.dev\/llms\.txt fetched=\d{4}-\d{2}-\d{2} -->/);
+    });
+
+    it('uses --name option to override hostname-derived name for URL', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Docs content.', { status: 200 }));
+
+      await refAddCommand('https://docs.example.com/llms.txt', { name: 'mylib' });
+
+      const refFile = join(tempDir, 'docs', 'references', 'mylib-llms.txt');
+      expect(existsSync(refFile)).toBe(true);
+    });
+
+    it('calls error() and process.exit(1) when URL fetch returns 404', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404, statusText: 'Not Found' }));
+      vi.spyOn(process, 'exit').mockImplementation(((code: number) => { throw new Error(`exit:${code}`); }) as () => never);
+      const errLines: string[] = [];
+      vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => { errLines.push(args.join(' ')); });
+
+      await expect(refAddCommand('https://example.com/llms.txt', {})).rejects.toThrow('exit:1');
+      expect(errLines.some(l => l.includes('Failed to fetch') || l.includes('404'))).toBe(true);
+    });
+
+    it('calls error() and process.exit(1) when URL fetch throws', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'));
+      vi.spyOn(process, 'exit').mockImplementation(((code: number) => { throw new Error(`exit:${code}`); }) as () => never);
+      const errLines: string[] = [];
+      vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => { errLines.push(args.join(' ')); });
+
+      await expect(refAddCommand('https://example.com/llms.txt', {})).rejects.toThrow('exit:1');
+      expect(errLines.some(l => l.includes('Network error') || l.includes('Failed to fetch'))).toBe(true);
+    });
+
+    it('calls error() and process.exit(1) when local file does not exist', async () => {
+      vi.spyOn(process, 'exit').mockImplementation(((code: number) => { throw new Error(`exit:${code}`); }) as () => never);
+      const errLines: string[] = [];
+      vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => { errLines.push(args.join(' ')); });
+
+      await expect(refAddCommand('nonexistent-file.txt', {})).rejects.toThrow('exit:1');
+      expect(errLines.some(l => l.includes('File not found') || l.includes('nonexistent-file.txt'))).toBe(true);
+    });
+
+    it('emits size warning when a single file exceeds warn-single-file-kb threshold', async () => {
+      // Default warn-single-file-kb is 80KB
+      const bigContent = 'x'.repeat(90 * 1024); // 90KB
+      writeFileSync(join(tempDir, 'big-ref.txt'), bigContent);
+
+      const warnLines: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { warnLines.push(args.join(' ')); });
+
+      await refAddCommand('big-ref.txt', { name: 'big' });
+
+      expect(warnLines.some(l => l.includes('KB') && (l.includes('warning') || l.includes('Warning') || l.includes('threshold') || l.includes('big-llms.txt')))).toBe(true);
+    });
+  });
+
   describe('refUpdateCommand', () => {
     it('reports error when references directory does not exist', async () => {
       rmSync(join(tempDir, 'docs', 'references'), { recursive: true, force: true });
