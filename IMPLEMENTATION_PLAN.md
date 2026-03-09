@@ -615,8 +615,8 @@ Template for the heal agent prompt.
 
 Orchestrate the full heal workflow.
 
-- [ ] Create `src/commands/heal/index.ts`.
-- [ ] `healCommand(options: HealOptions): Promise<void>` implementing the spec's 10-step command flow:
+- [x] Create `src/commands/heal/index.ts`.
+- [x] `healCommand(options: HealOptions): Promise<void>` implementing the spec's 10-step command flow:
   1. Load config
   2. Run diagnostics (applying `--only`/`--skip` from options)
   3. If total issues = 0: print "All clear" and exit 0
@@ -627,11 +627,11 @@ Orchestrate the full heal workflow.
   8. If `config.heal.auto-commit` and not `--no-commit` and git changes exist: commit with `config.heal.commit-prefix`
   9. Re-run diagnostics
   10. If remaining issues > 0: report count; else: print "All issues resolved"
-- [ ] Use `detectTestCommand`, `detectTypecheckCommand`, `composeValidateCommand` from `../run/detect.js` for the `{validate_command}` in the prompt.
-- [ ] Edge cases: no git repo (skip commit step without error), agent not installed (error before spawn), diagnostic command fails to execute (warn and skip that command), all diagnostics pass (exit 0 after step 3).
-- [ ] Files: `src/commands/heal/index.ts`
-- [ ] Tests: `tests/heal.test.ts` — mock `spawnAgent`, `runCommand`, git operations. Test: all diagnostics pass → exits clean; doctor only has issues → agent spawned with doctor output; multiple failures → all included in prompt; `--dry-run` prints prompt without spawning; `--only doctor` limits to doctor command; `--skip grade` skips grade; `--no-commit` skips git; agent spawned with correct args; re-run diagnostics after fix; remaining issues reported.
-- [ ] Done when: All heal scenarios pass. `ralph heal --dry-run` works end-to-end.
+- [x] Use `detectTestCommand`, `detectTypecheckCommand`, `composeValidateCommand` from `../run/detect.js` for the `{validate_command}` in the prompt.
+- [x] Edge cases: no git repo (skip commit step without error), agent not installed (error before spawn), diagnostic command fails to execute (warn and skip that command), all diagnostics pass (exit 0 after step 3).
+- [x] Files: `src/commands/heal/index.ts`
+- [x] Tests: `tests/heal.test.ts` — mock `spawnAgent`, `runCommand`, git operations. Test: all diagnostics pass → exits clean; doctor only has issues → agent spawned with doctor output; multiple failures → all included in prompt; `--dry-run` prints prompt without spawning; `--only doctor` limits to doctor command; `--skip grade` skips grade; `--no-commit` skips git; agent spawned with correct args; re-run diagnostics after fix; remaining issues reported.
+- [x] Done when: All heal scenarios pass. `ralph heal --dry-run` works end-to-end.
 
 ### Task 7: CLI registration
 
