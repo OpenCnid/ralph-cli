@@ -2,10 +2,10 @@
 
 ## Current State
 
-- **Version**: 0.4.0
-- **Commands**: All 13 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal) + config validate.
-- **Tests**: 685 across 30 files
-- **Next**: v0.5.0 — `ralph score` fitness scoring + run loop hardening (17 tasks)
+- **Version**: 0.5.0
+- **Commands**: All 14 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal, score) + config validate.
+- **Tests**: 685+ across 30+ files
+- **Next**: v0.6.0 (TBD)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
 
 ### Validation Baseline (2026-03-09)
@@ -22,6 +22,7 @@ These quality issues are non-blocking but should be resolved before v0.5.0 to ma
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.5.0 | 2026-03-10 | `ralph score` fitness scoring + run loop hardening — script discovery, default scorer, results log, trend, run lock, auto-revert, score context in prompts |
 | 0.4.0 | 2026-03-09 | `ralph heal` automated self-repair — diagnostics, heal prompt, agent orchestration, CLI registration, architecture/docs updates |
 | 0.3.0 | 2026-03-09 | `ralph review` agent-powered code review — diff extraction, context assembly, prompt engine, output formats (text/json/markdown), agent reuse from run |
 | 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
@@ -847,7 +848,7 @@ Update project documentation to reflect the new `score/` domain and run loop har
 
 ### Task 17: Version Bump + CHANGELOG
 
-- [ ] Bump `package.json` version to `0.5.0`. Add v0.5.0 section to `CHANGELOG.md` summarising: `ralph score` command, fitness scoring in run loop (scoring, revert, timeout, validation, score context), run lock, 16 implementation tasks. Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.5.0`, commands → 14, add `0.5.0` row to Release History, add `ralph score` row to Command Status table.
+- [x] Bump `package.json` version to `0.5.0`. Add v0.5.0 section to `CHANGELOG.md` summarising: `ralph score` command, fitness scoring in run loop (scoring, revert, timeout, validation, score context), run lock, 16 implementation tasks. Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.5.0`, commands → 14, add `0.5.0` row to Release History, add `ralph score` row to Command Status table.
   Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`. Done when: `ralph --version` prints `0.5.0`. All validation passes.
 
 ### Dependency Graph
