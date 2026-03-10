@@ -835,7 +835,7 @@ Unit and CLI integration tests for all `score/` modules.
 
 Unit tests for lock, timeout, validation, and scoring integration in the run domain.
 
-- [ ] Add tests for `run/lock.ts`, `run/timeout.ts`, `run/validation.ts`, and `run/scoring.ts` to the run test suite.
+- [x] Add tests for `run/lock.ts`, `run/timeout.ts`, `run/validation.ts`, and `run/scoring.ts` to the run test suite.
   **lock**: acquire success, EEXIST + dead PID = retry, EEXIST + live PID = throw, --force override, release idempotent. **timeout**: timeout=0 passthrough, SIGTERM at expiry, SIGKILL after 10s, timedOut field on result. **validation**: test command stdout captured, non-zero → fail, typecheck non-zero → fail, both null → pass, 120s timeout kill. **scoring**: `buildScoreContext` for all five status templates, test count jump warning, skip when prev count=0; regression checks (per-iteration, cumulative, exactly-at-threshold boundary); `.ralph/keep` honored/ignored; baseline recalibration after 3 discards; `auto-revert: false` logs regression as pass. Satisfies AC-19–AC-39, AC-54–AC-57, AC-59–AC-77.
 
 ### Task 16: Docs + Architecture Updates
