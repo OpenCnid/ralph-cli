@@ -29,7 +29,7 @@ Last updated: 2026-03-10
 - **Tests**: A — 92% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 221 lines, no oversized files
+- **File Health**: A — Avg 230 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
 - **Overall**: A
 
@@ -128,7 +128,7 @@ Last updated: 2026-03-10
 - **Tests**: B — 87% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 157 lines, no oversized files
+- **File Health**: A — Avg 159 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
 - **Overall**: B
 
@@ -155,7 +155,7 @@ Last updated: 2026-03-10
 - **Tests**: B — 86% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 168 lines, no oversized files
+- **File Health**: A — Avg 169 lines, no oversized files
 - **Staleness**: A — Median 1d since last change
 - **Overall**: B
 
@@ -164,7 +164,7 @@ Last updated: 2026-03-10
 - config/tests: A (stable) — 92% line coverage
 - config/docs: A (stable) — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
-- config/fileHealth: A (stable) — Avg 221 lines, no oversized files
+- config/fileHealth: A (stable) — Avg 230 lines, no oversized files
 - config/staleness: A (stable) — Median 0d since last change
 - config/overall: A (stable)
 - lint/tests: B (stable) — 83% line coverage
@@ -209,12 +209,12 @@ Last updated: 2026-03-10
 - promote/fileHealth: A (stable) — Avg 230 lines, no oversized files
 - promote/staleness: A (stable) — Median 1d since last change
 - promote/overall: B (stable)
-- ref/tests: A (was C today) — improved — 91% line coverage
+- ref/tests: A (stable) — 91% line coverage
 - ref/docs: A (stable) — 3/3 domain documentation files present
 - ref/architecture: A (stable) — No architectural violations
 - ref/fileHealth: A (stable) — Avg 364 lines, no oversized files
 - ref/staleness: A (stable) — Median 1d since last change
-- ref/overall: A (was C today) — improved
+- ref/overall: A (stable)
 - hooks/tests: B (stable) — 80% line coverage
 - hooks/docs: A (stable) — 3/3 domain documentation files present
 - hooks/architecture: A (stable) — No architectural violations
@@ -230,25 +230,25 @@ Last updated: 2026-03-10
 - run/tests: B (stable) — 87% line coverage
 - run/docs: A (stable) — 3/3 domain documentation files present
 - run/architecture: A (stable) — No architectural violations
-- run/fileHealth: A (stable) — Avg 157 lines, no oversized files
+- run/fileHealth: A (stable) — Avg 159 lines, no oversized files
 - run/staleness: A (stable) — Median 0d since last change
 - run/overall: B (stable)
-- review/tests: A (was C today) — improved — 95% line coverage
+- review/tests: A (stable) — 95% line coverage
 - review/docs: A (stable) — 3/3 domain documentation files present
 - review/architecture: A (stable) — No architectural violations
 - review/fileHealth: A (stable) — Avg 121 lines, no oversized files
 - review/staleness: A (stable) — Median 0d since last change
-- review/overall: A (was C today) — improved
-- heal/tests: B (was C today) — improved — 83% line coverage
+- review/overall: A (stable)
+- heal/tests: B (stable) — 83% line coverage
 - heal/docs: A (stable) — 3/3 domain documentation files present
 - heal/architecture: A (stable) — No architectural violations
 - heal/fileHealth: A (stable) — Avg 108 lines, no oversized files
 - heal/staleness: A (stable) — Median 0d since last change
-- heal/overall: B (was C today) — improved
+- heal/overall: B (stable)
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: A (stable) — Avg 168 lines, no oversized files
+- ralph-cli/fileHealth: A (stable) — Avg 169 lines, no oversized files
 - ralph-cli/staleness: A (stable) — Median 1d since last change
 - ralph-cli/overall: B (stable)
 
