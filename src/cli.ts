@@ -17,6 +17,7 @@ import { ciGenerateCommand } from './commands/ci/index.js';
 import { runCommand } from './commands/run/index.js';
 import { reviewCommand } from './commands/review/index.js';
 import { healCommand } from './commands/heal/index.js';
+import { scoreCommand } from './commands/score/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -357,6 +358,31 @@ program
       dryRun: options.dryRun,
       noCommit: options.commit === false ? true : undefined,
       verbose: options.verbose,
+    });
+  });
+
+// ralph score
+program
+  .command('score')
+  .description('Run fitness scorer and view score history')
+  .option('--history [n]', 'Show last N results from results.tsv (default: 20)')
+  .option('--trend [n]', 'Show ASCII sparkline of last N scores (default: 20)')
+  .option('--compare', 'Compare current score vs last recorded')
+  .option('--json', 'Output current score as JSON')
+  .action(async (options: { history?: string | boolean; trend?: string | boolean; compare?: boolean; json?: boolean }) => {
+    const parseN = (val: string | boolean | undefined): number | boolean | undefined => {
+      if (val === undefined || val === false) return undefined;
+      if (val === true || val === '') return true;
+      const n = parseInt(val as string, 10);
+      return isNaN(n) ? true : n;
+    };
+    const h = parseN(options.history);
+    const t = parseN(options.trend);
+    await scoreCommand({
+      ...(h !== undefined ? { history: h } : {}),
+      ...(t !== undefined ? { trend: t } : {}),
+      compare: options.compare,
+      json: options.json,
     });
   });
 

@@ -786,7 +786,7 @@ Implement trend computation and ASCII sparkline rendering for `ralph score --tre
 
 Implement the standalone `ralph score` command with all subcommand flags.
 
-- [ ] Create `src/commands/score/index.ts` and register `ralph score` in `src/cli.ts`.
+- [x] Create `src/commands/score/index.ts` and register `ralph score` in `src/cli.ts`.
   Implement: bare `ralph score` (run scorer, print score + metrics with source label), `--history [N]` (last N results.tsv entries, default 20), `--trend [N]` (sparkline + best/worst summary, default 20), `--compare` (current score vs last results.tsv entry with threshold indicator), `--json` (JSON output with score, source, metrics, timestamp). Exit 0 on success, 1 on scoring failure. Set `RALPH_ITERATION="0"` for standalone. Satisfies F-FS08 (AC-40–AC-44).
 
 ### Task 9: Run Lock (`src/commands/run/lock.ts`)
