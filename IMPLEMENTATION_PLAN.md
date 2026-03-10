@@ -800,7 +800,7 @@ Implement the run lock to prevent concurrent `ralph run` instances.
 
 Wrap `spawnAgent()` with a wall-clock timeout that sends SIGTERM then SIGKILL.
 
-- [ ] Create `src/commands/run/timeout.ts` with `spawnAgentWithTimeout()`.
+- [x] Create `src/commands/run/timeout.ts` with `spawnAgentWithTimeout()`.
   Accepts iteration timeout in seconds. If timeout > 0: start timer, send SIGTERM at expiry, wait 10s, send SIGKILL. Override `AgentConfig.timeout` to `Math.max(iterationTimeout + 30, agentConfig.timeout)` per spec to prevent inner abort racing the outer SIGTERM. Return `AgentResult` with `timedOut: true` on timeout. Timeout 0 = pass through to `spawnAgent()` unchanged. Satisfies F-FS05 (AC-26–AC-29).
 
 ### Task 11: Post-Agent Validation (`src/commands/run/validation.ts`)
