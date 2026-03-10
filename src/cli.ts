@@ -278,6 +278,10 @@ program
   .option('--no-push', 'Skip git push')
   .option('--resume', 'Resume from last checkpoint')
   .option('--verbose', 'Show full agent output')
+  .option('--no-score', 'Skip fitness scoring (validation and timeout still active)')
+  .option('--simplify', 'Simplification mode: focus on reducing code while maintaining quality')
+  .option('--baseline-score <float>', 'Override first-iteration baseline score (0.0–1.0)', parseFloat)
+  .option('--force', 'Override existing run lock without PID check')
   .action(async (mode: string | undefined, options: {
     max?: number;
     agent?: string;
@@ -287,6 +291,10 @@ program
     push: boolean;
     resume?: boolean;
     verbose?: boolean;
+    score: boolean;
+    simplify?: boolean;
+    baselineScore?: number;
+    force?: boolean;
   }) => {
     const resolvedMode = mode ?? 'build';
     if (resolvedMode !== 'plan' && resolvedMode !== 'build') {
@@ -302,6 +310,10 @@ program
       noPush: options.push === false ? true : undefined,
       resume: options.resume,
       verbose: options.verbose,
+      noScore: options.score === false ? true : undefined,
+      simplify: options.simplify,
+      baselineScore: options.baselineScore,
+      force: options.force,
     });
   });
 

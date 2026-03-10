@@ -187,6 +187,22 @@ function loadTemplate(filePath: string): string {
   return readFileSync(filePath, 'utf-8');
 }
 
+const SIMPLIFY_PREAMBLE = `\
+## Your Task: Simplification
+
+SIMPLIFICATION ITERATION — Your goal: reduce code while maintaining quality.
+
+Rules:
+- Remove dead code, redundant abstractions, unnecessary complexity
+- Tests must still pass
+- Score must not decrease (current: {score})
+- Do NOT add new features
+- Deleting code that maintains the score is a success
+- Improving the score by deleting code is an excellent success
+
+Current metrics: {metrics}
+`;
+
 /**
  * Generate a prompt string for the given run mode.
  * Uses a custom template file if configured, otherwise uses the built-in template.
@@ -195,7 +211,13 @@ function loadTemplate(filePath: string): string {
 export function generatePrompt(
   mode: RunMode,
   config: RalphConfig,
-  options: { skipTasks?: string | undefined; scoreContext?: string | undefined } = {},
+  options: {
+    skipTasks?: string | undefined;
+    scoreContext?: string | undefined;
+    simplify?: boolean | undefined;
+    lastScore?: number | null | undefined;
+    lastMetrics?: string | undefined;
+  } = {},
 ): string {
   let template: string;
 
@@ -207,5 +229,18 @@ export function generatePrompt(
   }
 
   const vars = buildVariables(config, options);
-  return applyVariables(template, vars);
+  let result = applyVariables(template, vars);
+
+  // --simplify: replace everything from "## Your Task" onward with the simplification preamble
+  if (options.simplify === true && mode === 'build') {
+    const taskIdx = result.indexOf('\n## Your Task');
+    if (taskIdx >= 0) {
+      result = result.slice(0, taskIdx + 1); // keep the newline before the heading
+    }
+    const score = options.lastScore != null ? options.lastScore.toFixed(3) : '(not yet scored)';
+    const metrics = options.lastMetrics ?? '—';
+    result += SIMPLIFY_PREAMBLE.replace('{score}', score).replace('{metrics}', metrics);
+  }
+
+  return result;
 }

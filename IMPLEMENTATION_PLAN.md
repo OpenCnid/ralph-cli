@@ -821,7 +821,7 @@ Wire scoring, revert, regression detection, `.ralph/keep`, cumulative check, bas
 
 Add new CLI flags to `ralph run` and implement their behavior.
 
-- [ ] Add `--no-score`, `--simplify`, `--baseline-score <float>`, `--force` to the `ralph run` CLI definition in `src/cli.ts` and implement flag validation + simplify prompt in `src/commands/run/index.ts`.
+- [x] Add `--no-score`, `--simplify`, `--baseline-score <float>`, `--force` to the `ralph run` CLI definition in `src/cli.ts` and implement flag validation + simplify prompt in `src/commands/run/index.ts`.
   Flag validation (pre-loop): `--simplify` + `--mode plan` → error; `--no-score` + `--simplify` → error; `--no-score` + `--baseline-score` → error; `--baseline-score` + `--mode plan` → error. `--simplify` replaces the `## Your Task` section and beyond in the build prompt with the simplification preamble. `--baseline-score` stored in `checkpoint.baselineScore`. `--force` passed to `acquireLock()`. Satisfies F-FS09, F-FS10 (AC-45–AC-50), AC-53, AC-68–AC-69.
 
 ### Task 14: Tests — `score/` Domain

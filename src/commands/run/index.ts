@@ -180,6 +180,33 @@ function extractTestCount(metricsStr: string): number | null {
 }
 
 export async function runCommand(mode: RunMode, options: RunOptions): Promise<void> {
+  // Flag validation (pre-loop)
+  if (options.simplify === true && mode === 'plan') {
+    output.error('--simplify cannot be combined with --mode plan');
+    process.exit(1);
+    return;
+  }
+  if (options.noScore === true && options.simplify === true) {
+    output.error('--no-score cannot be combined with --simplify');
+    process.exit(1);
+    return;
+  }
+  if (options.noScore === true && options.baselineScore !== undefined) {
+    output.error('--no-score cannot be combined with --baseline-score');
+    process.exit(1);
+    return;
+  }
+  if (options.baselineScore !== undefined && mode === 'plan') {
+    output.error('--baseline-score cannot be combined with --mode plan');
+    process.exit(1);
+    return;
+  }
+  if (options.baselineScore !== undefined && (options.baselineScore < 0 || options.baselineScore > 1)) {
+    output.error('--baseline-score must be between 0.0 and 1.0');
+    process.exit(1);
+    return;
+  }
+
   const { config } = loadConfig();
   const runConfig = config.run!; // mergeWithDefaults always fills run
   const maxIterations = options.max !== undefined ? options.max : runConfig.loop['max-iterations'];
@@ -214,6 +241,12 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
   } else {
     checkpoint = { version: 1, phase: mode, startedAt: new Date().toISOString(), iteration: 0, history: [] };
   }
+
+  // Store --baseline-score in checkpoint for resume persistence (AC-69)
+  if (options.baselineScore !== undefined) {
+    checkpoint.baselineScore = options.baselineScore;
+  }
+  const effectiveBaselineScore = checkpoint.baselineScore ?? undefined;
 
   let iteration = checkpoint.iteration;
 
@@ -260,7 +293,11 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
 
   // Dry run
   if (options.dryRun === true) {
-    const prompt = generatePrompt(mode, config);
+    const prompt = generatePrompt(mode, config, {
+      simplify: options.simplify,
+      lastScore: checkpoint.lastScore,
+      lastMetrics: checkpoint.lastMetrics ?? undefined,
+    });
     output.plain(prompt);
     return;
   }
@@ -347,7 +384,12 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
     }
 
     const planBefore = readPlanFile();
-    const prompt = generatePrompt(mode, config, { scoreContext });
+    const prompt = generatePrompt(mode, config, {
+      scoreContext,
+      simplify: options.simplify,
+      lastScore: checkpoint.lastScore,
+      lastMetrics: checkpoint.lastMetrics ?? undefined,
+    });
 
     printIterationHeader(iteration);
 
@@ -632,7 +674,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
         }
 
         // First scored iteration: record as baseline
-        if (prevLastScore === null && (options.baselineScore === undefined || options.baselineScore === null)) {
+        if (prevLastScore === null && (effectiveBaselineScore === undefined || effectiveBaselineScore === null)) {
           const headCommit = captureShortHead();
           appendResult({
             commit: headCommit,
@@ -685,10 +727,10 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
         }
 
         // Determine comparison baseline
-        const comparisonScore = (options.baselineScore !== undefined &&
-          options.baselineScore !== null &&
+        const comparisonScore = (effectiveBaselineScore !== undefined &&
+          effectiveBaselineScore !== null &&
           prevLastScore === null)
-          ? options.baselineScore
+          ? effectiveBaselineScore
           : (prevLastScore ?? newScore);
 
         const delta = newScore - comparisonScore;
