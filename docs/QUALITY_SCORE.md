@@ -20,6 +20,7 @@ Last updated: 2026-03-10
 | run | B | A | A | C | A | **C** |
 | review | A | A | A | A | A | **A** |
 | heal | B | A | A | A | A | **B** |
+| score | C | A | A | A | A | **C** |
 | ralph-cli | B | A | A | B | A | **B** |
 
 ## Details
@@ -149,6 +150,15 @@ Last updated: 2026-03-10
 - **File Health**: A — Avg 108 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
 - **Overall**: B
+
+### score
+
+- **Tests**: C — No coverage data for domain path src/commands/score
+- **Docs**: A — 3/3 domain documentation files present
+- **Architecture**: A — No architectural violations
+- **File Health**: A — Avg 113 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
+- **Overall**: C
 
 ### ralph-cli
 
