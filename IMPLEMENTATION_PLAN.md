@@ -807,7 +807,7 @@ Wrap `spawnAgent()` with a wall-clock timeout that sends SIGTERM then SIGKILL.
 
 Implement independent post-agent validation runner for `test-command` and `typecheck-command`.
 
-- [ ] Create `src/commands/run/validation.ts` with `runValidation()`.
+- [x] Create `src/commands/run/validation.ts` with `runValidation()`.
   `runValidation(config)` — run `validation.test-command` then `validation.typecheck-command` (each with 120s hardcoded timeout). Capture test command stdout in memory (for default scorer). On non-zero exit: return `{ passed: false, testOutput: string }`. Both null = pass immediately. Satisfies F-FS06 (AC-31–AC-34).
 
 ### Task 12: Run Loop Scoring Integration (`src/commands/run/scoring.ts` + `run/index.ts` + `run/prompts.ts`)
