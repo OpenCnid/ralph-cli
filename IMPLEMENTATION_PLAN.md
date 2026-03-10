@@ -779,7 +779,7 @@ Implement the built-in scorer that extracts test count + coverage from captured 
 
 Implement trend computation and ASCII sparkline rendering for `ralph score --trend`.
 
-- [ ] Create `src/commands/score/trend.ts` with `computeTrend()` and `renderSparkline()`.
+- [x] Create `src/commands/score/trend.ts` with `computeTrend()` and `renderSparkline()`.
   `renderSparkline(scores: (number | null)[])` — maps scores to 8 Unicode block chars (`▁▂▃▄▅▆▇█`); flat/equal scores use `▅`; null entries skipped. `computeTrend(entries: ResultEntry[], n: number)` — returns min, max, best iteration, worst iteration, first/last scored values. Satisfies F-FS08 `--trend` output (AC-42).
 
 ### Task 8: `ralph score` CLI Command (`src/commands/score/index.ts` + CLI registration)
