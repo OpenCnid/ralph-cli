@@ -751,7 +751,7 @@ Add validation rules for all new scoring config fields.
 
 Create the `score/` domain with its foundational type definitions.
 
-- [ ] Create `src/commands/score/types.ts` with `ScoreResult`, `ResultEntry`, and `ScoreContext` interfaces.
+- [x] Create `src/commands/score/types.ts` with `ScoreResult`, `ResultEntry`, and `ScoreContext` interfaces.
   Define `ScoreResult` (score, source, scriptPath, metrics, error), `ResultEntry` (commit, iteration, status, score, delta, durationS, metrics, description), and `ScoreContext` (previousStatus, previousScore, currentScore, delta, metrics, changedMetrics, timeoutSeconds, regressionThreshold, previousTestCount, currentTestCount). No external dependencies. Satisfies F-FS01–F-FS07 type contracts.
 
 ### Task 4: Results Log (`src/commands/score/results.ts`)
