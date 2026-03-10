@@ -758,7 +758,7 @@ Create the `score/` domain with its foundational type definitions.
 
 Implement `.ralph/results.tsv` append-only read/write logic.
 
-- [ ] Create `src/commands/score/results.ts` with `appendResult()` and `readResults()`.
+- [x] Create `src/commands/score/results.ts` with `appendResult()` and `readResults()`.
   `appendResult(entry: ResultEntry): void` — creates header if file absent, sanitizes tab chars in values, caps metrics at 200 chars with `…`, replaces control chars. `readResults(limit?: number): ResultEntry[]` — parses TSV, returns last N rows. Satisfies F-FS03 (AC-14, AC-15, AC-16, AC-17, AC-18, AC-67).
 
 ### Task 5: Score Script Discovery + Execution (`src/commands/score/scorer.ts`)
