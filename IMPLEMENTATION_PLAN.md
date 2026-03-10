@@ -82,7 +82,7 @@ Full details → `CHANGELOG.md`
 
 ### Task 2: Fix coverage attribution for `review` and `heal` domains
 
-- [ ] Configure vitest coverage to force-include `src/commands/review/**` and `src/commands/heal/**` in the coverage report so `ralph grade` can score those domains above C.
+- [x] Configure vitest coverage to force-include `src/commands/review/**` and `src/commands/heal/**` in the coverage report so `ralph grade` can score those domains above C.
   Add `include` patterns to `vitest.config.ts` coverage settings. After running `npm run test:coverage`, both domains should appear in `coverage/lcov.info`. Verify `ralph grade` upgrades `review` and `heal` from C to B or A.
   Files: `vitest.config.ts`.
 
