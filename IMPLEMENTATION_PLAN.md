@@ -828,7 +828,7 @@ Add new CLI flags to `ralph run` and implement their behavior.
 
 Unit and CLI integration tests for all `score/` modules.
 
-- [ ] Create `src/commands/score/score.test.ts` and `src/commands/score/cli.test.ts` covering the score domain.
+- [x] Create `src/commands/score/score.test.ts` and `src/commands/score/cli.test.ts` covering the score domain.
   **score.test.ts**: discoverScorer priority order + short-circuit; script execution with env vars; output parsing (score+metrics, no-tab, empty, out-of-range, non-numeric); EACCES fallback; 60s timeout kill; default scorer regex patterns for all five test count patterns; coverage JSON field priority order; single-signal weighting; null when neither signal; `test_count`/`test_total` always in metrics; results.tsv append (header creation, append, sanitization, recreation after delete); sparkline algorithm (normal, flat, null entries). **cli.test.ts**: `ralph score` (no flags, --history, --trend, --compare, --json, exit codes). Target: ≥90% coverage for `score/` domain. Satisfies AC-01–AC-18, AC-40–AC-44, AC-58.
 
 ### Task 15: Tests — Run Loop Additions
