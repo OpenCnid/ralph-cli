@@ -255,6 +255,12 @@ Last updated: 2026-03-10
 - heal/fileHealth: A (stable) — Avg 108 lines, no oversized files
 - heal/staleness: A (stable) — Median 0d since last change
 - heal/overall: B (stable)
+- score/tests: C (stable) — No coverage data for domain path src/commands/score
+- score/docs: A (stable) — 3/3 domain documentation files present
+- score/architecture: A (stable) — No architectural violations
+- score/fileHealth: A (stable) — Avg 113 lines, no oversized files
+- score/staleness: A (stable) — Median 0d since last change
+- score/overall: C (stable)
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
