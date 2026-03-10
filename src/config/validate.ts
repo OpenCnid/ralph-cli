@@ -8,7 +8,9 @@ const VALID_RUNNERS = ['codex', 'claude', 'amp', 'aider', 'cursor', 'other'];
 const VALID_COVERAGE_TOOLS = ['vitest', 'jest', 'pytest', 'go-test', 'none'];
 const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 
-const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review', 'heal'];
+const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review', 'heal', 'scoring'];
+const KNOWN_SCORING_KEYS = ['script', 'regression-threshold', 'cumulative-threshold', 'auto-revert', 'default-weights'];
+const KNOWN_SCORING_WEIGHTS_KEYS = ['tests', 'coverage'];
 const KNOWN_HEAL_KEYS = ['agent', 'commands', 'auto-commit', 'commit-prefix'];
 const VALID_HEAL_COMMANDS = ['doctor', 'grade', 'gc', 'lint'];
 const KNOWN_REVIEW_KEYS = ['agent', 'scope', 'context', 'output'];
@@ -17,7 +19,7 @@ const KNOWN_REVIEW_OUTPUT_KEYS = ['format', 'file', 'severity-threshold'];
 const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git'];
 const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
 const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
-const KNOWN_RUN_LOOP_KEYS = ['max-iterations', 'stall-threshold'];
+const KNOWN_RUN_LOOP_KEYS = ['max-iterations', 'stall-threshold', 'iteration-timeout'];
 const KNOWN_RUN_VALIDATION_KEYS = ['test-command', 'typecheck-command'];
 const KNOWN_RUN_GIT_KEYS = ['auto-commit', 'auto-push', 'commit-prefix', 'branch'];
 const KNOWN_PROJECT_KEYS = ['name', 'language', 'description', 'framework'];
@@ -390,6 +392,12 @@ export function validate(raw: unknown): ValidationResult {
               errors.push('"run.loop.stall-threshold" must be a non-negative integer.');
             }
           }
+          if (loop['iteration-timeout'] !== undefined) {
+            const v = loop['iteration-timeout'];
+            if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+              errors.push('"run.loop.iteration-timeout" must be a non-negative integer.');
+            }
+          }
         }
       }
       if (run['validation'] !== undefined) {
@@ -491,6 +499,53 @@ export function validate(raw: unknown): ValidationResult {
       errors.push('"heal" must be an object.');
     } else {
       validateHealConfig(obj['heal'] as Record<string, unknown>, errors, warnings);
+    }
+  }
+  if (obj['scoring'] !== undefined) {
+    if (typeof obj['scoring'] !== 'object' || obj['scoring'] === null) {
+      errors.push('"scoring" must be an object.');
+    } else {
+      const scoring = obj['scoring'] as Record<string, unknown>;
+      warnUnknownKeys(scoring, KNOWN_SCORING_KEYS, 'scoring.', warnings);
+      if (scoring['script'] !== undefined && scoring['script'] !== null && typeof scoring['script'] !== 'string') {
+        errors.push('"scoring.script" must be null or a string.');
+      }
+      if (scoring['regression-threshold'] !== undefined) {
+        const v = scoring['regression-threshold'];
+        if (typeof v !== 'number' || v < 0 || v > 1) {
+          errors.push('"scoring.regression-threshold" must be a number between 0.0 and 1.0.');
+        }
+      }
+      if (scoring['cumulative-threshold'] !== undefined) {
+        const v = scoring['cumulative-threshold'];
+        if (typeof v !== 'number' || v < 0 || v > 1) {
+          errors.push('"scoring.cumulative-threshold" must be a number between 0.0 and 1.0.');
+        }
+      }
+      if (scoring['auto-revert'] !== undefined && typeof scoring['auto-revert'] !== 'boolean') {
+        errors.push('"scoring.auto-revert" must be a boolean.');
+      }
+      if (scoring['default-weights'] !== undefined) {
+        if (typeof scoring['default-weights'] !== 'object' || scoring['default-weights'] === null) {
+          errors.push('"scoring.default-weights" must be an object.');
+        } else {
+          const weights = scoring['default-weights'] as Record<string, unknown>;
+          warnUnknownKeys(weights, KNOWN_SCORING_WEIGHTS_KEYS, 'scoring.default-weights.', warnings);
+          const tests = weights['tests'];
+          const coverage = weights['coverage'];
+          if (tests !== undefined && (typeof tests !== 'number' || tests < 0)) {
+            errors.push('"scoring.default-weights.tests" must be a non-negative number.');
+          }
+          if (coverage !== undefined && (typeof coverage !== 'number' || coverage < 0)) {
+            errors.push('"scoring.default-weights.coverage" must be a non-negative number.');
+          }
+          if (typeof tests === 'number' && typeof coverage === 'number') {
+            if (Math.abs(tests + coverage - 1.0) > 0.001) {
+              errors.push('"scoring.default-weights.tests" + "scoring.default-weights.coverage" must equal 1.0 (within 0.001 tolerance).');
+            }
+          }
+        }
+      }
     }
   }
   return { errors, warnings };

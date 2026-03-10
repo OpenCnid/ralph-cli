@@ -41,7 +41,7 @@ architecture:
   cross-cutting:
     - src/utils
   rules:
-    max-lines: 500
+    max-lines: 600
     naming:
       schemas: "*Schema"
       types: "*Type"

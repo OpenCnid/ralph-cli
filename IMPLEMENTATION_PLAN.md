@@ -744,7 +744,7 @@ Expected: all tests pass, doctor 10/10, `ralph heal` command functional, all acc
 
 Add validation rules for all new scoring config fields.
 
-- [ ] Add scoring field validation to `src/config/validate.ts`.
+- [x] Add scoring field validation to `src/config/validate.ts`.
   Validate: `scoring.regression-threshold` (0.0–1.0), `scoring.cumulative-threshold` (0.0–1.0), `scoring.auto-revert` (boolean), `scoring.script` (null or string), `scoring.default-weights.tests + coverage === 1.0` within 0.001 tolerance, `run.loop.iteration-timeout` (non-negative integer). Warn on unknown keys. Satisfies AC-13, AC-53.
 
 ### Task 3: Score Types (`src/commands/score/types.ts`)
