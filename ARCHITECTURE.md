@@ -2,7 +2,7 @@
 
 ## Overview
 
-ralph-cli is a CLI tool that scaffolds and maintains agent-optimized repositories. It has 13 commands, each self-contained in its own directory under `src/commands/`.
+ralph-cli is a CLI tool that scaffolds and maintains agent-optimized repositories. It has 14 commands, each self-contained in its own directory under `src/commands/`.
 
 ## Directory Map
 
@@ -50,6 +50,13 @@ src/
     │   ├── diagnostics.ts — Diagnostic execution and issue parsing
     │   ├── prompts.ts  — Heal prompt template engine
     │   └── types.ts    — HealOptions, DiagnosticResult, HealContext types
+    ├── score/          — Fitness scoring (run loop + standalone CLI)
+    │   ├── index.ts    — scoreCommand entry point, history/trend/compare
+    │   ├── scorer.ts   — Score script discovery and execution
+    │   ├── default-scorer.ts — Built-in test+coverage scorer
+    │   ├── results.ts  — TSV results log (append + read)
+    │   ├── trend.ts    — Trend computation and sparkline rendering
+    │   └── types.ts    — ScoreResult, ResultEntry, ScoreContext
     └── config-validate.ts — Standalone config validation command
 ```
 
@@ -80,6 +87,7 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 | run | `src/commands/run` | Autonomous build loop (agent spawn, prompts, progress) |
 | review | `src/commands/review` | Agent-powered code review (diff extraction, context assembly, prompt) |
 | heal | `src/commands/heal` | Automated self-repair (diagnostics, prompt, agent-driven fixes) |
+| score | `src/commands/score` | Fitness scoring (script execution, default scorer, results log, trend) |
 
 ## Cross-Cutting Concerns
 
@@ -93,6 +101,7 @@ Four intentional cross-command imports exist:
 2. **promote → lint engine** — `promote` imports the lint engine to count violations when tracking escalation.
 3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
 4. **heal → run/agent + run/detect** — `heal/index.ts` reuses agent resolution/spawn and validation command detection from the `run` domain.
+5. **run → score** — `run/index.ts` imports `discoverScorer`, `runScorer`, `runDefaultScorer`, `appendResult`, and `buildScoreContext` from the `score` domain to integrate fitness scoring into the build loop.
 
 These are documented exceptions, not violations.
 

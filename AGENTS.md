@@ -12,6 +12,11 @@
 - Override agent: `ralph run --agent codex`
 - Dry run: `ralph run --dry-run` — show prompt without executing
 - Resume from checkpoint: `ralph run --resume`
+- Score (current): `ralph score` — run fitness scorer, print score + metrics
+- Score history: `ralph score --history [N]` — show last N scored iterations (default 20)
+- Score trend: `ralph score --trend [N]` — sparkline + best/worst summary
+- Score compare: `ralph score --compare` — compare current score vs last recorded
+- Score JSON: `ralph score --json` — structured output for tooling
 - Typecheck: `npx tsc --noEmit`
 - Lint: `npm run lint`
 - Run locally: `node dist/cli.js <command>`
@@ -22,6 +27,7 @@
 - `src/cli.ts` — Entry point, command router (commander)
 - `src/commands/<name>/index.ts` — One directory per command
   - `init/` `lint/` `grade/` `gc/` `doctor/` `plan/` `promote/` `ref/` `hooks/` `ci/` `run/`
+  - `review/` `heal/` `score/`
   - `config-validate.ts` — Standalone config validation
 - `src/commands/lint/engine.ts` — Rule framework (built-in + custom)
 - `src/commands/lint/imports.ts` — Import parser

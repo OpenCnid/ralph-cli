@@ -55,7 +55,7 @@ Full details → `CHANGELOG.md`
 | `ralph run` | ✅ Complete (plan/build modes, agent abstraction, checkpoint, auto-detect) | 80+ |
 | `ralph review` | ✅ Complete (diff extraction, context assembly, prompt, output formats) | 42+ |
 | `ralph heal` | ✅ Complete (diagnostics, heal prompt, agent repair flow, verification) | 47+ |
-| `ralph score` | ⬜ Not started | — |
+| `ralph score` | ✅ Complete (script discovery, default scorer, results log, trend, CLI) | 30+ |
 
 ## Deferred Items
 
@@ -842,7 +842,7 @@ Unit tests for lock, timeout, validation, and scoring integration in the run dom
 
 Update project documentation to reflect the new `score/` domain and run loop hardening.
 
-- [ ] Update `ARCHITECTURE.md`, `AGENTS.md`, `docs/design-docs/score/` domain docs, `src/commands/score/DESIGN.md`, `.ralph/config.yml`, and `docs/RELIABILITY.md` for the fitness scoring feature.
+- [x] Update `ARCHITECTURE.md`, `AGENTS.md`, `docs/design-docs/score/` domain docs, `src/commands/score/DESIGN.md`, `.ralph/config.yml`, and `docs/RELIABILITY.md` for the fitness scoring feature.
   Add `score` as a new domain in `ARCHITECTURE.md` (layer, dependencies: score → config). Add `ralph score` to the commands list in `AGENTS.md`. Create `src/commands/score/DESIGN.md` and `docs/design-docs/score/` with the three standard domain doc files (each 30–100 lines, sections: Purpose, Usage, Config, Architecture, Design Decisions). Add `score` domain (`path: src/commands/score`) to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it. Update `docs/RELIABILITY.md` to document the auto-revert safety net and run lock. Update `IMPLEMENTATION_PLAN.md` version table for 0.5.0 release.
 
 ### Task 17: Version Bump + CHANGELOG
