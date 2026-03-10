@@ -765,7 +765,7 @@ Implement `.ralph/results.tsv` append-only read/write logic.
 
 Implement score script discovery (config → score.sh → score.ts → score.py → default) and execution.
 
-- [ ] Create `src/commands/score/scorer.ts` with `discoverScorer()` and `runScorer()`.
+- [x] Create `src/commands/score/scorer.ts` with `discoverScorer()` and `runScorer()`.
   `discoverScorer(config)` — short-circuit if/else chain checking config override, then `score.sh`, `score.ts` (via `npx tsx`), `score.py` (via `python3`); returns null for default. `runScorer(scriptPath, iteration, commit)` — spawns with `RALPH_ITERATION`/`RALPH_COMMIT` env vars, 60s timeout, parses `<score>\t<metrics>` stdout format, validates score 0.0–1.0, handles `EACCES` fallback. Satisfies F-FS01 (AC-01–AC-07).
 
 ### Task 6: Default Scorer (`src/commands/score/default-scorer.ts`)
