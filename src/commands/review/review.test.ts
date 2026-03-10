@@ -67,7 +67,7 @@ function makeRunConfig(): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
   };

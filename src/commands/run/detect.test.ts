@@ -45,7 +45,7 @@ describe('detectTestCommand', () => {
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
   it('returns config override when set', () => {
-    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3 }, validation: { 'test-command': 'bun test', 'typecheck-command': null }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
+    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': 'bun test', 'typecheck-command': null }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
     expect(detectTestCommand(config, tempDir)).toBe('bun test');
   });
 
@@ -103,7 +103,7 @@ describe('detectTypecheckCommand', () => {
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
   it('returns config override when set', () => {
-    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3 }, validation: { 'test-command': null, 'typecheck-command': 'deno check' }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
+    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': null, 'typecheck-command': 'deno check' }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
     expect(detectTypecheckCommand(config, tempDir)).toBe('deno check');
   });
 

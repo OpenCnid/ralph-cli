@@ -737,7 +737,7 @@ Expected: all tests pass, doctor 10/10, `ralph heal` command functional, all acc
 
 ### Task 1: Config Schema + Defaults for Scoring
 
-- [ ] Add `ScoringConfig` to schema, defaults, loader; extend `LoopConfig`, `AgentResult`, `RunOptions`, and `Checkpoint` with scoring fields.
+- [x] Add `ScoringConfig` to schema, defaults, loader; extend `LoopConfig`, `AgentResult`, `RunOptions`, and `Checkpoint` with scoring fields.
   Add `ScoringConfig` interface (`script`, `regression-threshold`, `cumulative-threshold`, `auto-revert`, `default-weights`) and `scoring?: ScoringConfig | undefined` to `RalphConfig`/`RawRalphConfig` in `src/config/schema.ts`. Add `iteration-timeout` to `LoopConfig`. Add `timedOut: boolean` to `AgentResult` and `noScore`/`simplify`/`baselineScore`/`force` to `RunOptions` in `src/commands/run/types.ts`. Add `DEFAULT_SCORING` and update `DEFAULT_LOOP` with `iteration-timeout: 900` in `src/config/defaults.ts`. Merge scoring defaults in `mergeWithDefaults()` in `src/config/loader.ts`. Add `lastScore`, `lastScoredIteration`, `bestScore`, `consecutiveDiscards`, `baselineScore`, `baselineCommit` (all optional) to `Checkpoint` in `src/commands/run/progress.ts`. Satisfies F-FS01–F-FS11 config prerequisites (AC-52, AC-71, AC-76).
 
 ### Task 2: Config Validation for Scoring Fields

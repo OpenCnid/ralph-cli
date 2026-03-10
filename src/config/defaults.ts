@@ -1,4 +1,4 @@
-import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ValidationConfig } from './schema.js';
+import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -66,9 +66,21 @@ const DEFAULT_PROMPTS: PromptsConfig = {
   build: null,
 };
 
+export const DEFAULT_SCORING: ScoringConfig = {
+  script: null,
+  'regression-threshold': 0.02,
+  'cumulative-threshold': 0.10,
+  'auto-revert': true,
+  'default-weights': {
+    tests: 0.6,
+    coverage: 0.4,
+  },
+};
+
 const DEFAULT_LOOP: LoopConfig = {
   'max-iterations': 0,
   'stall-threshold': 3,
+  'iteration-timeout': 900,
 };
 
 const DEFAULT_VALIDATION: ValidationConfig = {

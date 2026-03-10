@@ -77,7 +77,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 10, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     ...overrides,
@@ -213,7 +213,7 @@ describe('printBanner', () => {
   it('shows heading and all fields for build mode', () => {
     mockExecSync.mockReturnValue('feature/my-branch\n');
     const agentConfig: AgentConfig = { cli: 'claude', args: ['--print'], timeout: 1800 };
-    const runConfig = makeRunConfig({ loop: { 'max-iterations': 10, 'stall-threshold': 3 } });
+    const runConfig = makeRunConfig({ loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 } });
 
     printBanner('build', agentConfig, runConfig);
 
@@ -228,7 +228,7 @@ describe('printBanner', () => {
   it('shows "unlimited" when max-iterations is 0', () => {
     mockExecSync.mockReturnValue('main\n');
     const agentConfig: AgentConfig = { cli: 'codex', args: [], timeout: 600 };
-    const runConfig = makeRunConfig({ loop: { 'max-iterations': 0, 'stall-threshold': 5 } });
+    const runConfig = makeRunConfig({ loop: { 'max-iterations': 0, 'stall-threshold': 5, 'iteration-timeout': 900 } });
 
     printBanner('plan', agentConfig, runConfig);
 

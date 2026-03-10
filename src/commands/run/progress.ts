@@ -18,6 +18,12 @@ export interface Checkpoint {
   startedAt: string;
   iteration: number;
   history: IterationRecord[];
+  lastScore?: number | null | undefined;
+  lastScoredIteration?: number | null | undefined;
+  bestScore?: number | null | undefined;
+  consecutiveDiscards?: number | undefined;
+  baselineScore?: number | null | undefined;
+  baselineCommit?: string | null | undefined;
 }
 
 const CHECKPOINT_FILE = '.ralph/run-checkpoint.json';

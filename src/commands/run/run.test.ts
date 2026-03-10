@@ -84,7 +84,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     ...overrides,
@@ -229,7 +229,7 @@ describe('runCommand — build mode', () => {
 
   it('max iterations stops loop', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 2, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 2, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 500 });
 
@@ -284,7 +284,7 @@ describe('runCommand — build mode', () => {
   it('stall detection halts loop in non-TTY after threshold no-change iterations', async () => {
     // 3 iterations, no changes each time → stall after 3
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 100 });
     // git status always returns empty (no changes)
@@ -301,7 +301,7 @@ describe('runCommand — build mode', () => {
 
   it('stall detection disabled when threshold is 0', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 5, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 5, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 100 });
     mockExecSync.mockReturnValue(''); // no changes
@@ -325,7 +325,7 @@ describe('runCommand — build mode', () => {
     mockLoadCheckpoint.mockReturnValue(existingCheckpoint);
     // max-iterations = 4 → should only run iteration 4
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 4, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 4, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { resume: true });
@@ -380,7 +380,7 @@ describe('runCommand — build mode', () => {
   it('--max overrides loop.max-iterations from config', async () => {
     // Config has max-iterations 1, --max 3 → runs 3
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { max: 3 });
@@ -411,7 +411,7 @@ describe('runCommand — plan mode', () => {
   it('plan mode halts when plan file unchanged after iteration', async () => {
     // normalizePlanContent is identity mock, so same content = unchanged
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', {});
@@ -442,7 +442,7 @@ describe('runCommand — plan mode', () => {
   it('plan mode: continues without prompt in non-TTY when plan exists', async () => {
     // IMPLEMENTATION_PLAN.md already exists (created in top-level beforeEach)
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', {});
@@ -455,7 +455,7 @@ describe('runCommand — plan mode', () => {
     const existingCheckpoint = makeCheckpoint({ phase: 'plan', iteration: 1 });
     mockLoadCheckpoint.mockReturnValue(existingCheckpoint);
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 2, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 2, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', { resume: true });

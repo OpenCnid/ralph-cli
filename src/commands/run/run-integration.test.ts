@@ -62,7 +62,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     ...overrides,
@@ -151,7 +151,7 @@ afterEach(() => {
 describe('integration — full build cycle', () => {
   it('runs 3 iterations; checkpoint on disk has 3 history records with commits', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 3, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 3, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
     // Each iteration: git shows changes → commit path runs
     mockExecSync.mockImplementation((cmd: unknown) => {
@@ -181,7 +181,7 @@ describe('integration — plan mode completion', () => {
     writeFileSync(join(specsDir, 'spec.md'), '# Spec\n');
 
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 0, 'iteration-timeout': 900 },
       git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     }));
 
@@ -210,7 +210,7 @@ describe('integration — plan mode completion', () => {
 describe('integration — agent timeout', () => {
   it('records error in checkpoint and warns; loop runs to max-iterations', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 1, durationMs: 1000, error: 'timed out' });
 
@@ -243,7 +243,7 @@ describe('integration — resume from checkpoint', () => {
       JSON.stringify(saved, null, 2),
     );
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 3, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 3, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { resume: true });
@@ -283,7 +283,7 @@ describe('integration — resume phase mismatch', () => {
 describe('integration — stall detection', () => {
   it('halts loop after stall-threshold no-change iterations in non-TTY', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     // git status always empty → noChangesCount increments every iteration
     mockExecSync.mockImplementation((cmd: unknown) => {
@@ -309,7 +309,7 @@ describe('integration — custom prompt template', () => {
 
     mockLoadConfig.mockReturnValue(makeLoadResult({
       prompts: { plan: null, build: templatePath },
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', {});
