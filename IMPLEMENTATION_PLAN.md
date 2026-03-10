@@ -793,7 +793,7 @@ Implement the standalone `ralph score` command with all subcommand flags.
 
 Implement the run lock to prevent concurrent `ralph run` instances.
 
-- [ ] Create `src/commands/run/lock.ts` with `acquireLock()`, `releaseLock()`, `isLockHeld()`.
+- [x] Create `src/commands/run/lock.ts` with `acquireLock()`, `releaseLock()`, `isLockHeld()`.
   Write `.ralph/run.lock` with `{ pid, startedAt }` using exclusive `wx` flag. On `EEXIST`: read PID, check liveness via `process.kill(pid, 0)`, dead = delete and retry, alive = throw with message. Register `process.on('exit', releaseLock)`. `--force` deletes lockfile without PID check before acquire. Satisfies F-FS11 (AC-54–AC-57).
 
 ### Task 10: Iteration Timeout (`src/commands/run/timeout.ts`)
