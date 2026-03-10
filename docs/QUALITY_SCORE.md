@@ -230,9 +230,9 @@ Last updated: 2026-03-10
 - run/tests: B (stable) — 87% line coverage
 - run/docs: A (stable) — 3/3 domain documentation files present
 - run/architecture: A (stable) — No architectural violations
-- run/fileHealth: C (was A today) — degraded — Avg 218 lines, 1 oversized: index.ts (1052)
+- run/fileHealth: C (stable) — Avg 218 lines, 1 oversized: index.ts (1052)
 - run/staleness: A (stable) — Median 0d since last change
-- run/overall: C (was B today) — degraded
+- run/overall: C (stable)
 - review/tests: A (stable) — 95% line coverage
 - review/docs: A (stable) — 3/3 domain documentation files present
 - review/architecture: A (stable) — No architectural violations
@@ -248,7 +248,7 @@ Last updated: 2026-03-10
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: B (was A today) — degraded — Avg 174 lines, 1 oversized: index.ts (1052)
+- ralph-cli/fileHealth: B (stable) — Avg 174 lines, 1 oversized: index.ts (1052)
 - ralph-cli/staleness: A (stable) — Median 0d since last change
 - ralph-cli/overall: B (stable)
 
