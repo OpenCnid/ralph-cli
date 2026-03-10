@@ -772,7 +772,7 @@ Implement score script discovery (config → score.sh → score.ts → score.py 
 
 Implement the built-in scorer that extracts test count + coverage from captured output/files.
 
-- [ ] Create `src/commands/score/default-scorer.ts` with `runDefaultScorer()`.
+- [x] Create `src/commands/score/default-scorer.ts` with `runDefaultScorer()`.
   Parse test pass/fail counts from validation stdout using the five defined regex patterns. Read coverage from JSON report at configured path (Istanbul `total.statements.pct` → `total.lines.pct` → `statements.pct` → `lines.pct`). Compute weighted score per spec formula (single-signal = full weight). Always include `test_count`, `test_total`, `test_rate`, `coverage` in metrics output. Return null score when neither signal available. Satisfies F-FS02 (AC-08–AC-12, AC-58).
 
 ### Task 7: Score Trend + Sparkline (`src/commands/score/trend.ts`)
