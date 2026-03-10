@@ -24,6 +24,8 @@ export interface Checkpoint {
   consecutiveDiscards?: number | undefined;
   baselineScore?: number | null | undefined;
   baselineCommit?: string | null | undefined;
+  bestDiscardedScore?: number | null | undefined;
+  lastMetrics?: string | null | undefined;
 }
 
 const CHECKPOINT_FILE = '.ralph/run-checkpoint.json';

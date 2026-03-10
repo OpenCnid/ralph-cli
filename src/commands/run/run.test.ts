@@ -46,11 +46,48 @@ vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
 }));
 
+vi.mock('./timeout.js', () => ({
+  spawnAgentWithTimeout: vi.fn(),
+}));
+
+vi.mock('./lock.js', () => ({
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLockHeld: vi.fn(),
+}));
+
+vi.mock('./validation.js', () => ({
+  runValidation: vi.fn(),
+}));
+
+vi.mock('../score/scorer.js', () => ({
+  discoverScorer: vi.fn().mockReturnValue(null),
+  runScorer: vi.fn(),
+}));
+
+vi.mock('../score/default-scorer.js', () => ({
+  runDefaultScorer: vi.fn(),
+}));
+
+vi.mock('../score/results.js', () => ({
+  appendResult: vi.fn(),
+  readResults: vi.fn(),
+}));
+
+vi.mock('./scoring.js', () => ({
+  buildScoreContext: vi.fn().mockReturnValue(''),
+  computeChangedMetrics: vi.fn().mockReturnValue('(none)'),
+  computeRegression: vi.fn(),
+}));
+
 // ─── Imports after mocks ─────────────────────────────────────────────────────
 
 import { execSync } from 'node:child_process';
 import { loadConfig } from '../../config/loader.js';
 import { spawnAgent, resolveAgent } from './agent.js';
+import { spawnAgentWithTimeout } from './timeout.js';
+import { runValidation } from './validation.js';
+import { runDefaultScorer } from '../score/default-scorer.js';
 import { loadCheckpoint, saveCheckpoint, printFinalSummary, printIterationHeader } from './progress.js';
 import { generatePrompt } from './prompts.js';
 import * as outputMod from '../../utils/output.js';
@@ -62,6 +99,9 @@ import type { LoadResult } from '../../config/loader.js';
 const mockExecSync = vi.mocked(execSync);
 const mockLoadConfig = vi.mocked(loadConfig);
 const mockSpawnAgent = vi.mocked(spawnAgent);
+const mockSpawnAgentWithTimeout = vi.mocked(spawnAgentWithTimeout);
+const mockRunValidation = vi.mocked(runValidation);
+const mockRunDefaultScorer = vi.mocked(runDefaultScorer);
 const mockResolveAgent = vi.mocked(resolveAgent);
 const mockLoadCheckpoint = vi.mocked(loadCheckpoint);
 const mockSaveCheckpoint = vi.mocked(saveCheckpoint);
@@ -148,11 +188,25 @@ beforeEach(() => {
   writeFileSync(join(tmpDir, 'IMPLEMENTATION_PLAN.md'), '# Plan\n- [ ] Task 1\n');
   process.chdir(tmpDir);
 
-  // Default mock setup
+  vi.clearAllMocks();
+
+  // Re-apply defaults after clearAllMocks
   mockLoadConfig.mockReturnValue(makeLoadResult());
   mockResolveAgent.mockReturnValue(makeAgentConfig());
   mockLoadCheckpoint.mockReturnValue(null);
   mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 1000 });
+
+  // spawnAgentWithTimeout delegates to spawnAgent so existing assertions still work
+  mockSpawnAgentWithTimeout.mockImplementation(
+    (_config: AgentConfig, prompt: string, _timeout: number, opts?: { verbose?: boolean | undefined; capture?: boolean | undefined }) =>
+      mockSpawnAgent(_config, prompt, opts),
+  );
+
+  // Validation passes by default
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+
+  // Default scorer returns no score
+  mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });
 
   // git: no changes by default
   mockExecSync.mockImplementation((cmd: unknown) => {
@@ -162,23 +216,6 @@ beforeEach(() => {
     return '';
   });
 
-  mockExit = vi.spyOn(process, 'exit').mockImplementation((_code?: string | number | null) => {
-    throw new Error(`process.exit(${_code})`);
-  });
-
-  vi.clearAllMocks();
-
-  // Re-apply defaults after clearAllMocks
-  mockLoadConfig.mockReturnValue(makeLoadResult());
-  mockResolveAgent.mockReturnValue(makeAgentConfig());
-  mockLoadCheckpoint.mockReturnValue(null);
-  mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 1000 });
-  mockExecSync.mockImplementation((cmd: unknown) => {
-    const c = String(cmd);
-    if (c.includes('git status --porcelain')) return '';
-    if (c.includes('git rev-parse --short')) return 'abc1234\n';
-    return '';
-  });
   mockExit = vi.spyOn(process, 'exit').mockImplementation((_code?: string | number | null) => {
     throw new Error(`process.exit(${_code})`);
   });
