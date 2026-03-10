@@ -77,7 +77,7 @@ Full details → `CHANGELOG.md`
 
 ### Task 1: Create `docs/exec-plans/active/` and `docs/exec-plans/completed/` subdirectories
 
-- [ ] Create `docs/exec-plans/active/.gitkeep` and `docs/exec-plans/completed/.gitkeep` so doctor's exec-plans structure check passes (currently 28/29 checks; this brings it to 29/29).
+- [x] Create `docs/exec-plans/active/.gitkeep` and `docs/exec-plans/completed/.gitkeep` so doctor's exec-plans structure check passes (currently 28/29 checks; this brings it to 29/29).
   Files: two new `.gitkeep` files.
 
 ### Task 2: Fix coverage attribution for `review` and `heal` domains
