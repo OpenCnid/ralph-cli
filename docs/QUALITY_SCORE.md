@@ -14,19 +14,19 @@ Last updated: 2026-03-10
 | init | B | A | A | A | A | **B** |
 | plan | B | A | A | A | A | **B** |
 | promote | B | A | A | A | A | **B** |
-| ref | C | A | A | A | A | **C** |
+| ref | A | A | A | A | A | **A** |
 | hooks | B | A | A | A | A | **B** |
 | ci | B | A | A | A | A | **B** |
 | run | B | A | A | A | A | **B** |
-| review | C | A | A | A | A | **C** |
-| heal | C | A | A | A | A | **C** |
+| review | A | A | A | A | A | **A** |
+| heal | B | A | A | A | A | **B** |
 | ralph-cli | B | A | A | A | A | **B** |
 
 ## Details
 
 ### config
 
-- **Tests**: A — 94% line coverage
+- **Tests**: A — 92% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 221 lines, no oversized files
@@ -98,12 +98,12 @@ Last updated: 2026-03-10
 
 ### ref
 
-- **Tests**: C — 62% line coverage
+- **Tests**: A — 91% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 364 lines, no oversized files
 - **Staleness**: A — Median 1d since last change
-- **Overall**: C
+- **Overall**: A
 
 ### hooks
 
@@ -134,21 +134,21 @@ Last updated: 2026-03-10
 
 ### review
 
-- **Tests**: C — No coverage data for domain path src/commands/review
+- **Tests**: A — 95% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 121 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: C
+- **Overall**: A
 
 ### heal
 
-- **Tests**: C — No coverage data for domain path src/commands/heal
+- **Tests**: B — 83% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 108 lines, no oversized files
 - **Staleness**: A — Median 0d since last change
-- **Overall**: C
+- **Overall**: B
 
 ### ralph-cli
 
@@ -161,7 +161,7 @@ Last updated: 2026-03-10
 
 ## Trends
 
-- config/tests: A (stable) — 94% line coverage
+- config/tests: A (stable) — 92% line coverage
 - config/docs: A (stable) — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
 - config/fileHealth: A (stable) — Avg 221 lines, no oversized files
@@ -209,12 +209,12 @@ Last updated: 2026-03-10
 - promote/fileHealth: A (stable) — Avg 230 lines, no oversized files
 - promote/staleness: A (stable) — Median 1d since last change
 - promote/overall: B (stable)
-- ref/tests: C (stable) — 62% line coverage
+- ref/tests: A (was C today) — improved — 91% line coverage
 - ref/docs: A (stable) — 3/3 domain documentation files present
 - ref/architecture: A (stable) — No architectural violations
 - ref/fileHealth: A (stable) — Avg 364 lines, no oversized files
 - ref/staleness: A (stable) — Median 1d since last change
-- ref/overall: C (stable)
+- ref/overall: A (was C today) — improved
 - hooks/tests: B (stable) — 80% line coverage
 - hooks/docs: A (stable) — 3/3 domain documentation files present
 - hooks/architecture: A (stable) — No architectural violations
@@ -233,18 +233,18 @@ Last updated: 2026-03-10
 - run/fileHealth: A (stable) — Avg 157 lines, no oversized files
 - run/staleness: A (stable) — Median 0d since last change
 - run/overall: B (stable)
-- review/tests: C (stable) — No coverage data for domain path src/commands/review
+- review/tests: A (was C today) — improved — 95% line coverage
 - review/docs: A (stable) — 3/3 domain documentation files present
 - review/architecture: A (stable) — No architectural violations
 - review/fileHealth: A (stable) — Avg 121 lines, no oversized files
 - review/staleness: A (stable) — Median 0d since last change
-- review/overall: C (stable)
-- heal/tests: C (stable) — No coverage data for domain path src/commands/heal
+- review/overall: A (was C today) — improved
+- heal/tests: B (was C today) — improved — 83% line coverage
 - heal/docs: A (stable) — 3/3 domain documentation files present
 - heal/architecture: A (stable) — No architectural violations
 - heal/fileHealth: A (stable) — Avg 108 lines, no oversized files
 - heal/staleness: A (stable) — Median 0d since last change
-- heal/overall: C (stable)
+- heal/overall: B (was C today) — improved
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
