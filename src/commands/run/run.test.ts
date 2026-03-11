@@ -46,11 +46,48 @@ vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
 }));
 
+vi.mock('./timeout.js', () => ({
+  spawnAgentWithTimeout: vi.fn(),
+}));
+
+vi.mock('./lock.js', () => ({
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLockHeld: vi.fn(),
+}));
+
+vi.mock('./validation.js', () => ({
+  runValidation: vi.fn(),
+}));
+
+vi.mock('../score/scorer.js', () => ({
+  discoverScorer: vi.fn().mockReturnValue(null),
+  runScorer: vi.fn(),
+}));
+
+vi.mock('../score/default-scorer.js', () => ({
+  runDefaultScorer: vi.fn(),
+}));
+
+vi.mock('../score/results.js', () => ({
+  appendResult: vi.fn(),
+  readResults: vi.fn(),
+}));
+
+vi.mock('./scoring.js', () => ({
+  buildScoreContext: vi.fn().mockReturnValue(''),
+  computeChangedMetrics: vi.fn().mockReturnValue('(none)'),
+  computeRegression: vi.fn(),
+}));
+
 // ─── Imports after mocks ─────────────────────────────────────────────────────
 
 import { execSync } from 'node:child_process';
 import { loadConfig } from '../../config/loader.js';
 import { spawnAgent, resolveAgent } from './agent.js';
+import { spawnAgentWithTimeout } from './timeout.js';
+import { runValidation } from './validation.js';
+import { runDefaultScorer } from '../score/default-scorer.js';
 import { loadCheckpoint, saveCheckpoint, printFinalSummary, printIterationHeader } from './progress.js';
 import { generatePrompt } from './prompts.js';
 import * as outputMod from '../../utils/output.js';
@@ -62,6 +99,9 @@ import type { LoadResult } from '../../config/loader.js';
 const mockExecSync = vi.mocked(execSync);
 const mockLoadConfig = vi.mocked(loadConfig);
 const mockSpawnAgent = vi.mocked(spawnAgent);
+const mockSpawnAgentWithTimeout = vi.mocked(spawnAgentWithTimeout);
+const mockRunValidation = vi.mocked(runValidation);
+const mockRunDefaultScorer = vi.mocked(runDefaultScorer);
 const mockResolveAgent = vi.mocked(resolveAgent);
 const mockLoadCheckpoint = vi.mocked(loadCheckpoint);
 const mockSaveCheckpoint = vi.mocked(saveCheckpoint);
@@ -84,7 +124,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     ...overrides,
@@ -148,11 +188,25 @@ beforeEach(() => {
   writeFileSync(join(tmpDir, 'IMPLEMENTATION_PLAN.md'), '# Plan\n- [ ] Task 1\n');
   process.chdir(tmpDir);
 
-  // Default mock setup
+  vi.clearAllMocks();
+
+  // Re-apply defaults after clearAllMocks
   mockLoadConfig.mockReturnValue(makeLoadResult());
   mockResolveAgent.mockReturnValue(makeAgentConfig());
   mockLoadCheckpoint.mockReturnValue(null);
   mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 1000 });
+
+  // spawnAgentWithTimeout delegates to spawnAgent so existing assertions still work
+  mockSpawnAgentWithTimeout.mockImplementation(
+    (_config: AgentConfig, prompt: string, _timeout: number, opts?: { verbose?: boolean | undefined; capture?: boolean | undefined }) =>
+      mockSpawnAgent(_config, prompt, opts),
+  );
+
+  // Validation passes by default
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+
+  // Default scorer returns no score
+  mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });
 
   // git: no changes by default
   mockExecSync.mockImplementation((cmd: unknown) => {
@@ -162,23 +216,6 @@ beforeEach(() => {
     return '';
   });
 
-  mockExit = vi.spyOn(process, 'exit').mockImplementation((_code?: string | number | null) => {
-    throw new Error(`process.exit(${_code})`);
-  });
-
-  vi.clearAllMocks();
-
-  // Re-apply defaults after clearAllMocks
-  mockLoadConfig.mockReturnValue(makeLoadResult());
-  mockResolveAgent.mockReturnValue(makeAgentConfig());
-  mockLoadCheckpoint.mockReturnValue(null);
-  mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 1000 });
-  mockExecSync.mockImplementation((cmd: unknown) => {
-    const c = String(cmd);
-    if (c.includes('git status --porcelain')) return '';
-    if (c.includes('git rev-parse --short')) return 'abc1234\n';
-    return '';
-  });
   mockExit = vi.spyOn(process, 'exit').mockImplementation((_code?: string | number | null) => {
     throw new Error(`process.exit(${_code})`);
   });
@@ -229,7 +266,7 @@ describe('runCommand — build mode', () => {
 
   it('max iterations stops loop', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 2, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 2, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 500 });
 
@@ -284,7 +321,7 @@ describe('runCommand — build mode', () => {
   it('stall detection halts loop in non-TTY after threshold no-change iterations', async () => {
     // 3 iterations, no changes each time → stall after 3
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 100 });
     // git status always returns empty (no changes)
@@ -301,7 +338,7 @@ describe('runCommand — build mode', () => {
 
   it('stall detection disabled when threshold is 0', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 5, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 5, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
     mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 100 });
     mockExecSync.mockReturnValue(''); // no changes
@@ -325,7 +362,7 @@ describe('runCommand — build mode', () => {
     mockLoadCheckpoint.mockReturnValue(existingCheckpoint);
     // max-iterations = 4 → should only run iteration 4
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 4, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 4, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { resume: true });
@@ -380,7 +417,7 @@ describe('runCommand — build mode', () => {
   it('--max overrides loop.max-iterations from config', async () => {
     // Config has max-iterations 1, --max 3 → runs 3
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { max: 3 });
@@ -411,7 +448,7 @@ describe('runCommand — plan mode', () => {
   it('plan mode halts when plan file unchanged after iteration', async () => {
     // normalizePlanContent is identity mock, so same content = unchanged
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', {});
@@ -442,7 +479,7 @@ describe('runCommand — plan mode', () => {
   it('plan mode: continues without prompt in non-TTY when plan exists', async () => {
     // IMPLEMENTATION_PLAN.md already exists (created in top-level beforeEach)
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', {});
@@ -455,7 +492,7 @@ describe('runCommand — plan mode', () => {
     const existingCheckpoint = makeCheckpoint({ phase: 'plan', iteration: 1 });
     mockLoadCheckpoint.mockReturnValue(existingCheckpoint);
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 2, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 2, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
 
     await runCommand('plan', { resume: true });

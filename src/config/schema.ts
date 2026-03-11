@@ -102,6 +102,18 @@ export interface PromptsConfig {
 export interface LoopConfig {
   'max-iterations': number;
   'stall-threshold': number;
+  'iteration-timeout': number;
+}
+
+export interface ScoringConfig {
+  script: string | null;
+  'regression-threshold': number;
+  'cumulative-threshold': number;
+  'auto-revert': boolean;
+  'default-weights': {
+    tests: number;
+    coverage: number;
+  };
 }
 
 export interface ValidationConfig {
@@ -166,6 +178,7 @@ export interface RalphConfig {
   run?: RunConfig | undefined;
   review?: ReviewConfig | undefined;
   heal?: HealConfig | undefined;
+  scoring?: ScoringConfig | undefined;
 }
 
 /**
@@ -224,5 +237,15 @@ export interface RawRalphConfig {
     commands: string[];
     'auto-commit': boolean;
     'commit-prefix': string;
+  }>;
+  scoring?: Partial<{
+    script: string | null;
+    'regression-threshold': number;
+    'cumulative-threshold': number;
+    'auto-revert': boolean;
+    'default-weights': Partial<{
+      tests: number;
+      coverage: number;
+    }>;
   }>;
 }

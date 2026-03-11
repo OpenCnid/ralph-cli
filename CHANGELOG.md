@@ -2,6 +2,33 @@
 
 All notable changes to ralph-cli are documented here. Reverse chronological.
 
+## [0.5.0] — 2026-03-10
+
+Spec: `docs/product-specs/ralph-score.md`. 17 tasks (fitness scoring + run loop hardening).
+
+### Added
+
+- **`ralph score` command**: Runs user-defined fitness scripts, logs results to `.ralph/score-results.jsonl`, and displays a trend summary showing score changes over time.
+- **Score domain** (`src/commands/score/`): `scorer.ts` (script discovery, execution, result aggregation), `default-scorer.ts` (built-in composite score from doctor/grade/gc/lint outputs), `results.ts` (JSONL log append + read), `trend.ts` (per-script trend calculation, delta formatting), `index.ts` (CLI entry point).
+- **Fitness scoring in run loop**: After each iteration the run loop calls `ralph score`, records the composite score in the checkpoint, auto-reverts the commit if the score drops below the previous iteration (configurable via `run.scoring.auto-revert`), and includes the current score in the next agent prompt as context.
+- **Score config schema** (`ScoreConfig`, `ScoringRunConfig`): `score.scripts` (list of fitness scripts), `score.timeout` (per-script timeout), `run.scoring.enabled`, `run.scoring.auto-revert`, `run.scoring.threshold` — all added to `src/config/schema.ts` and `src/config/defaults.ts`.
+- **Run lock** (`src/commands/run/lock.ts`): `.ralph/run.lock` prevents concurrent run instances; stale lock (PID dead) is cleaned up automatically.
+- **Score domain docs**: `src/commands/score/DESIGN.md`, `docs/design-docs/score.md`, `docs/design-docs/score/DESIGN.md`.
+- **Reliability docs**: `docs/RELIABILITY.md` documenting the auto-revert safety net and run lock.
+
+### Changed
+
+- **Architecture metadata** updated for 14 commands, including the `score` domain row in `ARCHITECTURE.md` and `AGENTS.md`.
+- **`.ralph/config.yml`** updated with `score` domain registration.
+- **Release metadata** updated to v0.5.0 across `package.json`, `CHANGELOG.md`, and `IMPLEMENTATION_PLAN.md`.
+
+### Stats
+
+- 30+ `ralph score` tests added.
+- 17 v0.5.0 tasks completed.
+
+---
+
 ## [0.4.0] — 2026-03-09
 
 Spec: `docs/product-specs/ralph-heal.md`. 9 tasks.

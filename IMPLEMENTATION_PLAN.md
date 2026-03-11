@@ -2,16 +2,27 @@
 
 ## Current State
 
-- **Version**: 0.4.0
-- **Commands**: All 13 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal) + config validate.
-- **Tests**: 685 across 30 files
-- **Next**: Post-release cleanup and validation follow-up
+- **Version**: 0.5.0
+- **Commands**: All 14 implemented (init, lint, grade, gc, doctor, plan, promote, ref, hooks, ci, run, review, heal, score) + config validate.
+- **Tests**: 685+ across 30+ files
+- **Next**: v0.6.0 (TBD)
 - **Dependencies**: Runtime: `commander`, `yaml`, `picocolors`. Dev: `typescript`, `vitest`, `eslint`, `@types/node`
+
+### Validation Baseline (2026-03-09)
+
+All four checks pass:
+- `npm test` — 685 tests, 30 files ✅
+- `npx tsc --noEmit` — clean ✅
+- `ralph doctor --ci` — 10/10 (28/29 checks; `docs/exec-plans/` missing `active/` + `completed/` subdirs) ✅
+- `ralph grade --ci` — exits 0; `review`/`heal` grade C (coverage file has no entries for those paths — tests are fully mocked); `ref` grade C (62% line coverage) ✅
+
+These quality issues are non-blocking but should be resolved before v0.5.0 to maintain a clean baseline.
 
 ## Release History
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.5.0 | 2026-03-10 | `ralph score` fitness scoring + run loop hardening — script discovery, default scorer, results log, trend, run lock, auto-revert, score context in prompts |
 | 0.4.0 | 2026-03-09 | `ralph heal` automated self-repair — diagnostics, heal prompt, agent orchestration, CLI registration, architecture/docs updates |
 | 0.3.0 | 2026-03-09 | `ralph review` agent-powered code review — diff extraction, context assembly, prompt engine, output formats (text/json/markdown), agent reuse from run |
 | 0.2.2 | 2026-03-09 | Fix `ref` domain grade — add test coverage for URL, update, list, pyproject.toml/go.mod paths (ref: C) |
@@ -45,6 +56,7 @@ Full details → `CHANGELOG.md`
 | `ralph run` | ✅ Complete (plan/build modes, agent abstraction, checkpoint, auto-detect) | 80+ |
 | `ralph review` | ✅ Complete (diff extraction, context assembly, prompt, output formats) | 42+ |
 | `ralph heal` | ✅ Complete (diagnostics, heal prompt, agent repair flow, verification) | 47+ |
+| `ralph score` | ✅ Complete (script discovery, default scorer, results log, trend, CLI) | 30+ |
 
 ## Deferred Items
 
@@ -57,6 +69,36 @@ Full details → `CHANGELOG.md`
 - **`exactOptionalPropertyTypes`**: Optional props need `| undefined`.
 - **YAML 1.2**: Single-quote regex patterns with backslashes in `.yml` files.
 - **Test isolation**: Tests `chdir()` to temp dirs with `.git/` stubs. Restore `origCwd` in `afterEach`.
+
+---
+
+## v0.4.1 — Pre-v0.5.0 Baseline Cleanup
+
+**Goal:** Resolve the three non-blocking quality issues discovered at the v0.4.0 baseline before beginning fitness-scoring work.
+
+### Task 1: Create `docs/exec-plans/active/` and `docs/exec-plans/completed/` subdirectories
+
+- [x] Create `docs/exec-plans/active/.gitkeep` and `docs/exec-plans/completed/.gitkeep` so doctor's exec-plans structure check passes (currently 28/29 checks; this brings it to 29/29).
+  Files: two new `.gitkeep` files.
+
+### Task 2: Fix coverage attribution for `review` and `heal` domains
+
+- [x] Configure vitest coverage to force-include `src/commands/review/**` and `src/commands/heal/**` in the coverage report so `ralph grade` can score those domains above C.
+  Add `include` patterns to `vitest.config.ts` coverage settings. After running `npm run test:coverage`, both domains should appear in `coverage/lcov.info`. Verify `ralph grade` upgrades `review` and `heal` from C to B or A.
+  Files: `vitest.config.ts`.
+
+### Dependency Graph
+
+```
+Task 1 and Task 2 are independent — can run in either order.
+```
+
+### Validation
+
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: 685 tests pass, typecheck clean, doctor 10/10 (29/29 checks), review + heal grade B or above.
 
 ---
 
@@ -686,3 +728,150 @@ After all tasks:
 npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
 ```
 Expected: all tests pass, doctor 10/10, `ralph heal` command functional, all acceptance criteria from spec satisfied.
+
+---
+
+## v0.5.0 — `ralph score` (Fitness Scoring)
+
+**Spec:** `docs/product-specs/fitness-scoring.md`
+**Goal:** Add gradient-based fitness scoring to the run loop — score script execution, auto-revert on regression, iteration timeout, post-agent validation, and a standalone `ralph score` command.
+
+### Task 1: Config Schema + Defaults for Scoring
+
+- [x] Add `ScoringConfig` to schema, defaults, loader; extend `LoopConfig`, `AgentResult`, `RunOptions`, and `Checkpoint` with scoring fields.
+  Add `ScoringConfig` interface (`script`, `regression-threshold`, `cumulative-threshold`, `auto-revert`, `default-weights`) and `scoring?: ScoringConfig | undefined` to `RalphConfig`/`RawRalphConfig` in `src/config/schema.ts`. Add `iteration-timeout` to `LoopConfig`. Add `timedOut: boolean` to `AgentResult` and `noScore`/`simplify`/`baselineScore`/`force` to `RunOptions` in `src/commands/run/types.ts`. Add `DEFAULT_SCORING` and update `DEFAULT_LOOP` with `iteration-timeout: 900` in `src/config/defaults.ts`. Merge scoring defaults in `mergeWithDefaults()` in `src/config/loader.ts`. Add `lastScore`, `lastScoredIteration`, `bestScore`, `consecutiveDiscards`, `baselineScore`, `baselineCommit` (all optional) to `Checkpoint` in `src/commands/run/progress.ts`. Satisfies F-FS01–F-FS11 config prerequisites (AC-52, AC-71, AC-76).
+
+### Task 2: Config Validation for Scoring Fields
+
+Add validation rules for all new scoring config fields.
+
+- [x] Add scoring field validation to `src/config/validate.ts`.
+  Validate: `scoring.regression-threshold` (0.0–1.0), `scoring.cumulative-threshold` (0.0–1.0), `scoring.auto-revert` (boolean), `scoring.script` (null or string), `scoring.default-weights.tests + coverage === 1.0` within 0.001 tolerance, `run.loop.iteration-timeout` (non-negative integer). Warn on unknown keys. Satisfies AC-13, AC-53.
+
+### Task 3: Score Types (`src/commands/score/types.ts`)
+
+Create the `score/` domain with its foundational type definitions.
+
+- [x] Create `src/commands/score/types.ts` with `ScoreResult`, `ResultEntry`, and `ScoreContext` interfaces.
+  Define `ScoreResult` (score, source, scriptPath, metrics, error), `ResultEntry` (commit, iteration, status, score, delta, durationS, metrics, description), and `ScoreContext` (previousStatus, previousScore, currentScore, delta, metrics, changedMetrics, timeoutSeconds, regressionThreshold, previousTestCount, currentTestCount). No external dependencies. Satisfies F-FS01–F-FS07 type contracts.
+
+### Task 4: Results Log (`src/commands/score/results.ts`)
+
+Implement `.ralph/results.tsv` append-only read/write logic.
+
+- [x] Create `src/commands/score/results.ts` with `appendResult()` and `readResults()`.
+  `appendResult(entry: ResultEntry): void` — creates header if file absent, sanitizes tab chars in values, caps metrics at 200 chars with `…`, replaces control chars. `readResults(limit?: number): ResultEntry[]` — parses TSV, returns last N rows. Satisfies F-FS03 (AC-14, AC-15, AC-16, AC-17, AC-18, AC-67).
+
+### Task 5: Score Script Discovery + Execution (`src/commands/score/scorer.ts`)
+
+Implement score script discovery (config → score.sh → score.ts → score.py → default) and execution.
+
+- [x] Create `src/commands/score/scorer.ts` with `discoverScorer()` and `runScorer()`.
+  `discoverScorer(config)` — short-circuit if/else chain checking config override, then `score.sh`, `score.ts` (via `npx tsx`), `score.py` (via `python3`); returns null for default. `runScorer(scriptPath, iteration, commit)` — spawns with `RALPH_ITERATION`/`RALPH_COMMIT` env vars, 60s timeout, parses `<score>\t<metrics>` stdout format, validates score 0.0–1.0, handles `EACCES` fallback. Satisfies F-FS01 (AC-01–AC-07).
+
+### Task 6: Default Scorer (`src/commands/score/default-scorer.ts`)
+
+Implement the built-in scorer that extracts test count + coverage from captured output/files.
+
+- [x] Create `src/commands/score/default-scorer.ts` with `runDefaultScorer()`.
+  Parse test pass/fail counts from validation stdout using the five defined regex patterns. Read coverage from JSON report at configured path (Istanbul `total.statements.pct` → `total.lines.pct` → `statements.pct` → `lines.pct`). Compute weighted score per spec formula (single-signal = full weight). Always include `test_count`, `test_total`, `test_rate`, `coverage` in metrics output. Return null score when neither signal available. Satisfies F-FS02 (AC-08–AC-12, AC-58).
+
+### Task 7: Score Trend + Sparkline (`src/commands/score/trend.ts`)
+
+Implement trend computation and ASCII sparkline rendering for `ralph score --trend`.
+
+- [x] Create `src/commands/score/trend.ts` with `computeTrend()` and `renderSparkline()`.
+  `renderSparkline(scores: (number | null)[])` — maps scores to 8 Unicode block chars (`▁▂▃▄▅▆▇█`); flat/equal scores use `▅`; null entries skipped. `computeTrend(entries: ResultEntry[], n: number)` — returns min, max, best iteration, worst iteration, first/last scored values. Satisfies F-FS08 `--trend` output (AC-42).
+
+### Task 8: `ralph score` CLI Command (`src/commands/score/index.ts` + CLI registration)
+
+Implement the standalone `ralph score` command with all subcommand flags.
+
+- [x] Create `src/commands/score/index.ts` and register `ralph score` in `src/cli.ts`.
+  Implement: bare `ralph score` (run scorer, print score + metrics with source label), `--history [N]` (last N results.tsv entries, default 20), `--trend [N]` (sparkline + best/worst summary, default 20), `--compare` (current score vs last results.tsv entry with threshold indicator), `--json` (JSON output with score, source, metrics, timestamp). Exit 0 on success, 1 on scoring failure. Set `RALPH_ITERATION="0"` for standalone. Satisfies F-FS08 (AC-40–AC-44).
+
+### Task 9: Run Lock (`src/commands/run/lock.ts`)
+
+Implement the run lock to prevent concurrent `ralph run` instances.
+
+- [x] Create `src/commands/run/lock.ts` with `acquireLock()`, `releaseLock()`, `isLockHeld()`.
+  Write `.ralph/run.lock` with `{ pid, startedAt }` using exclusive `wx` flag. On `EEXIST`: read PID, check liveness via `process.kill(pid, 0)`, dead = delete and retry, alive = throw with message. Register `process.on('exit', releaseLock)`. `--force` deletes lockfile without PID check before acquire. Satisfies F-FS11 (AC-54–AC-57).
+
+### Task 10: Iteration Timeout (`src/commands/run/timeout.ts`)
+
+Wrap `spawnAgent()` with a wall-clock timeout that sends SIGTERM then SIGKILL.
+
+- [x] Create `src/commands/run/timeout.ts` with `spawnAgentWithTimeout()`.
+  Accepts iteration timeout in seconds. If timeout > 0: start timer, send SIGTERM at expiry, wait 10s, send SIGKILL. Override `AgentConfig.timeout` to `Math.max(iterationTimeout + 30, agentConfig.timeout)` per spec to prevent inner abort racing the outer SIGTERM. Return `AgentResult` with `timedOut: true` on timeout. Timeout 0 = pass through to `spawnAgent()` unchanged. Satisfies F-FS05 (AC-26–AC-29).
+
+### Task 11: Post-Agent Validation (`src/commands/run/validation.ts`)
+
+Implement independent post-agent validation runner for `test-command` and `typecheck-command`.
+
+- [x] Create `src/commands/run/validation.ts` with `runValidation()`.
+  `runValidation(config)` — run `validation.test-command` then `validation.typecheck-command` (each with 120s hardcoded timeout). Capture test command stdout in memory (for default scorer). On non-zero exit: return `{ passed: false, testOutput: string }`. Both null = pass immediately. Satisfies F-FS06 (AC-31–AC-34).
+
+### Task 12: Run Loop Scoring Integration (`src/commands/run/scoring.ts` + `run/index.ts` + `run/prompts.ts`)
+
+Wire scoring, revert, regression detection, `.ralph/keep`, cumulative check, baseline recalibration, and score context injection into the run loop.
+
+- [x] Create `src/commands/run/scoring.ts` and update `src/commands/run/index.ts` and `src/commands/run/prompts.ts`.
+  **scoring.ts**: `buildScoreContext(ctx: ScoreContext): string` — generates score context string per the five status templates (pass/discard/timeout/fail/none); includes test count jump warning when count increased >100% (skip if previous count was 0). `computeRegression(newScore, checkpoint, config)` — returns per-iteration delta and cumulative drop vs bestScore. **run/index.ts**: insert into build-mode loop: capture baseline commit + original branch + pre-agent untracked files + `keepExistedBeforeAgent` before spawn; after agent: run `spawnAgentWithTimeout()`, detect timeout → revert + log `timeout`; check `hasChanges() || currentHead !== baseline` (skip results.tsv if no new work); run `runValidation()` → fail → revert + log `fail`; post-validation auto-commit; run scoring (skip if `--no-score`); post-scoring dirty check (compare HEAD + porcelain before/after score script); regression checks → revert + log `discard`; `.ralph/keep` handling; baseline recalibration after 3 consecutive discards; cumulative regression check; `appendResult()`; inject score context for next prompt; update checkpoint. Acquire lock at pre-loop; release post-loop. Plan mode exemption: skip all above except lock. **run/prompts.ts**: add `{score_context}` placeholder to `BUILD_TEMPLATE`; extend `generatePrompt()` and `buildVariables()` to accept and inject `scoreContext` option. Satisfies F-FS04 + F-FS07 (AC-19–AC-25, AC-35–AC-39, AC-51, AC-53, AC-58–AC-77).
+
+### Task 13: New Run Flags (`--no-score`, `--simplify`, `--baseline-score`, `--force`)
+
+Add new CLI flags to `ralph run` and implement their behavior.
+
+- [x] Add `--no-score`, `--simplify`, `--baseline-score <float>`, `--force` to the `ralph run` CLI definition in `src/cli.ts` and implement flag validation + simplify prompt in `src/commands/run/index.ts`.
+  Flag validation (pre-loop): `--simplify` + `--mode plan` → error; `--no-score` + `--simplify` → error; `--no-score` + `--baseline-score` → error; `--baseline-score` + `--mode plan` → error. `--simplify` replaces the `## Your Task` section and beyond in the build prompt with the simplification preamble. `--baseline-score` stored in `checkpoint.baselineScore`. `--force` passed to `acquireLock()`. Satisfies F-FS09, F-FS10 (AC-45–AC-50), AC-53, AC-68–AC-69.
+
+### Task 14: Tests — `score/` Domain
+
+Unit and CLI integration tests for all `score/` modules.
+
+- [x] Create `src/commands/score/score.test.ts` and `src/commands/score/cli.test.ts` covering the score domain.
+  **score.test.ts**: discoverScorer priority order + short-circuit; script execution with env vars; output parsing (score+metrics, no-tab, empty, out-of-range, non-numeric); EACCES fallback; 60s timeout kill; default scorer regex patterns for all five test count patterns; coverage JSON field priority order; single-signal weighting; null when neither signal; `test_count`/`test_total` always in metrics; results.tsv append (header creation, append, sanitization, recreation after delete); sparkline algorithm (normal, flat, null entries). **cli.test.ts**: `ralph score` (no flags, --history, --trend, --compare, --json, exit codes). Target: ≥90% coverage for `score/` domain. Satisfies AC-01–AC-18, AC-40–AC-44, AC-58.
+
+### Task 15: Tests — Run Loop Additions
+
+Unit tests for lock, timeout, validation, and scoring integration in the run domain.
+
+- [x] Add tests for `run/lock.ts`, `run/timeout.ts`, `run/validation.ts`, and `run/scoring.ts` to the run test suite.
+  **lock**: acquire success, EEXIST + dead PID = retry, EEXIST + live PID = throw, --force override, release idempotent. **timeout**: timeout=0 passthrough, SIGTERM at expiry, SIGKILL after 10s, timedOut field on result. **validation**: test command stdout captured, non-zero → fail, typecheck non-zero → fail, both null → pass, 120s timeout kill. **scoring**: `buildScoreContext` for all five status templates, test count jump warning, skip when prev count=0; regression checks (per-iteration, cumulative, exactly-at-threshold boundary); `.ralph/keep` honored/ignored; baseline recalibration after 3 discards; `auto-revert: false` logs regression as pass. Satisfies AC-19–AC-39, AC-54–AC-57, AC-59–AC-77.
+
+### Task 16: Docs + Architecture Updates
+
+Update project documentation to reflect the new `score/` domain and run loop hardening.
+
+- [x] Update `ARCHITECTURE.md`, `AGENTS.md`, `docs/design-docs/score/` domain docs, `src/commands/score/DESIGN.md`, `.ralph/config.yml`, and `docs/RELIABILITY.md` for the fitness scoring feature.
+  Add `score` as a new domain in `ARCHITECTURE.md` (layer, dependencies: score → config). Add `ralph score` to the commands list in `AGENTS.md`. Create `src/commands/score/DESIGN.md` and `docs/design-docs/score/` with the three standard domain doc files (each 30–100 lines, sections: Purpose, Usage, Config, Architecture, Design Decisions). Add `score` domain (`path: src/commands/score`) to `.ralph/config.yml` `architecture.domains` list so `ralph grade` scores it. Update `docs/RELIABILITY.md` to document the auto-revert safety net and run lock. Update `IMPLEMENTATION_PLAN.md` version table for 0.5.0 release.
+
+### Task 17: Version Bump + CHANGELOG
+
+- [x] Bump `package.json` version to `0.5.0`. Add v0.5.0 section to `CHANGELOG.md` summarising: `ralph score` command, fitness scoring in run loop (scoring, revert, timeout, validation, score context), run lock, 16 implementation tasks. Update `IMPLEMENTATION_PLAN.md` Current State block: version → `0.5.0`, commands → 14, add `0.5.0` row to Release History, add `ralph score` row to Command Status table.
+  Files: `package.json`, `CHANGELOG.md`, `IMPLEMENTATION_PLAN.md`. Done when: `ralph --version` prints `0.5.0`. All validation passes.
+
+### Dependency Graph
+
+```
+Tasks 1–3 sequential (schema → types)
+  └→ Tasks 4–7 parallel (results, scorer, default-scorer, trend)
+       └→ Task 8 (ralph score CLI — needs 4–7)
+  └→ Task 9 (run lock — independent)
+  └→ Task 10 (timeout — needs Task 1 for AgentResult.timedOut)
+  └→ Task 11 (validation — independent)
+       └→ Task 12 (run loop integration — needs 8–11)
+            └→ Task 13 (new run flags — needs 12)
+            └→ Task 14 (score/ tests — needs 4–8)
+            └→ Task 15 (run loop tests — needs 9–12)
+                 └→ Task 16 (docs)
+                      └→ Task 17 (version bump)
+```
+
+### Validation
+
+After all tasks:
+```
+npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
+```
+Expected: all tests pass, typecheck clean, doctor 10/10, `ralph score` command functional, all acceptance criteria from `docs/product-specs/fitness-scoring.md` satisfied.

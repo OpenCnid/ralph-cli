@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW } from './defaults.js';
+import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -144,6 +144,7 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
       loop: {
         'max-iterations': raw.run?.loop?.['max-iterations'] ?? DEFAULT_RUN.loop['max-iterations'],
         'stall-threshold': raw.run?.loop?.['stall-threshold'] ?? DEFAULT_RUN.loop['stall-threshold'],
+        'iteration-timeout': raw.run?.loop?.['iteration-timeout'] ?? DEFAULT_RUN.loop['iteration-timeout'],
       },
       validation: {
         'test-command': raw.run?.validation?.['test-command'] ?? DEFAULT_RUN.validation['test-command'],
@@ -194,6 +195,16 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
       'auto-commit': raw.heal?.['auto-commit'] ?? DEFAULT_HEAL['auto-commit'],
       'commit-prefix': raw.heal?.['commit-prefix'] ?? DEFAULT_HEAL['commit-prefix'],
     },
+    scoring: raw.scoring !== undefined ? {
+      script: raw.scoring.script ?? DEFAULT_SCORING.script,
+      'regression-threshold': raw.scoring['regression-threshold'] ?? DEFAULT_SCORING['regression-threshold'],
+      'cumulative-threshold': raw.scoring['cumulative-threshold'] ?? DEFAULT_SCORING['cumulative-threshold'],
+      'auto-revert': raw.scoring['auto-revert'] ?? DEFAULT_SCORING['auto-revert'],
+      'default-weights': {
+        tests: raw.scoring['default-weights']?.tests ?? DEFAULT_SCORING['default-weights'].tests,
+        coverage: raw.scoring['default-weights']?.coverage ?? DEFAULT_SCORING['default-weights'].coverage,
+      },
+    } : undefined,
   };
 
   // Apply CI overrides when running in CI

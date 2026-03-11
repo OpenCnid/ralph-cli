@@ -12,6 +12,7 @@ export interface AgentResult {
   durationMs: number;
   error?: string | undefined;
   output?: string | undefined;
+  timedOut?: boolean | undefined;
 }
 
 export type RunMode = 'plan' | 'build';
@@ -25,4 +26,8 @@ export interface RunOptions {
   noPush?: boolean | undefined;
   resume?: boolean | undefined;
   verbose?: boolean | undefined;
+  noScore?: boolean | undefined;
+  simplify?: boolean | undefined;
+  baselineScore?: number | undefined;
+  force?: boolean | undefined;
 }

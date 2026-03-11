@@ -884,3 +884,127 @@ describe('validate', () => {
     expect(result.errors.length).toBeGreaterThanOrEqual(5);
   });
 });
+
+describe('scoring config validation', () => {
+  it('accepts valid scoring config', () => {
+    const result = validate({
+      ...MINIMAL,
+      scoring: {
+        script: './score.sh',
+        'regression-threshold': 0.02,
+        'cumulative-threshold': 0.10,
+        'auto-revert': true,
+        'default-weights': { tests: 0.6, coverage: 0.4 },
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts scoring.script as null', () => {
+    const result = validate({ ...MINIMAL, scoring: { script: null } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('errors on non-object scoring', () => {
+    const result = validate({ ...MINIMAL, scoring: 'bad' });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('"scoring"');
+  });
+
+  it('errors on scoring.script non-string non-null', () => {
+    const result = validate({ ...MINIMAL, scoring: { script: 42 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.script');
+  });
+
+  it('errors on scoring.regression-threshold below 0', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'regression-threshold': -0.1 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.regression-threshold');
+  });
+
+  it('errors on scoring.regression-threshold above 1', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'regression-threshold': 1.5 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.regression-threshold');
+  });
+
+  it('accepts scoring.regression-threshold at 0 and 1 boundaries', () => {
+    expect(validate({ ...MINIMAL, scoring: { 'regression-threshold': 0 } }).errors).toEqual([]);
+    expect(validate({ ...MINIMAL, scoring: { 'regression-threshold': 1.0 } }).errors).toEqual([]);
+  });
+
+  it('errors on scoring.cumulative-threshold out of range', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'cumulative-threshold': 2 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.cumulative-threshold');
+  });
+
+  it('errors on scoring.auto-revert non-boolean', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'auto-revert': 'yes' } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.auto-revert');
+  });
+
+  it('errors when default-weights do not sum to 1.0', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'default-weights': { tests: 0.5, coverage: 0.3 } } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('default-weights');
+  });
+
+  it('accepts default-weights summing to 1.0 within tolerance', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'default-weights': { tests: 0.6001, coverage: 0.4 } } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('errors on non-object default-weights', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'default-weights': 'bad' } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('scoring.default-weights');
+  });
+
+  it('warns on unknown scoring keys', () => {
+    const result = validate({ ...MINIMAL, scoring: { unknown_key: true } });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('scoring.unknown_key');
+  });
+
+  it('warns on unknown default-weights keys', () => {
+    const result = validate({ ...MINIMAL, scoring: { 'default-weights': { tests: 0.7, coverage: 0.3, extra: 0 } } });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('scoring.default-weights.extra');
+  });
+});
+
+describe('run.loop.iteration-timeout validation', () => {
+  it('accepts valid iteration-timeout', () => {
+    const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 900 } } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts iteration-timeout of 0', () => {
+    const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 0 } } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('errors on negative iteration-timeout', () => {
+    const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': -1 } } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.loop.iteration-timeout');
+  });
+
+  it('errors on non-integer iteration-timeout', () => {
+    const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 1.5 } } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.loop.iteration-timeout');
+  });
+
+  it('errors on string iteration-timeout', () => {
+    const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': '900' } } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.loop.iteration-timeout');
+  });
+});

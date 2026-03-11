@@ -81,6 +81,11 @@ Do not add implementation notes, code snippets, or architectural opinions beyond
 `;
 
 export const BUILD_TEMPLATE = `\
+<!-- Template Placeholder Contract
+Placeholders: {project_name}, {date}, {language}, {framework}, {project_path}, {src_path}, {specs_path}, {validate_command}, {test_command}, {typecheck_command}, {skip_tasks}, {score_context}
+Contract version: 1
+Consumers: src/commands/run/prompts.ts, src/commands/run/scoring.ts
+-->
 # Build Session
 
 **Project:** {project_name}
@@ -98,6 +103,7 @@ Run this after completing your work. All checks must pass before you finish:
 \`\`\`
 (Individual commands: test — \`{test_command}\`, typecheck — \`{typecheck_command}\`)
 
+{score_context}
 ## Your Task: One Task Per Iteration
 
 **Do NOT work on more than one task.** Pick the next unchecked task from the plan and implement only that.
@@ -146,7 +152,7 @@ Do not commit unrelated changes, formatting-only edits, or work from other tasks
 
 function buildVariables(
   config: RalphConfig,
-  options: { skipTasks?: string | undefined },
+  options: { skipTasks?: string | undefined; scoreContext?: string | undefined },
 ): Record<string, string> {
   const testCmd = detectTestCommand(config);
   const typecheckCmd = detectTypecheckCommand(config);
@@ -166,6 +172,7 @@ function buildVariables(
     skip_tasks: options.skipTasks ?? '',
     language: config.project.language,
     framework: config.project.framework ?? '',
+    score_context: options.scoreContext ?? '',
   };
 }
 
@@ -180,6 +187,22 @@ function loadTemplate(filePath: string): string {
   return readFileSync(filePath, 'utf-8');
 }
 
+const SIMPLIFY_PREAMBLE = `\
+## Your Task: Simplification
+
+SIMPLIFICATION ITERATION — Your goal: reduce code while maintaining quality.
+
+Rules:
+- Remove dead code, redundant abstractions, unnecessary complexity
+- Tests must still pass
+- Score must not decrease (current: {score})
+- Do NOT add new features
+- Deleting code that maintains the score is a success
+- Improving the score by deleting code is an excellent success
+
+Current metrics: {metrics}
+`;
+
 /**
  * Generate a prompt string for the given run mode.
  * Uses a custom template file if configured, otherwise uses the built-in template.
@@ -188,7 +211,13 @@ function loadTemplate(filePath: string): string {
 export function generatePrompt(
   mode: RunMode,
   config: RalphConfig,
-  options: { skipTasks?: string | undefined } = {},
+  options: {
+    skipTasks?: string | undefined;
+    scoreContext?: string | undefined;
+    simplify?: boolean | undefined;
+    lastScore?: number | null | undefined;
+    lastMetrics?: string | undefined;
+  } = {},
 ): string {
   let template: string;
 
@@ -200,5 +229,18 @@ export function generatePrompt(
   }
 
   const vars = buildVariables(config, options);
-  return applyVariables(template, vars);
+  let result = applyVariables(template, vars);
+
+  // --simplify: replace everything from "## Your Task" onward with the simplification preamble
+  if (options.simplify === true && mode === 'build') {
+    const taskIdx = result.indexOf('\n## Your Task');
+    if (taskIdx >= 0) {
+      result = result.slice(0, taskIdx + 1); // keep the newline before the heading
+    }
+    const score = options.lastScore != null ? options.lastScore.toFixed(3) : '(not yet scored)';
+    const metrics = options.lastMetrics ?? '—';
+    result += SIMPLIFY_PREAMBLE.replace('{score}', score).replace('{metrics}', metrics);
+  }
+
+  return result;
 }

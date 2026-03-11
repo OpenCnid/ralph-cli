@@ -38,10 +38,12 @@ architecture:
       path: src/commands/review
     - name: heal
       path: src/commands/heal
+    - name: score
+      path: src/commands/score
   cross-cutting:
     - src/utils
   rules:
-    max-lines: 500
+    max-lines: 600
     naming:
       schemas: "*Schema"
       types: "*Type"

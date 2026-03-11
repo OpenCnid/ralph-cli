@@ -9,13 +9,23 @@ import { tmpdir } from 'node:os';
 // progress.js, prompts.js, detect.js are NOT mocked:
 //   – loadCheckpoint/saveCheckpoint exercise real filesystem (temp dir)
 //   – generatePrompt exercises real variable substitution
-// child_process, agent.js, config/loader.js, output.js are mocked.
+// child_process, agent.js, config/loader.js, output.js, timeout.js are mocked.
 
 vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
 
 vi.mock('./agent.js', () => ({
   spawnAgent: vi.fn(),
   resolveAgent: vi.fn(),
+}));
+
+vi.mock('./timeout.js', () => ({
+  spawnAgentWithTimeout: vi.fn(),
+}));
+
+vi.mock('./lock.js', () => ({
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLockHeld: vi.fn(),
 }));
 
 vi.mock('../../config/loader.js', () => ({
@@ -36,6 +46,7 @@ vi.mock('../../utils/output.js', () => ({
 import { execSync } from 'node:child_process';
 import { loadConfig } from '../../config/loader.js';
 import { spawnAgent, resolveAgent } from './agent.js';
+import { spawnAgentWithTimeout } from './timeout.js';
 import * as outputMod from '../../utils/output.js';
 import { runCommand } from './index.js';
 import type { RunConfig, RalphConfig, AgentConfig } from '../../config/schema.js';
@@ -45,6 +56,7 @@ import type { LoadResult } from '../../config/loader.js';
 const mockExecSync = vi.mocked(execSync);
 const mockLoadConfig = vi.mocked(loadConfig);
 const mockSpawnAgent = vi.mocked(spawnAgent);
+const mockSpawnAgentWithTimeout = vi.mocked(spawnAgentWithTimeout);
 const mockResolveAgent = vi.mocked(resolveAgent);
 const mockWarn = vi.mocked(outputMod.warn);
 const mockError = vi.mocked(outputMod.error);
@@ -62,7 +74,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: { plan: null, build: null },
-    loop: { 'max-iterations': 1, 'stall-threshold': 3 },
+    loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     ...overrides,
@@ -125,6 +137,12 @@ beforeEach(() => {
   mockResolveAgent.mockReturnValue(makeAgentConfig());
   mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 1000 });
 
+  // spawnAgentWithTimeout delegates to spawnAgent so existing assertions still work
+  mockSpawnAgentWithTimeout.mockImplementation(
+    (_config: AgentConfig, prompt: string, _timeout: number, opts?: { verbose?: boolean | undefined; capture?: boolean | undefined }) =>
+      mockSpawnAgent(_config, prompt, opts),
+  );
+
   // Default git mock: banner branch + short hash, no changes
   mockExecSync.mockImplementation((cmd: unknown) => {
     const c = String(cmd);
@@ -151,7 +169,7 @@ afterEach(() => {
 describe('integration — full build cycle', () => {
   it('runs 3 iterations; checkpoint on disk has 3 history records with commits', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 3, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 3, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
     // Each iteration: git shows changes → commit path runs
     mockExecSync.mockImplementation((cmd: unknown) => {
@@ -181,7 +199,7 @@ describe('integration — plan mode completion', () => {
     writeFileSync(join(specsDir, 'spec.md'), '# Spec\n');
 
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 0, 'iteration-timeout': 900 },
       git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
     }));
 
@@ -208,15 +226,16 @@ describe('integration — plan mode completion', () => {
 // ─── 3. Agent timeout ────────────────────────────────────────────────────────
 
 describe('integration — agent timeout', () => {
-  it('records error in checkpoint and warns; loop runs to max-iterations', async () => {
+  it('records timeout in checkpoint; loop runs to max-iterations', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
+    // error containing 'timed out' is treated as equivalent to timedOut:true per spec
     mockSpawnAgent.mockResolvedValue({ exitCode: 1, durationMs: 1000, error: 'timed out' });
 
     await runCommand('build', {});
 
-    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('Agent spawn failed'));
+    // Timeout path: reverts baseline and continues (no 'Agent spawn failed' warning)
     const cp = readCheckpoint(tmpDir);
     expect(cp.history).toHaveLength(1);
     expect(cp.history[0]?.error).toBe('timed out');
@@ -243,7 +262,7 @@ describe('integration — resume from checkpoint', () => {
       JSON.stringify(saved, null, 2),
     );
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 3, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 3, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', { resume: true });
@@ -283,7 +302,7 @@ describe('integration — resume phase mismatch', () => {
 describe('integration — stall detection', () => {
   it('halts loop after stall-threshold no-change iterations in non-TTY', async () => {
     mockLoadConfig.mockReturnValue(makeLoadResult({
-      loop: { 'max-iterations': 0, 'stall-threshold': 3 },
+      loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     }));
     // git status always empty → noChangesCount increments every iteration
     mockExecSync.mockImplementation((cmd: unknown) => {
@@ -309,7 +328,7 @@ describe('integration — custom prompt template', () => {
 
     mockLoadConfig.mockReturnValue(makeLoadResult({
       prompts: { plan: null, build: templatePath },
-      loop: { 'max-iterations': 1, 'stall-threshold': 0 },
+      loop: { 'max-iterations': 1, 'stall-threshold': 0, 'iteration-timeout': 900 },
     }));
 
     await runCommand('build', {});
