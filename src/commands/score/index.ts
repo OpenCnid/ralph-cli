@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { loadConfig, type LoadResult } from '../../config/loader.js';
 import { discoverScorer, runScorer } from './scorer.js';
 import { runDefaultScorer } from './default-scorer.js';
@@ -26,8 +27,24 @@ function getCommit(): string {
   }
 }
 
+/**
+ * Auto-detect a test command when run.validation.test-command is not configured.
+ * Returns the command string or null if no test runner can be inferred.
+ */
+function detectTestCommand(): string | null {
+  if (existsSync('package.json')) return 'npm test';
+  if (existsSync('Makefile')) return 'make test';
+  if (existsSync('Cargo.toml')) return 'cargo test';
+  if (existsSync('go.mod')) return 'go test ./...';
+  if (existsSync('pyproject.toml') || existsSync('setup.py')) return 'python -m pytest';
+  return null;
+}
+
 function runDefaultScorerStandalone(config: RalphConfig): ScoreResult {
-  const testCmd = config.run?.validation['test-command'];
+  let testCmd = config.run?.validation['test-command'] ?? null;
+  if (testCmd == null || testCmd === '') {
+    testCmd = detectTestCommand();
+  }
   let testStdout = '';
   if (testCmd != null && testCmd !== '') {
     try {
@@ -153,7 +170,13 @@ async function runCompare(config: RalphConfig): Promise<void> {
   const result = await runCurrentScorer(config);
 
   if (result.score === null) {
-    output.error(`Scoring failed${result.error ? `: ${result.error}` : ''}`);
+    const hint =
+      result.error != null
+        ? result.error
+        : result.source === 'default'
+          ? 'No test output and no coverage data. Set run.validation.test-command in .ralph/config.yml or add a score script.'
+          : 'Score script returned null.';
+    output.error(`Scoring failed: ${hint}`);
     process.exit(1);
   }
 
@@ -207,7 +230,13 @@ export async function scoreCommand(options: ScoreOptions): Promise<void> {
   const result = await runCurrentScorer(config);
 
   if (result.score === null) {
-    output.error(`Scoring failed${result.error ? `: ${result.error}` : ''}`);
+    const hint =
+      result.error != null
+        ? result.error
+        : result.source === 'default'
+          ? 'No test output and no coverage data. Set run.validation.test-command in .ralph/config.yml or add a score script (score.sh, score.ts, score.py).'
+          : 'Score script returned null.';
+    output.error(`Scoring failed: ${hint}`);
     process.exit(1);
   }
 
