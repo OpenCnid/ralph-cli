@@ -27,7 +27,11 @@ export function discoverScorer(config: ScoringConfig | undefined): string | null
 function resolveRunner(scriptPath: string): { cli: string; args: string[] } {
   if (scriptPath.endsWith('.ts')) return { cli: 'npx', args: ['tsx', scriptPath] };
   if (scriptPath.endsWith('.py')) return { cli: 'python3', args: [scriptPath] };
-  return { cli: scriptPath, args: [] };
+  // Ensure relative paths are prefixed with ./ so spawn() finds them in CWD
+  const cli = !scriptPath.startsWith('/') && !scriptPath.startsWith('./')
+    ? `./${scriptPath}`
+    : scriptPath;
+  return { cli, args: [] };
 }
 
 /** Parse the first stdout line into score + metrics. */
