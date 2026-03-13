@@ -109,7 +109,7 @@ Date: 2026-03-13
   - Build a minimal `ReviewContext` fixture; pure function, no mocking needed
   - Verify: all 5 pass; `prompts.test.ts` shows up in test output
 
-- [ ] Tests for `--intent` in `reviewCommand()` — add to `src/commands/review/review.test.ts`
+- [x] Tests for `--intent` in `reviewCommand()` — add to `src/commands/review/review.test.ts`
   - 3 cases per spec test plan:
     1. `--intent` flag → `intent: true` reaches `generateReviewPrompt()` (mock chain verification)
     2. `--intent --dry-run` → output contains "Problem Context"

@@ -21,6 +21,7 @@ vi.mock('./context.js', () => ({
   resolveScope: vi.fn(),
   extractDiff: vi.fn(),
   assembleContext: vi.fn(),
+  extractMotivation: vi.fn(),
 }));
 
 vi.mock('./prompts.js', () => ({
@@ -40,7 +41,7 @@ vi.mock('../../utils/output.js', () => ({
 
 import { loadConfig } from '../../config/loader.js';
 import { spawnAgent } from '../run/agent.js';
-import { resolveScope, extractDiff, assembleContext } from './context.js';
+import { resolveScope, extractDiff, assembleContext, extractMotivation } from './context.js';
 import { generateReviewPrompt } from './prompts.js';
 import * as outputMod from '../../utils/output.js';
 import { reviewCommand } from './index.js';
@@ -55,6 +56,7 @@ const mockResolveScope = vi.mocked(resolveScope);
 const mockExtractDiff = vi.mocked(extractDiff);
 const mockAssembleContext = vi.mocked(assembleContext);
 const mockGenerateReviewPrompt = vi.mocked(generateReviewPrompt);
+const mockExtractMotivation = vi.mocked(extractMotivation);
 const mockError = vi.mocked(outputMod.error);
 const mockWarn = vi.mocked(outputMod.warn);
 const mockPlain = vi.mocked(outputMod.plain);
@@ -182,6 +184,7 @@ beforeEach(() => {
   mockAssembleContext.mockReturnValue(makeReviewContext());
   mockGenerateReviewPrompt.mockReturnValue('the review prompt');
   mockSpawnAgent.mockResolvedValue({ exitCode: 0, durationMs: 5000, output: 'APPROVE\nLooks good.' });
+  mockExtractMotivation.mockReturnValue(null);
 
   mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
 });
@@ -427,5 +430,36 @@ describe('reviewCommand', () => {
     expect(mockPlain).toHaveBeenCalledOnce();
     const out = mockPlain.mock.calls[0]![0];
     expect(out).toContain('# Code Review');
+  });
+
+  it('--intent flag passes intent: true to generateReviewPrompt', async () => {
+    mockAssembleContext.mockReturnValue(makeReviewContext({ specs: ['## Motivation\nWhy it exists.\n'] }));
+    mockExtractMotivation.mockReturnValue('Why it exists.');
+
+    await reviewCommand(undefined, { intent: true });
+
+    expect(mockGenerateReviewPrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ intent: true }),
+    );
+  });
+
+  it('--intent --dry-run prints intent prompt containing "Problem Context"', async () => {
+    mockGenerateReviewPrompt.mockReturnValue('Problem Context\nsome intent prompt content');
+
+    await reviewCommand(undefined, { intent: true, dryRun: true });
+
+    expect(mockSpawnAgent).not.toHaveBeenCalled();
+    expect(mockPlain).toHaveBeenCalledWith(expect.stringContaining('Problem Context'));
+  });
+
+  it('without --intent, intent defaults to false in generateReviewPrompt', async () => {
+    await reviewCommand(undefined, {});
+
+    expect(mockGenerateReviewPrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ intent: false }),
+    );
+    expect(mockExtractMotivation).not.toHaveBeenCalled();
   });
 });
