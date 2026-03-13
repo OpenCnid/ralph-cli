@@ -346,6 +346,51 @@ describe('doctor checks', () => {
     expect(initSpy).toHaveBeenCalledWith({ defaults: true });
   });
 
+  it('fails motivation check when spec has no ## Motivation section', () => {
+    const specsDir = join(tempDir, 'docs', 'product-specs');
+    mkdirSync(specsDir, { recursive: true });
+    writeFileSync(join(specsDir, 'auth.md'), '# Auth Spec\n## Requirements\nSome requirements.\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const check = checks.find(c => c.name === 'Spec files have ## Motivation sections');
+    expect(check).toBeDefined();
+    expect(check!.pass).toBe(false);
+  });
+
+  it('passes motivation check when spec has ## Motivation section', () => {
+    const specsDir = join(tempDir, 'docs', 'product-specs');
+    mkdirSync(specsDir, { recursive: true });
+    writeFileSync(join(specsDir, 'auth.md'), '# Auth Spec\n## Motivation\nWhy this exists.\n## Requirements\nSome requirements.\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const check = checks.find(c => c.name === 'Spec files have ## Motivation sections');
+    expect(check).toBeDefined();
+    expect(check!.pass).toBe(true);
+  });
+
+  it('passes motivation check with "No spec files found" when specs dir is empty', () => {
+    const specsDir = join(tempDir, 'docs', 'product-specs');
+    mkdirSync(specsDir, { recursive: true });
+    const checks = runAllChecks(tempDir, makeConfig());
+    const check = checks.find(c => c.name === 'Spec files have ## Motivation sections');
+    expect(check).toBeDefined();
+    expect(check!.pass).toBe(true);
+    expect(check!.detail).toBe('No spec files found');
+  });
+
+  it('lists missing filenames in motivation check detail for multiple specs', () => {
+    const specsDir = join(tempDir, 'docs', 'product-specs');
+    mkdirSync(specsDir, { recursive: true });
+    writeFileSync(join(specsDir, 'auth.md'), '# Auth\n## Motivation\nWhy.\n');
+    writeFileSync(join(specsDir, 'billing.md'), '# Billing\n## Requirements\nNo motivation here.\n');
+    writeFileSync(join(specsDir, 'users.md'), '# Users\n## Requirements\nAlso no motivation.\n');
+    const checks = runAllChecks(tempDir, makeConfig());
+    const check = checks.find(c => c.name === 'Spec files have ## Motivation sections');
+    expect(check).toBeDefined();
+    expect(check!.pass).toBe(false);
+    expect(check!.detail).toContain('billing.md');
+    expect(check!.detail).toContain('users.md');
+    expect(check!.detail).not.toContain('auth.md');
+  });
+
   it('doctor --fix lists fixable issues before confirmation', async () => {
     const origCwd = process.cwd();
     process.chdir(tempDir);

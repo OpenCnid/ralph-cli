@@ -122,7 +122,7 @@ Date: 2026-03-13
     2. `--intent` combined with `--dry-run --diff-only` → all flags parse correctly
   - Verify: existing 142 lines of tests still pass; 2 new tests added
 
-- [ ] Tests for motivation doctor check — add to `src/commands/doctor/doctor.test.ts` (or whichever file covers `runContentChecks`)
+- [x] Tests for motivation doctor check — add to `src/commands/doctor/doctor.test.ts` (or whichever file covers `runContentChecks`)
   - 4 cases per spec test plan:
     1. Spec without `## Motivation` → `check.pass === false`
     2. Spec with `## Motivation` → `check.pass === true`
