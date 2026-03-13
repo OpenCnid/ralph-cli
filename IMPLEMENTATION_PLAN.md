@@ -186,7 +186,7 @@ Date: 2026-03-13
   - `buildScoreContext()` with single-entry `stageResults: 'test:fail'` → generic message (< 2 stages).
   - Satisfies: F-SV04 tests, AC-6
 
-- [ ] Add tests to `src/commands/score/results.test.ts` — 9th column TSV handling
+- [x] Add tests to `src/commands/score/results.test.ts` — 9th column TSV handling
   - `appendResult()` with `stages: 'unit:pass,integration:fail'` → written row has 9 tab-separated
     columns, 9th is `'unit:pass,integration:fail'`.
   - `appendResult()` without `stages` → written row has `'—'` as 9th column.
