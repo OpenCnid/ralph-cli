@@ -203,7 +203,7 @@ beforeEach(() => {
   );
 
   // Validation passes by default
-  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '', stages: [], failedStage: null });
 
   // Default scorer returns no score
   mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });

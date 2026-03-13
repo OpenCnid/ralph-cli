@@ -93,7 +93,7 @@ Date: 2026-03-13
 
 ## Refactor validation.ts (F-SV03 integration)
 
-- [ ] Refactor `src/commands/run/validation.ts` to use the stage pipeline executor
+- [x] Refactor `src/commands/run/validation.ts` to use the stage pipeline executor
   - Update `ValidationResult` interface: add `stages: StageResult[]` and
     `failedStage: string | null`. Keep `passed` and `testOutput` for backward compat.
   - Import `synthesizeDefaultStages`, `executeStages`, `StageResult` from `./stages.js`.

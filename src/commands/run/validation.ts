@@ -1,51 +1,37 @@
-import { spawnSync } from 'node:child_process';
 import type { RunConfig } from './types.js';
-
-const VALIDATION_TIMEOUT_MS = 120_000;
+import type { StageResult } from './stages.js';
+import { synthesizeDefaultStages, executeStages } from './stages.js';
 
 export interface ValidationResult {
   passed: boolean;
   testOutput: string;
+  stages: StageResult[];
+  failedStage: string | null;
 }
 
 /**
- * Runs post-agent validation commands (test-command and typecheck-command).
+ * Runs post-agent validation using the stage pipeline executor.
  *
- * Runs test-command first (capturing stdout), then typecheck-command.
- * Each has a hardcoded 120s timeout; exceeding it is treated as failure.
- * Returns { passed: true, testOutput } when all configured commands pass.
- * Returns { passed: false, testOutput } on first non-zero exit or timeout.
- * When both commands are null, validation is skipped and passes immediately.
+ * If `config.validation.stages` is defined and non-empty, runs those stages.
+ * Otherwise, synthesizes default stages from test-command and typecheck-command.
+ * Returns { passed, testOutput, stages, failedStage }.
  */
 export function runValidation(config: RunConfig): ValidationResult {
   const testCommand = config.validation['test-command'];
   const typecheckCommand = config.validation['typecheck-command'];
+  const configuredStages = config.validation.stages;
 
-  let testOutput = '';
+  const stages =
+    configuredStages !== undefined && configuredStages.length > 0
+      ? configuredStages
+      : synthesizeDefaultStages(testCommand, typecheckCommand);
 
-  if (testCommand !== null) {
-    const result = spawnSync('sh', ['-c', testCommand], {
-      timeout: VALIDATION_TIMEOUT_MS,
-      encoding: 'utf-8',
-    });
+  const result = executeStages(stages);
 
-    testOutput = result.stdout ?? '';
-
-    if (result.status !== 0 || result.signal !== null) {
-      return { passed: false, testOutput };
-    }
-  }
-
-  if (typecheckCommand !== null) {
-    const result = spawnSync('sh', ['-c', typecheckCommand], {
-      timeout: VALIDATION_TIMEOUT_MS,
-      encoding: 'utf-8',
-    });
-
-    if (result.status !== 0 || result.signal !== null) {
-      return { passed: false, testOutput };
-    }
-  }
-
-  return { passed: true, testOutput };
+  return {
+    passed: result.passed,
+    testOutput: result.testOutput,
+    stages: result.stages,
+    failedStage: result.failedStage,
+  };
 }

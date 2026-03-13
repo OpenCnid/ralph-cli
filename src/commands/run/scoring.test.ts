@@ -458,7 +458,7 @@ beforeEach(() => {
     (_config: AgentConfig, prompt: string, _timeout: number, opts?: { verbose?: boolean | undefined; capture?: boolean | undefined }) =>
       mockSpawnAgent(_config, prompt, opts),
   );
-  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '', stages: [], failedStage: null });
   mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });
 
   // Git: always shows changes so the run loop takes the "has new work" path

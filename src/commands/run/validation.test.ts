@@ -60,7 +60,7 @@ describe('runValidation', () => {
     const result = runValidation(makeRunConfig(null, null));
 
     expect(mockSpawnSync).not.toHaveBeenCalled();
-    expect(result).toEqual({ passed: true, testOutput: '' });
+    expect(result).toEqual(expect.objectContaining({ passed: true, testOutput: '' }));
   });
 
   // ── test command stdout captured ──────────────────────────────────────────
