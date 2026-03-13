@@ -10,3 +10,4 @@ d286604	7	pass	—	—	56	test_count=0 test_total=0 test_rate=0 coverage=0	ralph
 f917d6c	9	pass	—	—	143	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Wire / into  and add dry-run stage display
 3cb21fb	10	pass	—	—	124	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Create  — unit tests for stage executor and default synthesis
 ee007fb	11	pass	—	—	78	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — adapt existing assertions for new fields
+920a97d	12	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add tests to  — stage-aware score context
