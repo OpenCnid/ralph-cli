@@ -27,7 +27,7 @@ Last updated: 2026-03-13
 
 ### config
 
-- **Tests**: A — 92% line coverage
+- **Tests**: A — 93% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: D — Avg 292 lines, 1 oversized: validate.ts (684)
@@ -126,7 +126,7 @@ Last updated: 2026-03-13
 
 ### run
 
-- **Tests**: B — 87% line coverage
+- **Tests**: B — 80% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: C — Avg 238 lines, 1 oversized: index.ts (1131)
@@ -153,7 +153,7 @@ Last updated: 2026-03-13
 
 ### score
 
-- **Tests**: C — No coverage data for domain path src/commands/score
+- **Tests**: C — 66% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 148 lines, no oversized files
@@ -162,7 +162,7 @@ Last updated: 2026-03-13
 
 ### ralph-cli
 
-- **Tests**: B — 86% line coverage
+- **Tests**: B — 83% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: B — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)
@@ -171,7 +171,7 @@ Last updated: 2026-03-13
 
 ## Trends
 
-- config/tests: A (stable) — 92% line coverage
+- config/tests: A (stable) — 93% line coverage
 - config/docs: A (stable) — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
 - config/fileHealth: D (stable) — Avg 292 lines, 1 oversized: validate.ts (684)
@@ -237,7 +237,7 @@ Last updated: 2026-03-13
 - ci/fileHealth: A (stable) — Avg 137 lines, no oversized files
 - ci/staleness: A (stable) — Median 4d since last change
 - ci/overall: B (stable)
-- run/tests: B (stable) — 87% line coverage
+- run/tests: B (stable) — 80% line coverage
 - run/docs: A (stable) — 3/3 domain documentation files present
 - run/architecture: A (stable) — No architectural violations
 - run/fileHealth: C (stable) — Avg 238 lines, 1 oversized: index.ts (1131)
@@ -255,13 +255,13 @@ Last updated: 2026-03-13
 - heal/fileHealth: A (stable) — Avg 108 lines, no oversized files
 - heal/staleness: A (stable) — Median 3d since last change
 - heal/overall: B (stable)
-- score/tests: C (stable) — No coverage data for domain path src/commands/score
+- score/tests: C (stable) — 66% line coverage
 - score/docs: A (stable) — 3/3 domain documentation files present
 - score/architecture: A (stable) — No architectural violations
 - score/fileHealth: A (stable) — Avg 148 lines, no oversized files
 - score/staleness: A (stable) — Median 0d since last change
 - score/overall: C (stable)
-- ralph-cli/tests: B (stable) — 86% line coverage
+- ralph-cli/tests: B (stable) — 83% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
 - ralph-cli/fileHealth: B (stable) — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)

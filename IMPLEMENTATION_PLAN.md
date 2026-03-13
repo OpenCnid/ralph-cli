@@ -205,7 +205,7 @@ Date: 2026-03-13
 ---
 
 ## Verification
-- [ ] Run full validation and verify all Phase 3 acceptance criteria
+- [x] Run full validation and verify all Phase 3 acceptance criteria
   Run: `npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci`
   Cross-check each AC:
   - AC-1: `computeCalibration()` with ≥5 entries returns correct rates; conditional metrics null when absent — unit tests
