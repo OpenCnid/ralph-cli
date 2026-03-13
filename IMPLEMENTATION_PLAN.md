@@ -295,7 +295,7 @@ Date: 2026-03-13
   - `runAdversarialPass`: `effectiveAutoCommit: false` → `outcome: 'skip'`, warning logged (AC-15)
   - `runAdversarialPass`: different `config.agent` and `config.model` → adversary agent config uses those values, not runConfig.agent (AC-14)
 
-- [ ] Add scoring unit tests for adversarial context to `src/commands/run/scoring.test.ts`.
+- [x] Add scoring unit tests for adversarial context to `src/commands/run/scoring.test.ts`.
   Satisfies: AC-8.
   - `buildScoreContext` with `previousStatus: 'adversarial-fail'` + 2 failed tests + diagnosticBranch: output contains both test names and branch name
   - `buildScoreContext` with `previousStatus: 'pass'` + `adversarialResult.outcome: 'pass'` + 3 testFilesAdded: output contains `+3 adversarial tests`
