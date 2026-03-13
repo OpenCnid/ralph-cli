@@ -187,6 +187,13 @@ export interface HealConfig {
   'commit-prefix': string;
 }
 
+export interface CalibrationConfig {
+  window: number;
+  'warn-pass-rate': number;
+  'warn-discard-rate': number;
+  'warn-volatility': number;
+}
+
 export interface RalphConfig {
   project: ProjectConfig;
   runner?: RunnerConfig | undefined;
@@ -201,6 +208,7 @@ export interface RalphConfig {
   review?: ReviewConfig | undefined;
   heal?: HealConfig | undefined;
   scoring?: ScoringConfig | undefined;
+  calibration?: CalibrationConfig | undefined;
 }
 
 /**
@@ -271,4 +279,5 @@ export interface RawRalphConfig {
       coverage: number;
     }>;
   }>;
+  calibration?: Partial<CalibrationConfig>;
 }

@@ -5,6 +5,14 @@ import { discoverScorer, runScorer } from './scorer.js';
 import { runDefaultScorer } from './default-scorer.js';
 import { readResults } from './results.js';
 import { computeTrend, renderSparkline } from './trend.js';
+import {
+  computeCalibration,
+  detectTrustDrift,
+  formatCalibrationReport,
+  formatCalibrationJSON,
+  type CalibrationThresholds,
+} from './calibration.js';
+import { DEFAULT_CALIBRATION } from '../../config/defaults.js';
 import * as output from '../../utils/output.js';
 import type { ScoreResult } from './types.js';
 import type { RalphConfig } from '../../config/schema.js';
@@ -14,6 +22,7 @@ export interface ScoreOptions {
   trend?: number | boolean | undefined;
   compare?: boolean | undefined;
   json?: boolean | undefined;
+  calibration?: boolean | undefined;
 }
 
 function getCommit(): string {
@@ -201,6 +210,37 @@ async function runCompare(config: RalphConfig): Promise<void> {
 }
 
 export async function scoreCommand(options: ScoreOptions): Promise<void> {
+  if (options.calibration === true) {
+    let calConfig = DEFAULT_CALIBRATION;
+    try {
+      const loadResult = loadConfig();
+      if (loadResult.config.calibration !== undefined) {
+        calConfig = loadResult.config.calibration;
+      }
+    } catch {
+      // use defaults when config is unavailable
+    }
+    const thresholds: CalibrationThresholds = {
+      window: calConfig.window,
+      warnPassRate: calConfig['warn-pass-rate'],
+      warnDiscardRate: calConfig['warn-discard-rate'],
+      warnVolatility: calConfig['warn-volatility'],
+    };
+    const entries = readResults(thresholds.window);
+    if (entries.length < 5) {
+      output.plain(`Calibration: insufficient data (${entries.length} entries, need 5)`);
+      return;
+    }
+    const report = computeCalibration(entries, thresholds.window);
+    const drift = detectTrustDrift(report, thresholds);
+    if (options.json === true) {
+      console.log(JSON.stringify(formatCalibrationJSON(report, drift), null, 2));
+      return;
+    }
+    output.plain(formatCalibrationReport(report, drift));
+    return;
+  }
+
   if (options.history !== undefined && options.history !== false) {
     const limit = typeof options.history === 'number' ? options.history : 20;
     printHistory(limit);

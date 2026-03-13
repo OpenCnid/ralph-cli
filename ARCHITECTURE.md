@@ -58,7 +58,9 @@ src/
     │   ├── default-scorer.ts — Built-in test+coverage scorer
     │   ├── results.ts  — TSV results log (append + read)
     │   ├── trend.ts    — Trend computation and sparkline rendering
-    │   └── types.ts    — ScoreResult, ResultEntry, ScoreContext
+    │   ├── types.ts    — ScoreResult, ResultEntry, ScoreContext
+    │   ├── calibration.ts  — Calibration metrics, trust drift detection, report formatting
+    │   └── calibration.test.ts — Unit tests for calibration module
     └── config-validate.ts — Standalone config validation command
 ```
 
@@ -103,7 +105,7 @@ Four intentional cross-command imports exist:
 2. **promote → lint engine** — `promote` imports the lint engine to count violations when tracking escalation.
 3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
 4. **heal → run/agent + run/detect** — `heal/index.ts` reuses agent resolution/spawn and validation command detection from the `run` domain.
-5. **run → score** — `run/index.ts` imports `discoverScorer`, `runScorer`, `runDefaultScorer`, `appendResult`, and `buildScoreContext` from the `score` domain to integrate fitness scoring into the build loop.
+5. **run → score** — `run/index.ts` imports `discoverScorer`, `runScorer`, `runDefaultScorer`, `appendResult`, and `buildScoreContext` from the `score` domain to integrate fitness scoring into the build loop. `run/progress.ts` additionally imports `computeCalibration`, `detectTrustDrift`, and `CalibrationThresholds` from `score/calibration.ts` and `readResults` from `score/results.ts` to display calibration summaries in the final run summary.
 
 Intra-domain import patterns in the `run` domain:
 - `adversarial.ts` imports `spawnAgentWithTimeout` from `run/timeout.ts` (agent execution with deadline)

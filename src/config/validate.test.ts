@@ -1160,6 +1160,92 @@ describe('run.adversarial config validation', () => {
   });
 });
 
+describe('calibration config validation', () => {
+  it('accepts full valid calibration config', () => {
+    const result = validate({
+      ...MINIMAL,
+      calibration: {
+        window: 30,
+        'warn-pass-rate': 0.95,
+        'warn-discard-rate': 0.01,
+        'warn-volatility': 0.005,
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts calibration with only some fields', () => {
+    const result = validate({ ...MINIMAL, calibration: { window: 10 } });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('errors on window: 4 (below minimum 5)', () => {
+    const result = validate({ ...MINIMAL, calibration: { window: 4 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.window');
+  });
+
+  it('errors on window: 1.5 (non-integer)', () => {
+    const result = validate({ ...MINIMAL, calibration: { window: 1.5 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.window');
+  });
+
+  it('errors on warn-pass-rate: 1.1 (above 1)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-pass-rate': 1.1 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.warn-pass-rate');
+  });
+
+  it('errors on warn-pass-rate: 0 (must be > 0)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-pass-rate': 0 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.warn-pass-rate');
+  });
+
+  it('errors on warn-discard-rate: -0.1 (below 0)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-discard-rate': -0.1 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.warn-discard-rate');
+  });
+
+  it('errors on warn-volatility: -1 (below 0)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-volatility': -1 } });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('calibration.warn-volatility');
+  });
+
+  it('accepts warn-pass-rate: 1.0 (boundary)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-pass-rate': 1.0 } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts warn-discard-rate: 0 (boundary)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-discard-rate': 0 } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts warn-volatility: 0 (boundary)', () => {
+    const result = validate({ ...MINIMAL, calibration: { 'warn-volatility': 0 } });
+    expect(result.errors).toEqual([]);
+  });
+
+  it('warns on unknown calibration keys', () => {
+    const result = validate({ ...MINIMAL, calibration: { unknown_key: true } });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('calibration.unknown_key');
+  });
+
+  it('errors on non-object calibration', () => {
+    const result = validate({ ...MINIMAL, calibration: 'bad' });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('"calibration"');
+  });
+});
+
 describe('run.loop.iteration-timeout validation', () => {
   it('accepts valid iteration-timeout', () => {
     const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 900 } } });

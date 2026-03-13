@@ -48,3 +48,32 @@ cede3c5	22	pass	—	—	15	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 6e65840	25	pass	—	—	25	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 25
 9f4fb52	26	pass	—	—	11	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 26
 4d2e162	27	pass	—	—	13	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 27
+2597470	1	pass	—	—	47	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  interface and update  /  in
+062728d	2	pass	—	—	38	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  constant to
+72e62e6	3	pass	—	—	56	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Merge calibration defaults in  and add validation in
+579b2b1	4	pass	—	—	211	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Create
+9b2fe20	5	pass	—	—	169	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  flag to  and
+12592c7	6	pass	—	—	260	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  in  and all 9 call sites in
+806be52	7	pass	—	—	39	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  to add  to the score domain listing
+ce118bc	8	pass	—	—	189	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Unit tests:
+a63e1aa	9	pass	—	—	258	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Integration tests: extend
+a7b28aa	10	pass	—	—	170	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Integration tests: extend
+e17508d	12	pass	—	—	215	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: verify backward compatibility for trust calibration phase 3
+224f126	13	pass	—	—	89	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: complete Phase 3 trust calibration — all ACs verified
+788a974	14	pass	—	—	14	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 14
+d3dc717	15	pass	—	—	17	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 15
+be29015	16	pass	—	—	18	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 16
+5c80cc1	17	pass	—	—	12	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 17
+c3e48e4	18	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 18
+385c91d	19	pass	—	—	21	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 19
+933f1e2	20	pass	—	—	18	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 20
+792653a	21	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 21
+8deeb13	22	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 22
+0b1b8df	23	pass	—	—	17	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 23
+18777c4	24	pass	—	—	36	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 24
+e07ab94	25	pass	—	—	17	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 25
+682dafa	26	pass	—	—	17	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 26
+c53be22	27	pass	—	—	38	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 27
+01a3e0a	28	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 28
+90c8f16	29	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 29
+2178f34	30	pass	—	—	24	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 30

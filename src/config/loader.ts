@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ADVERSARIAL, DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
+import { DEFAULT_ADVERSARIAL, DEFAULT_ARCHITECTURE, DEFAULT_CALIBRATION, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -206,6 +206,9 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
       'auto-commit': raw.heal?.['auto-commit'] ?? DEFAULT_HEAL['auto-commit'],
       'commit-prefix': raw.heal?.['commit-prefix'] ?? DEFAULT_HEAL['commit-prefix'],
     },
+    calibration: raw.calibration !== undefined
+      ? { ...DEFAULT_CALIBRATION, ...raw.calibration }
+      : undefined,
     scoring: raw.scoring !== undefined ? {
       script: raw.scoring.script ?? DEFAULT_SCORING.script,
       'regression-threshold': raw.scoring['regression-threshold'] ?? DEFAULT_SCORING['regression-threshold'],

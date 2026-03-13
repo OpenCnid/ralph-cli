@@ -3,6 +3,12 @@ import { execSync } from 'node:child_process';
 import type { AgentResult } from './types.js';
 import type { AgentConfig, RunConfig } from '../../config/schema.js';
 import * as output from '../../utils/output.js';
+import {
+  computeCalibration,
+  detectTrustDrift,
+  type CalibrationThresholds,
+} from '../score/calibration.js';
+import { readResults } from '../score/results.js';
 
 export interface IterationRecord {
   iteration: number;
@@ -132,7 +138,11 @@ export function printIterationSummary(
   }
 }
 
-export function printFinalSummary(reason: string, checkpoint: Checkpoint): void {
+export function printFinalSummary(
+  reason: string,
+  checkpoint: Checkpoint,
+  calibrationThresholds?: CalibrationThresholds | undefined,
+): void {
   const { history } = checkpoint;
   const totalMs = history.reduce((sum, r) => sum + r.durationMs, 0);
 
@@ -153,4 +163,23 @@ export function printFinalSummary(reason: string, checkpoint: Checkpoint): void 
   }
 
   output.info(`Stop reason: ${reason}`);
+
+  if (calibrationThresholds !== undefined) {
+    const entries = readResults(calibrationThresholds.window);
+    if (entries.length >= 5) {
+      const report = computeCalibration(entries, calibrationThresholds.window);
+      const drift = detectTrustDrift(report, calibrationThresholds);
+      const pct = (rate: number) => `${(rate * 100).toFixed(0)}%`;
+      const volStr =
+        report.scoreVolatility !== null ? report.scoreVolatility.toFixed(3) : 'n/a';
+      const statusStr = drift.isDrift ? '' : ' ✓ Normal';
+      output.plain(
+        `Calibration (last ${report.actual}): pass=${pct(report.passRate)} discard=${pct(report.discardRate)} volatility=${volStr}${statusStr}`,
+      );
+      if (drift.isDrift) {
+        const signalDesc = drift.signals.map(s => s.name.toLowerCase()).join(' + ');
+        output.plain(`  ⚠ Trust drift: ${signalDesc}. Run ralph score --calibration for details.`);
+      }
+    }
+  }
 }
