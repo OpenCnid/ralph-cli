@@ -272,7 +272,7 @@ Date: 2026-03-13
 
 ## Tests
 
-- [ ] Write unit tests in `src/commands/run/adversarial.test.ts`.
+- [x] Write unit tests in `src/commands/run/adversarial.test.ts`.
   Satisfies verification of: AC-3, AC-4, AC-5, AC-6, AC-7, AC-10, AC-14, AC-15, AC-16.
 
   Mock: `spawnAgentWithTimeout` (from `./timeout.js`), `execSync` (from `node:child_process`), `existsSync`/`readdirSync` (from `node:fs`).
