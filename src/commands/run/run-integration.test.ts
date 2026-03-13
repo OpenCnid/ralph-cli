@@ -348,9 +348,9 @@ describe('integration — dry-run', () => {
     await runCommand('build', { dryRun: true });
 
     expect(mockSpawnAgent).not.toHaveBeenCalled();
-    expect(mockPlain).toHaveBeenCalledOnce();
+    expect(mockPlain).toHaveBeenCalled();
 
-    // Real BUILD_TEMPLATE is used — verify it's a non-empty string
+    // Real BUILD_TEMPLATE is used — verify prompt is a non-empty string
     const printed = mockPlain.mock.calls[0]?.[0];
     expect(typeof printed).toBe('string');
     expect((printed as string).length).toBeGreaterThan(100);

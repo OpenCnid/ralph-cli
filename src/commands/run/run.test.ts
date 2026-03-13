@@ -31,6 +31,7 @@ vi.mock('./prompts.js', () => ({
 vi.mock('./detect.js', () => ({
   detectCompletedTask: vi.fn().mockReturnValue(null),
   normalizePlanContent: vi.fn((s: string) => s),
+  composeValidateCommand: vi.fn().mockReturnValue('npm test && npx tsc --noEmit'),
 }));
 
 vi.mock('../../utils/output.js', () => ({

@@ -135,7 +135,7 @@ Date: 2026-03-13
 
 ## Run Loop Wiring + Dry Run Display (F-SV07 + F-SV06)
 
-- [ ] Wire `ValidationResult.stages`/`failedStage` into `run/index.ts` and add dry-run stage display
+- [x] Wire `ValidationResult.stages`/`failedStage` into `run/index.ts` and add dry-run stage display
   - **Dry run (F-SV06):** In the `dryRun === true` block (line ~295): after `output.plain(prompt)`,
     read `config.run?.validation` stages. If explicit stages are configured, print a stage pipeline
     summary table: stage name, command, required flag, timeout. If no stages, print the flat
