@@ -207,7 +207,7 @@ Date: 2026-03-13
 
 ## Backward Compatibility
 
-- [ ] Verify backward compatibility
+- [x] Verify backward compatibility
   - Run `npm test` with the full test suite. Confirm 832+ tests pass.
   - Run `npx tsc --noEmit`. Confirm clean.
   - Manually confirm: with no `stages:` config and `test-command: "npm test"` +
