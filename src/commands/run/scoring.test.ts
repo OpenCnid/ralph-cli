@@ -212,6 +212,83 @@ describe('buildScoreContext', () => {
     });
     expect(buildScoreContext(ctx)).not.toContain('Test count increased');
   });
+
+  // ── adversarial-fail branch ───────────────────────────────────────────────
+
+  it('previousStatus=adversarial-fail: output contains both test names and branch name', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'adversarial-fail',
+      adversarialResult: {
+        outcome: 'fail',
+        testFilesAdded: [],
+        failedTests: ['should handle empty input', 'should reject null values'],
+        diagnosticBranch: 'ralph/adversarial/3',
+        testCountBefore: 100,
+        testCountAfter: null,
+      },
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('REVERTED by adversarial testing');
+    expect(result).toContain('should handle empty input');
+    expect(result).toContain('should reject null values');
+    expect(result).toContain('ralph/adversarial/3');
+  });
+
+  it('previousStatus=pass + adversarialResult.outcome=pass: output contains edge-case test count', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'pass',
+      currentScore: 0.85,
+      previousScore: 0.80,
+      delta: 0.05,
+      metrics: '—',
+      adversarialResult: {
+        outcome: 'pass',
+        testFilesAdded: ['src/a.test.ts', 'src/b.test.ts', 'src/c.test.ts'],
+        failedTests: [],
+        diagnosticBranch: null,
+        testCountBefore: 100,
+        testCountAfter: 103,
+      },
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('Adversarial testing passed: 3 edge-case tests added and passing.');
+  });
+
+  it('previousStatus=pass + adversarialResult.outcome=skip: output contains skipped', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'pass',
+      currentScore: 0.85,
+      previousScore: 0.80,
+      delta: 0.05,
+      metrics: '—',
+      adversarialResult: {
+        outcome: 'skip',
+        testFilesAdded: [],
+        failedTests: [],
+        diagnosticBranch: null,
+        testCountBefore: null,
+        testCountAfter: null,
+        skipReason: 'no tests written',
+      },
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('skipped (no tests written)');
+  });
+
+  it('previousStatus=pass + no adversarialResult: output unchanged from pre-Phase-2', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'pass',
+      currentScore: 0.85,
+      previousScore: 0.80,
+      delta: 0.05,
+      metrics: 'test_count=100',
+      regressionThreshold: 0.02,
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).not.toContain('Adversarial');
+    expect(result).toContain('Score Context');
+    expect(result).toContain('0.850');
+  });
 });
 
 // ─── computeRegression ───────────────────────────────────────────────────────

@@ -157,7 +157,7 @@ Date: 2026-03-13
 
 ## Score Context
 
-- [ ] Add `'adversarial-fail'` branch to `buildScoreContext()` in `src/commands/run/scoring.ts`; update `ScoreContext['previousStatus']` union reference in `scoring.ts` to accept the new value (type already updated in score/types.ts task above).
+- [x] Add `'adversarial-fail'` branch to `buildScoreContext()` in `src/commands/run/scoring.ts`; update `ScoreContext['previousStatus']` union reference in `scoring.ts` to accept the new value (type already updated in score/types.ts task above).
   Satisfies: AC-8 (score context after failure names tests and branch), AC-2 (pass context includes adversarial test count).
 
   New `adversarial-fail` branch in `buildScoreContext()`:

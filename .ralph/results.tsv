@@ -27,3 +27,5 @@ f580837	25	pass	—	—	23	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 f0abbf5	1	pass	—	—	452	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add AdversarialConfig schema, defaults, and validation
 1e9f040	2	pass	—	—	49	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  type and  to ; add  to  union in ; add  field to  in ; add  
 f795429	3	pass	—	—	74	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add generateAdversarialPrompt() to run/prompts.ts
+61e47de	4	pass	—	—	135	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: create adversarial.ts with enforceFileRestriction and enforce
+187db7d	5	pass	—	—	65	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add pushDiagnosticBranch() to adversarial.ts

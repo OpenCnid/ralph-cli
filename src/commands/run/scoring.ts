@@ -94,7 +94,33 @@ export function buildScoreContext(ctx: ScoreContext): string {
         `Ensure new tests exercise real behavior.`;
     }
 
+    if (ctx.adversarialResult != null) {
+      const ar = ctx.adversarialResult;
+      if (ar.outcome === 'pass') {
+        const n = ar.testFilesAdded.length;
+        context += `\nAdversarial testing passed: ${n} edge-case tests added and passing.`;
+      } else if (ar.outcome === 'skip') {
+        const reason = ar.skipReason ?? 'unknown';
+        context += `\nAdversarial testing: skipped (${reason}).`;
+      }
+    }
+
     return context;
+  }
+
+  if (previousStatus === 'adversarial-fail') {
+    const r = ctx.adversarialResult;
+    const count = r?.failedTests.length ?? 0;
+    const failedList = (r?.failedTests ?? []).map(t => `  - test: "${t}"`).join('\n');
+    const branch = r?.diagnosticBranch ?? null;
+    return (
+      `## Score Context\n` +
+      `⚠ Previous iteration passed validation but was REVERTED by adversarial testing.\n` +
+      `The adversary found ${count} edge case(s) that broke the implementation.\n` +
+      (failedList ? `Failed tests:\n${failedList}\n` : '') +
+      (branch ? `Diagnostic branch: ${branch}\n` : '') +
+      `Fix these edge cases in your implementation. The adversarial tests will run again.`
+    );
   }
 
   if (previousStatus === 'discard') {
