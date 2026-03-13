@@ -118,6 +118,44 @@ describe('buildScoreContext', () => {
     expect(buildScoreContext(ctx)).toBe('');
   });
 
+  // ── stage-aware fail messages ─────────────────────────────────────────────
+
+  it('previousStatus=fail with 2+ stages: produces stage-aware message naming the failed stage', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: 'integration',
+      stageResults: 'unit:pass,typecheck:pass,integration:fail',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation at stage "integration"');
+    expect(result).toContain('unit ✓');
+    expect(result).toContain('integration ✗');
+  });
+
+  it('previousStatus=fail with null stageResults: produces v0.5 generic message', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: null,
+      stageResults: null,
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation');
+    expect(result).not.toContain('at stage');
+    expect(result).toContain('Ensure all tests pass');
+  });
+
+  it('previousStatus=fail with single-entry stageResults: falls back to generic message', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: 'test',
+      stageResults: 'test:fail',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation');
+    expect(result).not.toContain('at stage');
+    expect(result).toContain('Ensure all tests pass');
+  });
+
   // ── test count jump warning ───────────────────────────────────────────────
 
   it('adds test count jump warning when currentTestCount > previousTestCount * 2', () => {

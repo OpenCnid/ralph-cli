@@ -61,7 +61,7 @@ Date: 2026-03-13
 
 ## Score Context Enrichment (F-SV04)
 
-- [ ] Update `src/commands/run/scoring.ts` — stage-aware fail message in `buildScoreContext()`
+- [x] Update `src/commands/run/scoring.ts` — stage-aware fail message in `buildScoreContext()`
   - In the `previousStatus === 'fail'` branch: if `ctx.stageResults` is non-null and contains
     2+ comma-separated entries, produce stage-aware message:
     `"⚠ Previous iteration FAILED validation at stage \"{failedStage}\" and was reverted.\n"` +
