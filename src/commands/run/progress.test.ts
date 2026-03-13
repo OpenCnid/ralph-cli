@@ -17,7 +17,18 @@ vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
 }));
 
+vi.mock('../score/results.js', () => ({
+  readResults: vi.fn(),
+}));
+
+vi.mock('../score/calibration.js', () => ({
+  computeCalibration: vi.fn(),
+  detectTrustDrift: vi.fn(),
+}));
+
 import * as outputMod from '../../utils/output.js';
+import * as resultsMod from '../score/results.js';
+import * as calibrationMod from '../score/calibration.js';
 import { execSync } from 'node:child_process';
 import {
   loadCheckpoint,
@@ -36,7 +47,11 @@ import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 const mockWarn = vi.mocked(outputMod.warn);
 const mockInfo = vi.mocked(outputMod.info);
 const mockHeading = vi.mocked(outputMod.heading);
+const mockPlain = vi.mocked(outputMod.plain);
 const mockExecSync = vi.mocked(execSync);
+const mockReadResults = vi.mocked(resultsMod.readResults);
+const mockComputeCalibration = vi.mocked(calibrationMod.computeCalibration);
+const mockDetectTrustDrift = vi.mocked(calibrationMod.detectTrustDrift);
 
 let origCwd: string;
 let tmpDir: string;
@@ -342,5 +357,92 @@ describe('printFinalSummary', () => {
 
     expect(mockInfo).toHaveBeenCalledWith('Duration: 0s');
     expect(mockInfo).toHaveBeenCalledWith('Total iterations: 0');
+  });
+
+  it('shows compact calibration line when thresholds provided and ≥5 entries (normal)', () => {
+    const cp = baseCheckpoint({ history: [] });
+    const thresholds = { window: 30, warnPassRate: 0.95, warnDiscardRate: 0.01, warnVolatility: 0.005 };
+
+    mockReadResults.mockReturnValue(new Array(10).fill({ status: 'pass', score: 80 }));
+    mockComputeCalibration.mockReturnValue({
+      window: 30, actual: 10, passRate: 0.8, discardRate: 0.1,
+      adversarialCatchRate: null, firstTryPassRate: 0.8, scoreVolatility: 0.123,
+      stallFrequency: null, scores: [], partial: true,
+    });
+    mockDetectTrustDrift.mockReturnValue({ isDrift: false, signals: [] });
+
+    printFinalSummary('manual stop', cp, thresholds);
+
+    expect(mockPlain).toHaveBeenCalledWith(
+      'Calibration (last 10): pass=80% discard=10% volatility=0.123 ✓ Normal',
+    );
+    expect(mockPlain).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows compact calibration line and drift line when trust drift detected', () => {
+    const cp = baseCheckpoint({ history: [] });
+    const thresholds = { window: 30, warnPassRate: 0.95, warnDiscardRate: 0.01, warnVolatility: 0.005 };
+
+    mockReadResults.mockReturnValue(new Array(10).fill({ status: 'pass', score: 90 }));
+    mockComputeCalibration.mockReturnValue({
+      window: 30, actual: 10, passRate: 0.97, discardRate: 0.0,
+      adversarialCatchRate: null, firstTryPassRate: 0.97, scoreVolatility: 0.002,
+      stallFrequency: null, scores: [], partial: true,
+    });
+    mockDetectTrustDrift.mockReturnValue({
+      isDrift: true,
+      signals: [
+        { name: 'High pass rate', value: '97%', threshold: '> 95%', interpretation: 'tasks too easy' },
+        { name: 'Low discard rate', value: '0%', threshold: '< 1%', interpretation: 'not discarding' },
+      ],
+    });
+
+    printFinalSummary('manual stop', cp, thresholds);
+
+    expect(mockPlain).toHaveBeenCalledWith(
+      'Calibration (last 10): pass=97% discard=0% volatility=0.002',
+    );
+    expect(mockPlain).toHaveBeenCalledWith(
+      '  ⚠ Trust drift: high pass rate + low discard rate. Run ralph score --calibration for details.',
+    );
+    expect(mockPlain).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows "n/a" for volatility when scoreVolatility is null', () => {
+    const cp = baseCheckpoint({ history: [] });
+    const thresholds = { window: 30, warnPassRate: 0.95, warnDiscardRate: 0.01, warnVolatility: 0.005 };
+
+    mockReadResults.mockReturnValue(new Array(5).fill({ status: 'pass', score: null }));
+    mockComputeCalibration.mockReturnValue({
+      window: 30, actual: 5, passRate: 1.0, discardRate: 0.0,
+      adversarialCatchRate: null, firstTryPassRate: 1.0, scoreVolatility: null,
+      stallFrequency: null, scores: [], partial: true,
+    });
+    mockDetectTrustDrift.mockReturnValue({ isDrift: false, signals: [] });
+
+    printFinalSummary('manual stop', cp, thresholds);
+
+    expect(mockPlain).toHaveBeenCalledWith(
+      'Calibration (last 5): pass=100% discard=0% volatility=n/a ✓ Normal',
+    );
+  });
+
+  it('shows no calibration output when thresholds provided but <5 entries', () => {
+    const cp = baseCheckpoint({ history: [] });
+    const thresholds = { window: 30, warnPassRate: 0.95, warnDiscardRate: 0.01, warnVolatility: 0.005 };
+
+    mockReadResults.mockReturnValue(new Array(3).fill({ status: 'pass', score: 80 }));
+
+    printFinalSummary('manual stop', cp, thresholds);
+
+    expect(mockPlain).not.toHaveBeenCalled();
+  });
+
+  it('shows no calibration output when no thresholds provided (backward compat)', () => {
+    const cp = baseCheckpoint({ history: [] });
+
+    printFinalSummary('manual stop', cp);
+
+    expect(mockPlain).not.toHaveBeenCalled();
   });
 });

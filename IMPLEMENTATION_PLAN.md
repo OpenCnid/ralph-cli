@@ -175,7 +175,7 @@ Date: 2026-03-13
   - `--calibration` combined with `--history`: calibration branch runs (precedence confirmed)
   Satisfies AC-4, AC-5.
 
-- [ ] Integration tests: extend `src/commands/run/progress.test.ts`
+- [x] Integration tests: extend `src/commands/run/progress.test.ts`
   - `printFinalSummary` with thresholds + ≥5 mock entries → compact calibration line in output
   - `printFinalSummary` with thresholds + < 5 mock entries → no calibration line
   - `printFinalSummary` without thresholds → no calibration line (backward compat)
