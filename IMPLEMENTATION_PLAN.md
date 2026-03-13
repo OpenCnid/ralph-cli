@@ -117,7 +117,7 @@ Date: 2026-03-13
 ---
 
 ## Run Loop Integration (F-CT05)
-- [ ] Update `printFinalSummary` in `src/commands/run/progress.ts` and all 9 call sites in `src/commands/run/index.ts`
+- [x] Update `printFinalSummary` in `src/commands/run/progress.ts` and all 9 call sites in `src/commands/run/index.ts`
   In `progress.ts`:
   - Import `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `CalibrationThresholds` from `../score/calibration.js`
   - Import `readResults` from `../score/results.js`

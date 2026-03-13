@@ -279,6 +279,7 @@ describe('runCommand — build mode', () => {
     expect(mockPrintFinalSummary).toHaveBeenCalledWith(
       'max iterations reached',
       expect.any(Object),
+      expect.any(Object),
     );
   });
 
@@ -336,6 +337,7 @@ describe('runCommand — build mode', () => {
     expect(mockPrintFinalSummary).toHaveBeenCalledWith(
       expect.stringContaining('stalled'),
       expect.any(Object),
+      expect.any(Object),
     );
   });
 
@@ -350,7 +352,7 @@ describe('runCommand — build mode', () => {
 
     // Should run all 5 iterations without stalling
     expect(mockSpawnAgent).toHaveBeenCalledTimes(5);
-    expect(mockPrintFinalSummary).toHaveBeenCalledWith('max iterations reached', expect.any(Object));
+    expect(mockPrintFinalSummary).toHaveBeenCalledWith('max iterations reached', expect.any(Object), expect.any(Object));
   });
 
   it('--resume continues from checkpoint iteration count', async () => {
@@ -456,7 +458,7 @@ describe('runCommand — plan mode', () => {
 
     await runCommand('plan', {});
 
-    expect(mockPrintFinalSummary).toHaveBeenCalledWith('plan complete', expect.any(Object));
+    expect(mockPrintFinalSummary).toHaveBeenCalledWith('plan complete', expect.any(Object), expect.any(Object));
     expect(mockSpawnAgent).toHaveBeenCalledOnce();
   });
 

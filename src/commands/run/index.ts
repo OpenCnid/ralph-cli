@@ -12,6 +12,7 @@ import { runValidation } from './validation.js';
 import { discoverScorer, runScorer } from '../score/scorer.js';
 import { runDefaultScorer } from '../score/default-scorer.js';
 import { appendResult } from '../score/results.js';
+import { DEFAULT_CALIBRATION } from '../../config/defaults.js';
 import { buildScoreContext, computeChangedMetrics } from './scoring.js';
 import {
   loadCheckpoint,
@@ -152,6 +153,13 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
 
   const { config } = loadConfig();
   const runConfig = config.run!; // mergeWithDefaults always fills run
+  const calConfig = config.calibration ?? DEFAULT_CALIBRATION;
+  const calibrationThresholds = {
+    window: calConfig.window,
+    warnPassRate: calConfig['warn-pass-rate'],
+    warnDiscardRate: calConfig['warn-discard-rate'],
+    warnVolatility: calConfig['warn-volatility'],
+  };
   const maxIterations = options.max !== undefined ? options.max : runConfig.loop['max-iterations'];
   const effectiveAutoCommit = runConfig.git['auto-commit'] && options.noCommit !== true;
   const effectiveAutoPush = runConfig.git['auto-push'] && options.noPush !== true;
@@ -290,7 +298,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
     releaseLock();
     if (!force) {
       try { saveCheckpoint(checkpoint); } catch { /* ignore */ }
-      printFinalSummary('interrupted', checkpoint);
+      printFinalSummary('interrupted', checkpoint, calibrationThresholds);
       process.exit(0);
     } else {
       process.exit(1);
@@ -338,7 +346,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
   // Main loop
   while (true) {
     if (maxIterations > 0 && iteration >= maxIterations) {
-      printFinalSummary('max iterations reached', checkpoint);
+      printFinalSummary('max iterations reached', checkpoint, calibrationThresholds);
       break;
     }
 
@@ -428,7 +436,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
 
         const stallThreshold = runConfig.loop['stall-threshold'];
         if (stallThreshold > 0 && noChangesCount >= stallThreshold) {
-          printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint);
+          printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint, calibrationThresholds);
           break;
         }
         continue;
@@ -465,11 +473,11 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             if (cont) {
               noChangesCount = 0;
             } else {
-              printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint);
+              printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint, calibrationThresholds);
               break;
             }
           } else {
-            printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint);
+            printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint, calibrationThresholds);
             break;
           }
         }
@@ -1094,7 +1102,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
       // Plan mode: halt when plan unchanged
       const planAfter = readPlanFile();
       if (normalizePlanContent(planBefore) === normalizePlanContent(planAfter)) {
-        printFinalSummary('plan complete', checkpoint);
+        printFinalSummary('plan complete', checkpoint, calibrationThresholds);
         break;
       }
 
@@ -1107,11 +1115,11 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           if (cont) {
             noChangesCount = 0;
           } else {
-            printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint);
+            printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint, calibrationThresholds);
             break;
           }
         } else {
-          printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint);
+          printFinalSummary(`stalled — no changes in ${noChangesCount} iterations`, checkpoint, calibrationThresholds);
           break;
         }
       }
