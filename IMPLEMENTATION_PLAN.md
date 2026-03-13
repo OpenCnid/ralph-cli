@@ -265,7 +265,7 @@ Date: 2026-03-13
 
   Verify: `npx tsc --noEmit` clean; `npm test` ≥ 868 passing.
 
-- [ ] Update `ARCHITECTURE.md` with new run-domain files.
+- [x] Update `ARCHITECTURE.md` with new run-domain files.
   Add `adversarial.ts` and `adversarial.test.ts` to the run domain file listing. Document that `adversarial.ts` imports `spawnAgentWithTimeout` from `run/timeout.ts` and `revertToBaseline` from `run/index.ts` (or `run/git.ts` if extracted) — both are existing intra-domain patterns.
 
 ---
