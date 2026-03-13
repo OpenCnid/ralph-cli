@@ -160,6 +160,36 @@ export function findRelevantSpecs(changedFiles: string[], specsDir: string): str
 }
 
 /**
+ * Extract the ## Motivation section content from a spec file.
+ * Returns the trimmed text between the first matching heading and the next heading,
+ * or null if no Motivation heading is found or the section is only whitespace.
+ */
+export function extractMotivation(specContent: string): string | null {
+  const lines = specContent.split('\n');
+  let inMotivation = false;
+  const collected: string[] = [];
+
+  for (const line of lines) {
+    if (inMotivation) {
+      // Stop at next ## or # heading
+      if (/^#{1,2} /.test(line)) {
+        break;
+      }
+      collected.push(line);
+    } else {
+      // Match exactly ## heading (not ###) containing "motivation" (case-insensitive)
+      if (/^## /.test(line) && /motivation/i.test(line.slice(3))) {
+        inMotivation = true;
+      }
+    }
+  }
+
+  if (!inMotivation) return null;
+  const result = collected.join('\n').trim();
+  return result.length === 0 ? null : result;
+}
+
+/**
  * Assemble the full ReviewContext from config and diff data.
  */
 export function assembleContext(
@@ -229,5 +259,6 @@ export function assembleContext(
     rules,
     projectName: config.project.name,
     scope: options.scope ?? 'unknown',
+    motivations: [],
   };
 }

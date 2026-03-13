@@ -66,7 +66,7 @@ Last updated: 2026-03-13
 - **Tests**: A — 95% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 199 lines, no oversized files
+- **File Health**: A — Avg 214 lines, no oversized files
 - **Staleness**: A — Median 4d since last change
 - **Overall**: A
 
@@ -138,8 +138,8 @@ Last updated: 2026-03-13
 - **Tests**: A — 95% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 121 lines, no oversized files
-- **Staleness**: A — Median 4d since last change
+- **File Health**: A — Avg 148 lines, no oversized files
+- **Staleness**: A — Median 0d since last change
 - **Overall**: A
 
 ### heal
@@ -165,7 +165,7 @@ Last updated: 2026-03-13
 - **Tests**: B — 83% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: B — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)
+- **File Health**: B — Avg 189 lines, 2 oversized: index.ts (1131), validate.ts (684)
 - **Staleness**: A — Median 4d since last change
 - **Overall**: B
 
@@ -198,7 +198,7 @@ Last updated: 2026-03-13
 - doctor/tests: A (stable) — 95% line coverage
 - doctor/docs: A (stable) — 3/3 domain documentation files present
 - doctor/architecture: A (stable) — No architectural violations
-- doctor/fileHealth: A (stable) — Avg 199 lines, no oversized files
+- doctor/fileHealth: A (stable) — Avg 214 lines, no oversized files
 - doctor/staleness: A (stable) — Median 4d since last change
 - doctor/overall: A (stable)
 - init/tests: B (stable) — 88% line coverage
@@ -246,8 +246,8 @@ Last updated: 2026-03-13
 - review/tests: A (stable) — 95% line coverage
 - review/docs: A (stable) — 3/3 domain documentation files present
 - review/architecture: A (stable) — No architectural violations
-- review/fileHealth: A (stable) — Avg 121 lines, no oversized files
-- review/staleness: A (stable) — Median 4d since last change
+- review/fileHealth: A (stable) — Avg 148 lines, no oversized files
+- review/staleness: A (stable) — Median 0d since last change
 - review/overall: A (stable)
 - heal/tests: B (stable) — 83% line coverage
 - heal/docs: A (stable) — 3/3 domain documentation files present
@@ -264,7 +264,7 @@ Last updated: 2026-03-13
 - ralph-cli/tests: B (stable) — 83% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: B (stable) — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)
+- ralph-cli/fileHealth: B (stable) — Avg 189 lines, 2 oversized: index.ts (1131), validate.ts (684)
 - ralph-cli/staleness: A (stable) — Median 4d since last change
 - ralph-cli/overall: B (stable)
 

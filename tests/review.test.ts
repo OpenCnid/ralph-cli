@@ -209,7 +209,7 @@ describe('reviewCommand', () => {
     await reviewCommand(undefined, { diffOnly: true });
     expect(mockGenerateReviewPrompt).toHaveBeenCalledWith(
       expect.anything(),
-      { diffOnly: true },
+      expect.objectContaining({ diffOnly: true }),
     );
     expect(mockAssembleContext).toHaveBeenCalledWith(
       expect.anything(),

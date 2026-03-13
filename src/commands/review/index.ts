@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { loadConfig } from '../../config/loader.js';
 import * as output from '../../utils/output.js';
 import { spawnAgent, injectModel, AGENT_PRESETS } from '../run/agent.js';
-import { resolveScope, extractDiff, assembleContext } from './context.js';
+import { resolveScope, extractDiff, assembleContext, extractMotivation } from './context.js';
 import { generateReviewPrompt } from './prompts.js';
 import type { ReviewOptions } from './types.js';
 import type { AgentConfig, RalphConfig } from '../../config/schema.js';
@@ -90,8 +90,18 @@ export async function reviewCommand(
   );
   reviewContext.scope = scopeInfo.scopeLabel;
 
+  // Populate motivations when --intent is set
+  if (options.intent) {
+    for (const spec of reviewContext.specs) {
+      const motivation = extractMotivation(spec);
+      if (motivation !== null) {
+        reviewContext.motivations.push(motivation);
+      }
+    }
+  }
+
   // Generate prompt
-  const prompt = generateReviewPrompt(reviewContext, { diffOnly: options.diffOnly ?? false });
+  const prompt = generateReviewPrompt(reviewContext, { diffOnly: options.diffOnly ?? false, intent: options.intent ?? false });
 
   // Dry run — print prompt and exit
   if (options.dryRun) {

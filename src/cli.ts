@@ -329,6 +329,7 @@ program
   .option('--dry-run', 'Show generated prompt without executing')
   .option('--verbose', 'Show full agent output')
   .option('--diff-only', 'Omit architecture/specs/rules from prompt')
+  .option('--intent', 'Evaluate implementation against spec motivations instead of requirements')
   .action(async (target: string | undefined, options: {
     scope?: string;
     agent?: string;
@@ -338,8 +339,9 @@ program
     dryRun?: boolean;
     verbose?: boolean;
     diffOnly?: boolean;
+    intent?: boolean;
   }) => {
-    await reviewCommand(target, options);
+    await reviewCommand(target, { ...options, intent: options.intent });
   });
 
 // ralph heal

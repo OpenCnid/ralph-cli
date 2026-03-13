@@ -77,3 +77,17 @@ c53be22	27	pass	—	—	38	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 01a3e0a	28	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 28
 90c8f16	29	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 29
 2178f34	30	pass	—	—	24	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 30
+1e72704	1	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add intent and motivations fields to ReviewOptions/ReviewCont	—
+08cafce	2	pass	—	—	42	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add extractMotivation() to review/context.ts	—
+f470181	3	pass	—	—	47	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add INTENT_REVIEW_TEMPLATE and update generateReviewPrompt() 	—
+7237d7d	4	pass	—	—	159	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: wire --intent flag through CLI to reviewCommand()	—
+daf815b	5	pass	—	—	169	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add motivation-section doctor check to runContentChecks()	—
+792f050	6	pass	—	—	40	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add ## Motivation convention to productSpecsIndexMd() templat	—
+2938e6e	7	pass	—	—	81	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  mock shapes in existing test files	—
+dcfc63f	8	pass	—	—	46	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Unit tests for  — add to	—
+5610128	9	pass	—	—	58	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Unit tests for  intent path — create	—
+e9ce4d6	10	pass	—	—	66	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add unit tests for --intent flag in reviewCommand (3 cases)	—
+28333e2	11	pass	—	—	68	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Tests for  CLI parsing — add to	—
+49724b8	12	pass	—	—	62	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Tests for motivation doctor check — add to  (or whichever file co	—
+450ce81	13	pass	—	—	194	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: verify Phase 4 backward compatibility and acceptance criteria	—
+6a14891	14	pass	—	—	16	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 14	—

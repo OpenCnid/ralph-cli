@@ -26,6 +26,7 @@ function buildProgram(): Command {
     .option('--dry-run', 'Show generated prompt without executing')
     .option('--verbose', 'Show full agent output')
     .option('--diff-only', 'Omit architecture/specs/rules from prompt')
+    .option('--intent', 'Evaluate implementation against spec motivations instead of requirements')
     .action(async (target: string | undefined, options: {
       scope?: string;
       agent?: string;
@@ -35,6 +36,7 @@ function buildProgram(): Command {
       dryRun?: boolean;
       verbose?: boolean;
       diffOnly?: boolean;
+      intent?: boolean;
     }) => {
       await reviewCommandMock(target, options);
     });
@@ -123,6 +125,20 @@ describe('ralph review CLI parsing', () => {
       verbose: true,
       diffOnly: true,
     });
+  });
+
+  it('parses --intent', async () => {
+    await parse(['review', '--intent']);
+    expect(reviewCommandMock).toHaveBeenCalledWith(undefined, expect.objectContaining({ intent: true }));
+  });
+
+  it('parses --intent combined with --dry-run --diff-only', async () => {
+    await parse(['review', '--intent', '--dry-run', '--diff-only']);
+    expect(reviewCommandMock).toHaveBeenCalledWith(undefined, expect.objectContaining({
+      intent: true,
+      dryRun: true,
+      diffOnly: true,
+    }));
   });
 
   it('shows help text with all options', () => {

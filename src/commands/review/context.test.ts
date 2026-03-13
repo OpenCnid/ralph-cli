@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { resolveScope, findRelevantSpecs, assembleContext } from './context.js';
+import { resolveScope, findRelevantSpecs, assembleContext, extractMotivation } from './context.js';
 import type { RalphConfig } from '../../config/schema.js';
 
 // Mock child_process so extractDiff tests don't hit the real git
@@ -42,6 +42,50 @@ function baseConfig(overrides: Partial<RalphConfig> = {}): RalphConfig {
     ...overrides,
   };
 }
+
+// ── extractMotivation ────────────────────────────────────────────────────────
+
+describe('extractMotivation', () => {
+  it('returns section content between ## Motivation and next ## heading', () => {
+    const content = '# Spec\n## Motivation\nWhy this exists.\n## Requirements\nReq 1.';
+    expect(extractMotivation(content)).toBe('Why this exists.');
+  });
+
+  it('returns null when no Motivation heading exists', () => {
+    const content = '# Spec\n## Requirements\nReq 1.';
+    expect(extractMotivation(content)).toBeNull();
+  });
+
+  it('returns null for whitespace-only section content', () => {
+    const content = '# Spec\n## Motivation\n   \n\t\n## Requirements\nReq 1.';
+    expect(extractMotivation(content)).toBeNull();
+  });
+
+  it('handles EOF with no next heading after Motivation', () => {
+    const content = '# Spec\n## Motivation\nThis is the motivation.';
+    expect(extractMotivation(content)).toBe('This is the motivation.');
+  });
+
+  it('matches case-insensitively (## MOTIVATION)', () => {
+    const content = '# Spec\n## MOTIVATION\nUpper case heading.\n## Requirements\nReq.';
+    expect(extractMotivation(content)).toBe('Upper case heading.');
+  });
+
+  it('does not match ### heading (h3 ignored)', () => {
+    const content = '# Spec\n### Motivation\nShould not match.\n## Requirements\nReq.';
+    expect(extractMotivation(content)).toBeNull();
+  });
+
+  it('first of multiple ## Motivation headings wins', () => {
+    const content = '# Spec\n## Motivation\nFirst.\n## Motivation\nSecond.';
+    expect(extractMotivation(content)).toBe('First.');
+  });
+
+  it('matches partial heading text (## Motivation & Context)', () => {
+    const content = '# Spec\n## Motivation & Context\nWhy it exists.\n## Requirements\nReq.';
+    expect(extractMotivation(content)).toBe('Why it exists.');
+  });
+});
 
 // ── resolveScope ────────────────────────────────────────────────────────────
 
