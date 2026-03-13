@@ -34,7 +34,7 @@ Date: 2026-03-13
 
 ## Types
 
-- [ ] Add `AdversarialResult` type and `AdversarialOutcome` to `src/commands/run/types.ts`; add `'adversarial-fail'` to `ResultEntry['status']` union in `src/commands/score/types.ts`; add `adversarialResult` field to `ScoreContext` in `src/commands/score/types.ts`; add `'adversarial-fail'` to `ScoreContext['previousStatus']` union.
+- [x] Add `AdversarialResult` type and `AdversarialOutcome` to `src/commands/run/types.ts`; add `'adversarial-fail'` to `ResultEntry['status']` union in `src/commands/score/types.ts`; add `adversarialResult` field to `ScoreContext` in `src/commands/score/types.ts`; add `'adversarial-fail'` to `ScoreContext['previousStatus']` union.
   Satisfies: AC-6 (revert status type), AC-7 (diagnostic branch in score context), AC-8 (score context after adversarial failure), AC-13 (adversarial-fail in results TSV).
 
   `AdversarialResult` shape:

@@ -11,7 +11,7 @@ export interface ScoreResult {
 export interface ResultEntry {
   commit: string;              // short hash of HEAD
   iteration: number;           // 1-indexed
-  status: 'pass' | 'fail' | 'timeout' | 'discard';
+  status: 'pass' | 'fail' | 'timeout' | 'discard' | 'adversarial-fail';
   score: number | null;        // null rendered as '—' in TSV
   delta: number | null;        // null rendered as '—' in TSV
   durationS: number;           // wall-clock seconds
@@ -22,7 +22,7 @@ export interface ResultEntry {
 
 /** Scoring state passed to prompt generation for {score_context}. */
 export interface ScoreContext {
-  previousStatus: 'pass' | 'fail' | 'timeout' | 'discard' | null;
+  previousStatus: 'pass' | 'fail' | 'timeout' | 'discard' | 'adversarial-fail' | null;
   previousScore: number | null;
   currentScore: number | null;
   delta: number | null;
@@ -34,4 +34,5 @@ export interface ScoreContext {
   currentTestCount: number | null;  // for test count monitoring
   failedStage: string | null;       // name of failed stage, null if passed or no stages
   stageResults: string | null;      // "unit:pass,typecheck:pass,integration:fail" or null
+  adversarialResult?: import('../run/types.js').AdversarialResult | null | undefined;
 }

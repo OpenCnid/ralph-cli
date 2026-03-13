@@ -17,6 +17,18 @@ export interface AgentResult {
 
 export type RunMode = 'plan' | 'build';
 
+export type AdversarialOutcome = 'pass' | 'fail' | 'skip';
+
+export interface AdversarialResult {
+  outcome: AdversarialOutcome;
+  testFilesAdded: string[];
+  failedTests: string[];
+  diagnosticBranch: string | null;
+  testCountBefore: number | null;
+  testCountAfter: number | null;
+  skipReason?: string | undefined;
+}
+
 export interface RunOptions {
   max?: number | undefined;
   agent?: string | undefined;
