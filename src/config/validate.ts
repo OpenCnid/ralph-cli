@@ -8,7 +8,8 @@ const VALID_RUNNERS = ['codex', 'claude', 'amp', 'aider', 'cursor', 'other'];
 const VALID_COVERAGE_TOOLS = ['vitest', 'jest', 'pytest', 'go-test', 'none'];
 const VALID_GRADES = ['A', 'B', 'C', 'D', 'F'];
 
-const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review', 'heal', 'scoring'];
+const KNOWN_TOP_KEYS = ['project', 'runner', 'architecture', 'quality', 'gc', 'doctor', 'paths', 'references', 'ci', 'run', 'review', 'heal', 'scoring', 'calibration'];
+const KNOWN_CALIBRATION_KEYS = ['window', 'warn-pass-rate', 'warn-discard-rate', 'warn-volatility'];
 const KNOWN_SCORING_KEYS = ['script', 'regression-threshold', 'cumulative-threshold', 'auto-revert', 'default-weights'];
 const KNOWN_SCORING_WEIGHTS_KEYS = ['tests', 'coverage'];
 const KNOWN_HEAL_KEYS = ['agent', 'commands', 'auto-commit', 'commit-prefix'];
@@ -201,6 +202,34 @@ function validateAdversarialConfig(adv: Record<string, unknown>, errors: string[
   }
   if (adv['skip-on-simplify'] !== undefined && typeof adv['skip-on-simplify'] !== 'boolean') {
     errors.push('"run.adversarial.skip-on-simplify" must be a boolean.');
+  }
+}
+
+function validateCalibrationConfig(cal: Record<string, unknown>, errors: string[], warnings: string[]): void {
+  warnUnknownKeys(cal, KNOWN_CALIBRATION_KEYS, 'calibration.', warnings);
+  if (cal['window'] !== undefined) {
+    const v = cal['window'];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 5) {
+      errors.push('"calibration.window" must be an integer >= 5.');
+    }
+  }
+  if (cal['warn-pass-rate'] !== undefined) {
+    const v = cal['warn-pass-rate'];
+    if (typeof v !== 'number' || v <= 0 || v > 1) {
+      errors.push('"calibration.warn-pass-rate" must be a number in (0, 1].');
+    }
+  }
+  if (cal['warn-discard-rate'] !== undefined) {
+    const v = cal['warn-discard-rate'];
+    if (typeof v !== 'number' || v < 0 || v >= 1) {
+      errors.push('"calibration.warn-discard-rate" must be a number in [0, 1).');
+    }
+  }
+  if (cal['warn-volatility'] !== undefined) {
+    const v = cal['warn-volatility'];
+    if (typeof v !== 'number' || v < 0) {
+      errors.push('"calibration.warn-volatility" must be a number >= 0.');
+    }
   }
 }
 
@@ -641,6 +670,13 @@ export function validate(raw: unknown): ValidationResult {
           }
         }
       }
+    }
+  }
+  if (obj['calibration'] !== undefined) {
+    if (typeof obj['calibration'] !== 'object' || obj['calibration'] === null) {
+      errors.push('"calibration" must be an object.');
+    } else {
+      validateCalibrationConfig(obj['calibration'] as Record<string, unknown>, errors, warnings);
     }
   }
   return { errors, warnings };

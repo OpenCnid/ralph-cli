@@ -30,7 +30,7 @@ Date: 2026-03-13
   Satisfies AC-8.
   Verify: constant is exported and importable.
 
-- [ ] Merge calibration defaults in `src/config/loader.ts` and add validation in `src/config/validate.ts`
+- [x] Merge calibration defaults in `src/config/loader.ts` and add validation in `src/config/validate.ts`
   In `loader.ts`: import `DEFAULT_CALIBRATION`; in `mergeWithDefaults`, add:
   ```typescript
   calibration: raw.calibration !== undefined
