@@ -83,7 +83,7 @@ Date: 2026-03-13
   Returns the adversary prompt template from the spec with all `{placeholder}` values substituted. Include all 9 numbered rules from the spec's Adversary Prompt section.
   Verify: unit test calls function and checks output contains the configured budget number and constraint rule text.
 
-- [ ] Create `src/commands/run/adversarial.ts` — implement `enforceFileRestriction()` and `enforceTestDeletionGuard()`.
+- [x] Create `src/commands/run/adversarial.ts` — implement `enforceFileRestriction()` and `enforceTestDeletionGuard()`.
   Satisfies: AC-3 (file restriction: reverts non-test and restricted files), AC-4 (test deletion guard: aborts if count drops or test file deleted).
 
   Exports:
