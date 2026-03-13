@@ -28,7 +28,7 @@ Date: 2026-03-13
 
 ## Core Implementation
 
-- [ ] Create `src/commands/run/stages.ts` — stage type definitions, default synthesis, pipeline executor
+- [x] Create `src/commands/run/stages.ts` — stage type definitions, default synthesis, pipeline executor
   - Export `StageResult` interface: `{ name: string; passed: boolean; exitCode: number;
     output: string; durationMs: number; skipped: boolean }`.
   - Export `synthesizeDefaultStages(testCmd: string | null, typecheckCmd: string | null): ValidationStage[]`:
