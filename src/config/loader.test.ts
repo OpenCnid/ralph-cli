@@ -395,6 +395,20 @@ describe('mergeWithDefaults run config', () => {
     expect(config.run!['build-agent']!.args).toEqual(['--print', '--dangerously-skip-permissions', '--model', 'sonnet', '--verbose']);
   });
 
+  it('populates adversarial with defaults when absent (enabled: false)', () => {
+    const config = mergeWithDefaults({ project: { name: 'test', language: 'typescript' } });
+
+    expect(config.run!.adversarial).toBeDefined();
+    expect(config.run!.adversarial!.enabled).toBe(false);
+    expect(config.run!.adversarial!.agent).toBeNull();
+    expect(config.run!.adversarial!.model).toBeNull();
+    expect(config.run!.adversarial!.budget).toBe(5);
+    expect(config.run!.adversarial!.timeout).toBe(300);
+    expect(config.run!.adversarial!['diagnostic-branch']).toBe(true);
+    expect(config.run!.adversarial!['test-patterns'].length).toBeGreaterThan(0);
+    expect(config.run!.adversarial!['skip-on-simplify']).toBe(true);
+  });
+
   it('preserves fully specified run config', () => {
     const customArgs = ['--headless'];
     const config = mergeWithDefaults({

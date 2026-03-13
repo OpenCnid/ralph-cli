@@ -52,6 +52,7 @@ import { runCommand } from './index.js';
 import type { RunConfig, RalphConfig, AgentConfig } from '../../config/schema.js';
 import type { Checkpoint } from './progress.js';
 import type { LoadResult } from '../../config/loader.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 const mockExecSync = vi.mocked(execSync);
 const mockLoadConfig = vi.mocked(loadConfig);
@@ -77,6 +78,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     loop: { 'max-iterations': 1, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+    adversarial: DEFAULT_ADVERSARIAL,
     ...overrides,
   };
 }

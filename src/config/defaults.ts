@@ -1,4 +1,4 @@
-import type { AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
+import type { AdversarialConfig, AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -95,6 +95,29 @@ const DEFAULT_GIT: GitConfig = {
   branch: null,
 };
 
+export const DEFAULT_ADVERSARIAL: AdversarialConfig = {
+  enabled: false,
+  agent: null,
+  model: null,
+  budget: 5,
+  timeout: 300,
+  'diagnostic-branch': true,
+  'test-patterns': [
+    '**/*.test.{ts,js,tsx,jsx}',
+    '**/*.spec.{ts,js,tsx,jsx}',
+    '**/test_*.py',
+    '**/*_test.py',
+    '**/*_test.go',
+  ],
+  'restricted-patterns': [
+    'IMPLEMENTATION_PLAN.md',
+    '.ralph/**',
+    'package.json',
+    'tsconfig.json',
+  ],
+  'skip-on-simplify': true,
+};
+
 export const DEFAULT_RUN: RunConfig = {
   agent: DEFAULT_AGENT,
   'plan-agent': null,
@@ -103,6 +126,7 @@ export const DEFAULT_RUN: RunConfig = {
   loop: DEFAULT_LOOP,
   validation: DEFAULT_VALIDATION,
   git: DEFAULT_GIT,
+  adversarial: DEFAULT_ADVERSARIAL,
 };
 
 export const DEFAULT_HEAL: HealConfig = {

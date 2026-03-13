@@ -31,6 +31,7 @@ import {
 } from './progress.js';
 import type { Checkpoint } from './progress.js';
 import type { AgentConfig, RunConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 const mockWarn = vi.mocked(outputMod.warn);
 const mockInfo = vi.mocked(outputMod.info);
@@ -80,6 +81,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+    adversarial: DEFAULT_ADVERSARIAL,
     ...overrides,
   };
 }

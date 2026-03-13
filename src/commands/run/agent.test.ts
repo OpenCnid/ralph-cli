@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { spawnAgent, resolveAgent, injectModel, AGENT_PRESETS } from './agent.js';
 import type { AgentConfig, RunConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
@@ -29,6 +30,7 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+    adversarial: DEFAULT_ADVERSARIAL,
     ...overrides,
   };
 }

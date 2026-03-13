@@ -203,6 +203,90 @@ Rules:
 Current metrics: {metrics}
 `;
 
+const ADVERSARIAL_TEMPLATE = `\
+# Adversarial Testing Session
+
+You are reviewing code that was just implemented by another agent. Your job is
+to find bugs by writing tests that expose edge cases, boundary conditions, and
+error paths the implementer likely missed.
+
+## What Changed
+{builder_diff}
+
+## Relevant Spec
+{spec_content}
+
+## Existing Tests
+{existing_tests}
+
+## Validation Results
+{stage_results}
+
+## Rules
+
+1. **Write tests only.** Do not modify any implementation file. Any changes to
+   non-test files will be automatically reverted before your tests run. Your
+   tests must pass against the unmodified implementation.
+
+2. **Do not delete or rewrite existing tests.** Add new test cases only.
+   Removing or replacing existing tests will be detected and the adversarial
+   pass will be aborted. Your job is to ADD coverage, not reorganize it.
+
+3. **Do not modify IMPLEMENTATION_PLAN.md or any .md file.** Your scope is
+   test files only.
+
+4. **Target edge cases.** Empty inputs, null/undefined values, maximum sizes,
+   boundary values, malformed data, off-by-one errors, type coercion, error
+   paths, timeout scenarios, concurrent access patterns.
+
+5. **Be specific.** Each test should target one specific edge case with a clear
+   name describing what it tests (e.g., "should reject negative timeout values"
+   not "should handle edge cases").
+
+6. **Maximum {budget} tests.** Quality over quantity. Do not write trivial
+   assertions (e.g., \`expect(true).toBe(true)\`).
+
+7. **Use the project's test framework.** Match existing test patterns,
+   imports, and conventions. Look at {existing_tests} for examples.
+
+8. **Run the tests.** Execute \`{test_command}\` after writing. If your tests
+   fail because of a real bug in the implementation, leave them as-is — exposing
+   bugs is the goal. If your tests fail because of a mistake in your test code
+   (wrong import, syntax error), fix your test.
+
+9. **Do not fix implementation bugs.** Even if you find a bug, do not modify
+   implementation files. Write a test that demonstrates the bug and leave it
+   failing.
+
+If you cannot find meaningful edge cases worth testing, write nothing. An empty
+result is better than trivial tests. An empty result will not cause a revert.
+`;
+
+/**
+ * Generate the adversary agent prompt for a single adversarial pass.
+ */
+export function generateAdversarialPrompt(opts: {
+  builderDiff: string;
+  specContent: string;
+  existingTests: string;
+  stageResults: string | null;
+  budget: number;
+  testCommand: string;
+}): string {
+  const vars: Record<string, string> = {
+    builder_diff: opts.builderDiff,
+    spec_content: opts.specContent,
+    existing_tests: opts.existingTests,
+    stage_results: opts.stageResults ?? 'Validation passed.',
+    budget: String(opts.budget),
+    test_command: opts.testCommand,
+  };
+  return ADVERSARIAL_TEMPLATE.replace(/\{(\w+)\}/g, (match, key: string) => {
+    const value = vars[key];
+    return value !== undefined ? value : match;
+  });
+}
+
 /**
  * Generate a prompt string for the given run mode.
  * Uses a custom template file if configured, otherwise uses the built-in template.

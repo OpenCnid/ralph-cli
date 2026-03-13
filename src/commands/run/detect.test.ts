@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { detectTestCommand, detectTypecheckCommand, detectSourcePath, composeValidateCommand, detectCompletedTask, normalizePlanContent } from './detect.js';
 import type { RalphConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-run-detect-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -45,7 +46,7 @@ describe('detectTestCommand', () => {
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
   it('returns config override when set', () => {
-    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': 'bun test', 'typecheck-command': null }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
+    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': 'bun test', 'typecheck-command': null }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null }, adversarial: DEFAULT_ADVERSARIAL } });
     expect(detectTestCommand(config, tempDir)).toBe('bun test');
   });
 
@@ -103,7 +104,7 @@ describe('detectTypecheckCommand', () => {
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
   it('returns config override when set', () => {
-    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': null, 'typecheck-command': 'deno check' }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null } } });
+    const config = baseConfig({ run: { agent: { cli: 'claude', args: [], timeout: 300 }, 'plan-agent': null, 'build-agent': null, prompts: { plan: null, build: null }, loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 }, validation: { 'test-command': null, 'typecheck-command': 'deno check' }, git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null }, adversarial: DEFAULT_ADVERSARIAL } });
     expect(detectTypecheckCommand(config, tempDir)).toBe('deno check');
   });
 

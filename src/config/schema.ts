@@ -137,6 +137,18 @@ export interface GitConfig {
   branch: string | null;
 }
 
+export interface AdversarialConfig {
+  enabled: boolean;
+  agent: string | null;
+  model: string | null;
+  budget: number;
+  timeout: number;
+  'diagnostic-branch': boolean;
+  'test-patterns': string[];
+  'restricted-patterns': string[];
+  'skip-on-simplify': boolean;
+}
+
 export interface RunConfig {
   agent: AgentConfig;
   'plan-agent': AgentConfig | null;
@@ -145,6 +157,7 @@ export interface RunConfig {
   loop: LoopConfig;
   validation: ValidationConfig;
   git: GitConfig;
+  adversarial: AdversarialConfig;
 }
 
 export interface ReviewContextConfig {
@@ -209,6 +222,7 @@ export interface RawRalphConfig {
     loop: Partial<LoopConfig>;
     validation: Partial<ValidationConfig>;
     git: Partial<GitConfig>;
+    adversarial: Partial<AdversarialConfig>;
   }>;
   architecture?: Partial<{
     layers: string[];

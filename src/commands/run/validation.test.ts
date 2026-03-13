@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SpawnSyncReturns } from 'node:child_process';
 import type { RunConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ function makeRunConfig(
     loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': testCommand, 'typecheck-command': typecheckCommand },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+    adversarial: DEFAULT_ADVERSARIAL,
   };
 }
 

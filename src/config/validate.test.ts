@@ -1064,6 +1064,102 @@ describe('run.validation.stages validation', () => {
   });
 });
 
+describe('run.adversarial config validation', () => {
+  it('accepts valid adversarial config', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: {
+        adversarial: {
+          enabled: true,
+          agent: 'amp',
+          model: 'claude-opus-4-6',
+          budget: 10,
+          timeout: 600,
+          'diagnostic-branch': false,
+          'test-patterns': ['**/*.test.ts'],
+          'restricted-patterns': ['IMPLEMENTATION_PLAN.md'],
+          'skip-on-simplify': false,
+        },
+      },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts adversarial with enabled: false (opt-in default)', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { enabled: false } },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('errors on budget: 0', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { budget: 0 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial.budget');
+  });
+
+  it('errors on negative budget', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { budget: -3 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial.budget');
+  });
+
+  it('errors on timeout: -1', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { timeout: -1 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial.timeout');
+  });
+
+  it('errors on timeout: 0', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { timeout: 0 } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial.timeout');
+  });
+
+  it('errors on test-patterns: []', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { 'test-patterns': [] } },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial.test-patterns');
+  });
+
+  it('warns on unknown key in adversarial config', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: { unknown_adv_key: true } },
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBe(1);
+    expect(result.warnings[0]).toContain('run.adversarial.unknown_adv_key');
+  });
+
+  it('errors on non-object run.adversarial', () => {
+    const result = validate({
+      ...MINIMAL,
+      run: { adversarial: 'bad' },
+    });
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.adversarial');
+  });
+});
+
 describe('run.loop.iteration-timeout validation', () => {
   it('accepts valid iteration-timeout', () => {
     const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 900 } } });

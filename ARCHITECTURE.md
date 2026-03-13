@@ -34,12 +34,14 @@ src/
     ├── hooks/          — Git hooks (pre-commit on staged files)
     ├── ci/             — CI config generation (GitHub Actions, GitLab CI)
     ├── run/            — Autonomous build loop
-    │   ├── index.ts    — Loop orchestration (runCommand entry point)
-    │   ├── agent.ts    — Agent spawn, timeout, resolveAgent, presets
-    │   ├── prompts.ts  — Template engine (plan/build built-in + custom)
-    │   ├── detect.ts   — Auto-detect test/typecheck/task completion
-    │   ├── progress.ts — Checkpoint I/O, banners, iteration display
-    │   └── types.ts    — RunMode, RunOptions, AgentResult types
+    │   ├── index.ts        — Loop orchestration (runCommand entry point)
+    │   ├── agent.ts        — Agent spawn, timeout, resolveAgent, presets
+    │   ├── prompts.ts      — Template engine (plan/build/adversarial built-in + custom)
+    │   ├── detect.ts       — Auto-detect test/typecheck/task completion
+    │   ├── progress.ts     — Checkpoint I/O, banners, iteration display
+    │   ├── types.ts        — RunMode, RunOptions, AgentResult, AdversarialResult types
+    │   ├── adversarial.ts  — Adversarial test-generation pass (file restriction, deletion guard, diagnostic branch)
+    │   └── adversarial.test.ts — Unit tests for adversarial pass orchestration
     ├── review/         — Agent-powered code review
     │   ├── index.ts    — reviewCommand entry point
     │   ├── context.ts  — Diff extraction and context assembly
@@ -102,6 +104,10 @@ Four intentional cross-command imports exist:
 3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
 4. **heal → run/agent + run/detect** — `heal/index.ts` reuses agent resolution/spawn and validation command detection from the `run` domain.
 5. **run → score** — `run/index.ts` imports `discoverScorer`, `runScorer`, `runDefaultScorer`, `appendResult`, and `buildScoreContext` from the `score` domain to integrate fitness scoring into the build loop.
+
+Intra-domain import patterns in the `run` domain:
+- `adversarial.ts` imports `spawnAgentWithTimeout` from `run/timeout.ts` (agent execution with deadline)
+- `adversarial.ts` imports `revertToBaseline` from `run/git.ts` (baseline restoration on adversarial failure)
 
 These are documented exceptions, not violations.
 

@@ -47,6 +47,7 @@ import { reviewCommand } from './index.js';
 import type { RalphConfig, ReviewConfig, RunConfig, AgentConfig } from '../../config/schema.js';
 import type { LoadResult } from '../../config/loader.js';
 import type { ReviewContext } from './types.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 const mockLoadConfig = vi.mocked(loadConfig);
 const mockSpawnAgent = vi.mocked(spawnAgent);
@@ -70,6 +71,7 @@ function makeRunConfig(): RunConfig {
     loop: { 'max-iterations': 0, 'stall-threshold': 3, 'iteration-timeout': 900 },
     validation: { 'test-command': null, 'typecheck-command': null },
     git: { 'auto-commit': true, 'auto-push': false, 'commit-prefix': 'ralph:', branch: null },
+    adversarial: DEFAULT_ADVERSARIAL,
   };
 }
 

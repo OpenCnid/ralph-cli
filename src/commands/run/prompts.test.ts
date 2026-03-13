@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generatePrompt, PLAN_TEMPLATE, BUILD_TEMPLATE } from './prompts.js';
+import { generatePrompt, generateAdversarialPrompt, PLAN_TEMPLATE, BUILD_TEMPLATE } from './prompts.js';
 import type { RalphConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-run-prompts-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -42,6 +43,7 @@ function baseConfig(overrides: Partial<RalphConfig> = {}): RalphConfig {
       loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
       validation: { 'test-command': 'npm test', 'typecheck-command': 'npx tsc --noEmit' },
       git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+      adversarial: DEFAULT_ADVERSARIAL,
     },
     ...overrides,
   };
@@ -136,6 +138,7 @@ describe('generatePrompt — built-in templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'make test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('build', config);
@@ -241,6 +244,85 @@ describe('template content quality', () => {
   });
 });
 
+describe('generateAdversarialPrompt', () => {
+  const baseOpts = {
+    builderDiff: 'diff --git a/src/foo.ts b/src/foo.ts\n+const x = 1;',
+    specContent: 'The function must handle null inputs.',
+    existingTests: 'describe("foo", () => { it("works", () => {}) })',
+    stageResults: null,
+    budget: 7,
+    testCommand: 'npm test',
+  };
+
+  it('contains the configured budget value', () => {
+    const result = generateAdversarialPrompt({ ...baseOpts, budget: 12 });
+    expect(result).toContain('12');
+  });
+
+  it('contains the builderDiff content', () => {
+    const result = generateAdversarialPrompt(baseOpts);
+    expect(result).toContain('diff --git a/src/foo.ts b/src/foo.ts');
+    expect(result).toContain('+const x = 1;');
+  });
+
+  it('contains all 9 rule constraint items', () => {
+    const result = generateAdversarialPrompt(baseOpts);
+    // Verify all 9 numbered rules are present
+    expect(result).toContain('1.');
+    expect(result).toContain('2.');
+    expect(result).toContain('3.');
+    expect(result).toContain('4.');
+    expect(result).toContain('5.');
+    expect(result).toContain('6.');
+    expect(result).toContain('7.');
+    expect(result).toContain('8.');
+    expect(result).toContain('9.');
+    // Spot-check rule content
+    expect(result).toContain('Write tests only');
+    expect(result).toContain('Do not delete or rewrite existing tests');
+    expect(result).toContain('IMPLEMENTATION_PLAN.md');
+    expect(result).toContain('Target edge cases');
+    expect(result).toContain('Be specific');
+    expect(result).toContain('Do not fix implementation bugs');
+  });
+
+  it('contains stageResults when provided', () => {
+    const result = generateAdversarialPrompt({ ...baseOpts, stageResults: 'All 42 tests passed.' });
+    expect(result).toContain('All 42 tests passed.');
+  });
+
+  it('substitutes default stage_results when stageResults is null', () => {
+    const result = generateAdversarialPrompt({ ...baseOpts, stageResults: null });
+    expect(result).toContain('Validation passed.');
+  });
+
+  it('contains specContent', () => {
+    const result = generateAdversarialPrompt(baseOpts);
+    expect(result).toContain('The function must handle null inputs.');
+  });
+
+  it('contains existingTests', () => {
+    const result = generateAdversarialPrompt(baseOpts);
+    expect(result).toContain('describe("foo"');
+  });
+
+  it('contains testCommand in rule 8', () => {
+    const result = generateAdversarialPrompt({ ...baseOpts, testCommand: 'yarn test' });
+    expect(result).toContain('yarn test');
+  });
+
+  it('leaves no unresolved {placeholders} from the template', () => {
+    const result = generateAdversarialPrompt(baseOpts);
+    // All known template variables should be substituted
+    expect(result).not.toContain('{builder_diff}');
+    expect(result).not.toContain('{spec_content}');
+    expect(result).not.toContain('{existing_tests}');
+    expect(result).not.toContain('{stage_results}');
+    expect(result).not.toContain('{budget}');
+    expect(result).not.toContain('{test_command}');
+  });
+});
+
 describe('generatePrompt — custom templates', () => {
   it('loads custom plan template from file path', () => {
     const templatePath = join(tempDir, 'plan-template.txt');
@@ -254,6 +336,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'npm test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);
@@ -273,6 +356,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'npm test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('build', config);
@@ -291,6 +375,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': null, 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);
@@ -311,6 +396,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': null, 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);
