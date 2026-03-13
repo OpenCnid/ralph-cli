@@ -135,7 +135,7 @@ Date: 2026-03-13
 
 ## Backward Compatibility
 
-- [ ] Verify backward compatibility
+- [x] Verify backward compatibility
   - Run `ralph review --dry-run` (no `--intent`) → confirm prompt contains "Spec compliance" language and NOT "Problem Context"
   - Compare test count: must be ≥ 989 + 22 = **1011** (8 extractMotivation + 5 prompts + 3 review + 2 cli + 4 doctor)
   - Run `ralph doctor --ci` → confirm exits 0 (motivation check is a warning; score threshold handles it)
@@ -145,7 +145,7 @@ Date: 2026-03-13
 
 ## Verification
 
-- [ ] Run full validation and verify all Phase 4 acceptance criteria
+- [x] Run full validation and verify all Phase 4 acceptance criteria
 
   ```
   npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
