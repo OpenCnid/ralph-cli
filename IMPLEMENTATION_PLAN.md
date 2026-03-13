@@ -51,7 +51,7 @@ Date: 2026-03-13
 
 ## Score Types (prerequisite for F-SV04 and F-SV05)
 
-- [ ] Update `src/commands/score/types.ts` — add stage fields to `ScoreContext` and `ResultEntry`
+- [x] Update `src/commands/score/types.ts` — add stage fields to `ScoreContext` and `ResultEntry`
   - Add to `ScoreContext`: `failedStage: string | null` and `stageResults: string | null`.
     (`stageResults` is a compact string like `"unit:pass,typecheck:pass,integration:fail"` or null.)
   - Add to `ResultEntry`: `stages?: string | undefined`.

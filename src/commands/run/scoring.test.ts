@@ -20,6 +20,8 @@ function makeScoreContext(overrides: Partial<ScoreContext> = {}): ScoreContext {
     regressionThreshold: 0.02,
     previousTestCount: null,
     currentTestCount: null,
+    failedStage: null,
+    stageResults: null,
     ...overrides,
   };
 }

@@ -434,6 +434,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: null,
           currentTestCount: null,
+          failedStage: null,
+          stageResults: null,
         });
 
         noChangesCount++;
@@ -532,6 +534,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: null,
           currentTestCount: null,
+          failedStage: null,
+          stageResults: null,
         });
 
         checkpoint.iteration = iteration;
@@ -709,6 +713,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -779,6 +785,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -844,6 +852,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -886,6 +896,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           // Increment consecutiveDiscards for cumulative regression too
@@ -941,6 +953,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: prevTestCount,
           currentTestCount: currTestCount,
+          failedStage: null,
+          stageResults: null,
         });
 
         checkpoint.iteration = iteration;

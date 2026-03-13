@@ -17,6 +17,7 @@ export interface ResultEntry {
   durationS: number;           // wall-clock seconds
   metrics: string;             // raw key=value string, or '—'
   description: string;         // commit message or '—'
+  stages?: string | undefined; // "name:pass,name:fail" or undefined
 }
 
 /** Scoring state passed to prompt generation for {score_context}. */
@@ -31,4 +32,6 @@ export interface ScoreContext {
   regressionThreshold: number; // for "regressions beyond X" message
   previousTestCount: number | null; // for test count monitoring
   currentTestCount: number | null;  // for test count monitoring
+  failedStage: string | null;       // name of failed stage, null if passed or no stages
+  stageResults: string | null;      // "unit:pass,typecheck:pass,integration:fail" or null
 }
