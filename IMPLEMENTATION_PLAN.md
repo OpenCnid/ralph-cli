@@ -170,7 +170,7 @@ Date: 2026-03-13
   - Mock `spawnSync` in this test file.
   - Satisfies: F-SV02 unit tests, F-SV03 unit tests, AC-1–AC-5, AC-10
 
-- [ ] Update `src/commands/run/validation.test.ts` — adapt existing assertions for new fields
+- [x] Update `src/commands/run/validation.test.ts` — adapt existing assertions for new fields
   - The existing `toEqual({ passed: true, testOutput: '' })` assertions check exact equality and
     will fail once `ValidationResult` gains `stages` and `failedStage`. Update each such assertion
     to use `expect.objectContaining({ passed: ..., testOutput: ... })` for the v0.5 behavioral
