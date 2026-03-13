@@ -381,7 +381,8 @@ program
   .option('--trend [n]', 'Show ASCII sparkline of last N scores (default: 20)')
   .option('--compare', 'Compare current score vs last recorded')
   .option('--json', 'Output current score as JSON')
-  .action(async (options: { history?: string | boolean; trend?: string | boolean; compare?: boolean; json?: boolean }) => {
+  .option('--calibration', 'Show calibration metrics and trust drift status')
+  .action(async (options: { history?: string | boolean; trend?: string | boolean; compare?: boolean; json?: boolean; calibration?: boolean }) => {
     const parseN = (val: string | boolean | undefined): number | boolean | undefined => {
       if (val === undefined || val === false) return undefined;
       if (val === true || val === '') return true;
@@ -395,6 +396,7 @@ program
       ...(t !== undefined ? { trend: t } : {}),
       compare: options.compare,
       json: options.json,
+      calibration: options.calibration,
     });
   });
 

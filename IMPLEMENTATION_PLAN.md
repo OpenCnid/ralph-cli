@@ -90,7 +90,7 @@ Date: 2026-03-13
 ---
 
 ## CLI Integration (F-CT03, F-CT04)
-- [ ] Add `--calibration` flag to `src/commands/score/index.ts` and `src/cli.ts`
+- [x] Add `--calibration` flag to `src/commands/score/index.ts` and `src/cli.ts`
   In `src/commands/score/index.ts`:
   - Add `calibration?: boolean | undefined` to `ScoreOptions` interface
   - Import `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `formatCalibrationJSON`, `CalibrationThresholds` from `./calibration.js`
