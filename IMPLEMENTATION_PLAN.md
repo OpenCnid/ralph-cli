@@ -66,7 +66,7 @@ Date: 2026-03-13
 
 ## Core Implementation
 
-- [ ] Add `generateAdversarialPrompt()` to `src/commands/run/prompts.ts`.
+- [x] Add `generateAdversarialPrompt()` to `src/commands/run/prompts.ts`.
   Satisfies: AC-2 (prompt includes builder diff, spec, existing tests, stage results), AC-9 (budget in prompt), AC-12 (callable from dry-run with placeholder values).
 
   Function signature:
