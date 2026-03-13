@@ -99,7 +99,7 @@ Date: 2026-03-13
     8. Partial heading text: `## Motivation & Context` matches
   - Verify: all 8 pass; total test count up by 8
 
-- [ ] Unit tests for `generateReviewPrompt` intent path — create `src/commands/review/prompts.test.ts`
+- [x] Unit tests for `generateReviewPrompt` intent path — create `src/commands/review/prompts.test.ts`
   - 5 cases per spec test plan:
     1. `intent: false` → standard template (no "Problem Context")
     2. `intent: true` → intent template (contains "Problem Context")
