@@ -4,337 +4,219 @@ Spec: `docs/product-specs/calibration-tracking.md`
 Date: 2026-03-13
 
 ## Pre-flight
-
-- Regression baseline: **913 tests passing** (39 test files), typecheck clean
-- No pre-existing validation failures.
-
-> Note: `ResultEntry.status` already includes `'adversarial-fail'` in `types.ts` (added in Phase 2). The
-> spec's note about requiring a type assertion (`as string`) for adversarial-fail comparisons is obsolete —
-> use a normal string comparison. This simplifies F-CT07 implementation.
+- Regression baseline: 913 tests passing (39 files), typecheck clean
+- No pre-existing failures. Proceed directly to implementation.
 
 ---
 
-## Schema & Config (Task 1 of 2)
+## Schema & Config (F-CT06)
+- [ ] Add `CalibrationConfig` interface and update `RalphConfig` / `RawRalphConfig` in `src/config/schema.ts`
+  Add `CalibrationConfig` with fields `window`, `warn-pass-rate`, `warn-discard-rate`, `warn-volatility`.
+  Add `calibration?: CalibrationConfig | undefined` to `RalphConfig`.
+  Add `calibration?: Partial<CalibrationConfig>` to `RawRalphConfig`.
+  Satisfies AC-8.
+  Verify: `npx tsc --noEmit` passes after edit.
 
-- [ ] Add `CalibrationConfig` to `src/config/schema.ts`, add `DEFAULT_CALIBRATION` to
-  `src/config/defaults.ts`, and merge calibration in `src/config/loader.ts`
+- [ ] Add `DEFAULT_CALIBRATION` constant to `src/config/defaults.ts`
+  ```typescript
+  export const DEFAULT_CALIBRATION: CalibrationConfig = {
+    window: 30,
+    'warn-pass-rate': 0.95,
+    'warn-discard-rate': 0.01,
+    'warn-volatility': 0.005,
+  };
+  ```
+  Update the import at line 1 to include `CalibrationConfig`.
+  Satisfies AC-8.
+  Verify: constant is exported and importable.
 
-  **schema.ts changes:**
-  - Add `CalibrationConfig` interface (4 fields: `window`, `warn-pass-rate`, `warn-discard-rate`,
-    `warn-volatility`)
-  - Add `calibration?: CalibrationConfig | undefined` to `RalphConfig`
-  - Add `calibration?: Partial<CalibrationConfig>` to `RawRalphConfig`
-
-  **defaults.ts changes:**
-  - Add `import { ..., CalibrationConfig } from './schema.js'` to import line
-  - Export `DEFAULT_CALIBRATION: CalibrationConfig` with values from spec (window=30,
-    warn-pass-rate=0.95, warn-discard-rate=0.01, warn-volatility=0.005)
-
-  **loader.ts changes:**
-  - Add `DEFAULT_CALIBRATION` to the import from `./defaults.js`
-  - Add calibration merge to `mergeWithDefaults()` following the `scoring` pattern:
-    ```typescript
-    calibration: raw.calibration !== undefined ? {
-      window: raw.calibration.window ?? DEFAULT_CALIBRATION.window,
-      'warn-pass-rate': raw.calibration['warn-pass-rate'] ?? DEFAULT_CALIBRATION['warn-pass-rate'],
-      'warn-discard-rate': raw.calibration['warn-discard-rate'] ?? DEFAULT_CALIBRATION['warn-discard-rate'],
-      'warn-volatility': raw.calibration['warn-volatility'] ?? DEFAULT_CALIBRATION['warn-volatility'],
-    } : undefined,
-    ```
-
-  **Verify:** `npx tsc --noEmit` passes. Satisfies F-CT06 (partial — validation in next task).
-
-## Schema & Config (Task 2 of 2)
-
-- [ ] Add calibration validation to `src/config/validate.ts`
-
-  - Add `'calibration'` to `KNOWN_TOP_KEYS` array
+- [ ] Merge calibration defaults in `src/config/loader.ts` and add validation in `src/config/validate.ts`
+  In `loader.ts`: import `DEFAULT_CALIBRATION`; in `mergeWithDefaults`, add:
+  ```typescript
+  calibration: raw.calibration !== undefined
+    ? { ...DEFAULT_CALIBRATION, ...raw.calibration }
+    : undefined,
+  ```
+  In `validate.ts`:
+  - Add `'calibration'` to `KNOWN_TOP_KEYS`
   - Add `KNOWN_CALIBRATION_KEYS = ['window', 'warn-pass-rate', 'warn-discard-rate', 'warn-volatility']`
-    constant near the other `KNOWN_*` constants
-  - Add a `validateCalibrationConfig()` block in the `validate()` function following the pattern of
-    existing optional sections (check `obj['calibration'] !== undefined`, guard type, call
-    `warnUnknownKeys`, then validate each field):
-    - `window`: integer ≥ 5
-    - `warn-pass-rate`: number in (0, 1]
-    - `warn-discard-rate`: number in [0, 1)
-    - `warn-volatility`: number ≥ 0
-
-  **Verify:** `npx tsc --noEmit` passes. `ralph config validate` passes with and without `calibration:`
-  section. Invalid `window: -1` produces a validation error. Satisfies AC-8 (validation part).
+  - Add `validateCalibrationConfig()` function called when `obj['calibration']` is present:
+    - `window`: must be integer ≥ 5
+    - `warn-pass-rate`: must be number in (0, 1]
+    - `warn-discard-rate`: must be number in [0, 1)
+    - `warn-volatility`: must be number ≥ 0
+  Satisfies AC-8 (invalid values rejected, defaults used when absent).
+  Verify: `ralph config validate` passes with and without `calibration:` section.
 
 ---
 
-## Core Implementation
+## Core Implementation (F-CT01, F-CT02, F-CT04, F-CT07)
+- [ ] Create `src/commands/score/calibration.ts`
+  Exports: `CalibrationReport`, `TrustDriftSignal`, `TrustDriftResult`, `CalibrationThresholds` interfaces;
+  `computeCalibration()`, `detectTrustDrift()`, `formatCalibrationReport()`, `formatCalibrationJSON()` functions.
 
-- [ ] Create `src/commands/score/calibration.ts` with all exports
+  **`computeCalibration(entries, window)`** (F-CT01, F-CT07):
+  - Accepts `ResultEntry[]` and `number`
+  - If `entries.length < 5`, return CalibrationReport with `actual: entries.length`, `window`, all rates 0, nulls for conditional metrics — caller checks `actual < 5` for "insufficient data"
+  - Pass rate, discard rate, first-try pass rate (heuristic: entry[0] is first-try; entry[i>0] is first-try iff entry[i-1].status === 'pass'), score volatility (population stddev over non-null scores; null if < 2 scored), stall frequency (null if no 'stall' entries), adversarial catch rate (null if no 'adversarial-fail' entries — use `(entry.status as string) === 'adversarial-fail'` with explanatory comment noting Phase 2 type union)
+  - `scores` field: raw score array from entries (for sparkline)
+  - `partial: boolean` is `entries.length < window` (used by formatter)
+  - Satisfies AC-1, AC-6, AC-9.
 
-  **Types to export:** `CalibrationReport`, `TrustDriftSignal`, `TrustDriftResult`,
-  `CalibrationThresholds`
+  **`detectTrustDrift(report, thresholds)`** (F-CT02):
+  - 4 candidates: pass rate > warnPassRate, discard rate < warnDiscardRate, volatility < warnVolatility (skip if null), adversarial catch rate === 0 (skip if null)
+  - Stall frequency is NOT a drift signal
+  - `isDrift = firedSignals.length >= 2`
+  - Satisfies AC-2, AC-3.
 
-  **`computeCalibration(entries, window)`:**
-  - Slice to `entries.slice(-window)` to get the rolling window
-  - If `actual < 5`, return a sentinel report (set `actual` to entries.length, all metrics 0/null,
-    caller detects insufficient data by checking `actual < 5`)
-  - Compute pass rate, discard rate, adversarial catch rate, first-try pass rate, score volatility,
-    stall frequency using exact formulas from spec (F-CT01 Procedure section)
-  - Adversarial catch rate: check `(entry.status as string) === 'adversarial-fail'` — NOTE: per the
-    Phase 2 pre-flight note above, the type union already includes `'adversarial-fail'`, so use
-    `entry.status === 'adversarial-fail'` directly (no cast needed)
-  - Standard deviation: population stddev (`Math.sqrt(sum((x - mean)^2) / n)`)
-  - Return `CalibrationReport` with `window` (configured), `actual` (window.length), and all metric fields
+  **`formatCalibrationReport(report, drift)`**:
+  - Outputs multi-line format per spec (F-CT03 "Output Format" section)
+  - Header shows "(partial window: N/W)" when `report.actual < report.window`
+  - Uses `renderSparkline(report.scores)` from `./trend.js`
+  - Trust status: "✓ Normal" or "⚠ Drift (N signals)" with suggested actions on drift
+  - Omits adversarial line when `adversarialCatchRate === null`
+  - Stall line shows "unavailable (no stall entries recorded)" when `stallFrequency === null`
 
-  **`detectTrustDrift(report, thresholds)`:**
-  - Check 4 signals per F-CT02 Procedure (pass rate `>`, discard rate `<`, volatility `<`, adversarial = 0%)
-  - Null metrics are excluded (not counted as fired or not-fired)
-  - `isDrift = signals.length >= 2`
-  - Each fired signal produces a `TrustDriftSignal` with name, value (formatted string), threshold
-    (formatted string), and interpretation text
+  **`formatCalibrationJSON(report, drift)`** (F-CT04):
+  - Returns object with `calibration`, `trustDrift`, `timestamp` fields
+  - Null metrics as JSON null; `partial` field included
+  - Insufficient data: `{ calibration: null, error: 'insufficient data', entries: N, minimum: 5 }`
+  - Satisfies AC-10.
 
-  **`formatCalibrationReport(report, drift)`:**
-  - Returns a multi-line string matching the output template in F-CT03
-  - Uses `renderSparkline()` from `./trend.js` for score trend line
-  - Uses "partial window" label when `report.actual < report.window`
-  - Stall frequency line: "unavailable (no stall entries recorded)" when `report.stallFrequency === null`
-  - Adversarial line: omitted entirely when `report.adversarialCatchRate === null`
-  - Trust status section: "✓ Normal" or "⚠ Drift (N signals)" with suggested actions on drift
-
-  **`formatCalibrationJSON(report, drift)`:**
-  - Returns an object matching the JSON schema in F-CT04
-  - Includes `calibration` (all report fields + `partial` boolean), `trustDrift`, and `timestamp`
-  - `null` fields are JSON null (not omitted)
-
-  **Imports allowed:** `./results.js` (readResults), `./types.js` (ResultEntry), `./trend.js`
-  (renderSparkline), `../../config/schema.js` (CalibrationConfig). No imports from `run/` or other
-  command domains.
-
-  **Verify:** `npx tsc --noEmit` passes. Satisfies AC-1 (computation), AC-2 (drift 2 signals), AC-3
-  (single signal not drift), F-CT07 (adversarial-aware), F-CT04 format.
+  Layer rule: imports only from `./results.js`, `./trend.js`, `../../config/schema.js`.
+  No imports from run/, lint/, gc/, or other command domains.
+  Verify: `npx tsc --noEmit` passes; file is under 500 lines.
 
 ---
 
-## CLI Integration
-
+## CLI Integration (F-CT03, F-CT04)
 - [ ] Add `--calibration` flag to `src/commands/score/index.ts` and `src/cli.ts`
-
-  **index.ts changes:**
+  In `src/commands/score/index.ts`:
   - Add `calibration?: boolean | undefined` to `ScoreOptions` interface
-  - Add calibration branch at the top of `scoreCommand()`, before the config load (or after — see
-    spec note: `--calibration` takes precedence over `--history` and `--trend`):
-    ```typescript
+  - Import `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `formatCalibrationJSON`, `CalibrationThresholds` from `./calibration.js`
+  - Import `DEFAULT_CALIBRATION` from `../../config/defaults.js`
+  - In `scoreCommand()`, add calibration branch BEFORE the history/trend checks:
+    ```
     if (options.calibration === true) {
-      // load config (or use defaults)
-      const thresholds = config?.calibration ?? DEFAULT_CALIBRATION;
-      const entries = readResults(thresholds.window);
-      if (entries.length < 5) {
-        output.plain(`Calibration: insufficient data (${entries.length} entries, need 5)`);
-        return;
-      }
-      const report = computeCalibration(entries, thresholds.window);
-      const drift = detectTrustDrift(report, toCalibrationThresholds(thresholds));
-      if (options.json === true) {
-        console.log(JSON.stringify(formatCalibrationJSON(report, drift), null, 2));
-        return;
-      }
-      output.plain(formatCalibrationReport(report, drift));
-      return;
+      load config (or use defaults); extract thresholds
+      readResults(thresholds.window)
+      if entries < 5: output.plain('Calibration: insufficient data (N entries, need 5)'); return
+      computeCalibration → detectTrustDrift
+      if options.json: console.log(JSON.stringify(formatCalibrationJSON(...), null, 2)); return
+      output.plain(formatCalibrationReport(...)); return
     }
     ```
-  - Add import for `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`,
-    `formatCalibrationJSON` from `./calibration.js`
-  - Add `DEFAULT_CALIBRATION` import from `../../config/defaults.js`
-  - The config load in this branch: reuse the existing `loadConfig()` call that already exists later in
-    `scoreCommand()` — hoist it or call it early. Simplest: load config early, then branch on all options.
-    Alternatively, load config only when `options.calibration` is true.
-  - For the JSON insufficient-data case, output:
-    `console.log(JSON.stringify({ calibration: null, error: 'insufficient data', entries: N, minimum: 5 }, null, 2))`
-
-  **cli.ts changes:**
-  - Add `.option('--calibration', 'Show calibration metrics and trust drift status')` to the `score`
-    command (before `.action(...)`)
-  - Add `calibration?: boolean` to the options type in the `.action()` handler
-  - Pass `calibration: options.calibration` in the `scoreCommand({...})` call
-
-  **Verify:** `npx tsc --noEmit` passes. `ralph score --calibration` produces formatted output. Satisfies
-  AC-4 (CLI output), AC-5 (insufficient data), AC-6 (partial window), AC-10 (JSON output), F-CT03, F-CT04.
+  - Exit 0 always (never throw or process.exit(1) from this path)
+  Satisfies AC-4, AC-5, AC-10.
+  In `src/cli.ts`:
+  - Add `.option('--calibration', 'Show calibration metrics and trust drift status')` to the `ralph score` command
+  - Add `calibration: options.calibration` to the `scoreCommand({...})` call
+  Delegation Safety: both files required — missing either causes silent no-op or type error.
+  Verify: `ralph score --calibration` prints formatted report; `ralph score --calibration --json` outputs parseable JSON.
 
 ---
 
-## Run Loop Integration
-
-- [ ] Add optional calibration parameter to `printFinalSummary` in `src/commands/run/progress.ts` and
-  update call sites in `src/commands/run/index.ts`
-
-  **progress.ts changes:**
-  - Add imports: `readResults` from `../score/results.js`, `computeCalibration`, `detectTrustDrift`,
-    `formatCalibrationReport` from `../score/calibration.js`, `DEFAULT_CALIBRATION` from
-    `../../config/defaults.js`, `CalibrationConfig` from `../../config/schema.js`
-  - Change `printFinalSummary` signature to:
+## Run Loop Integration (F-CT05)
+- [ ] Update `printFinalSummary` in `src/commands/run/progress.ts` and all 9 call sites in `src/commands/run/index.ts`
+  In `progress.ts`:
+  - Import `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `CalibrationThresholds` from `../score/calibration.js`
+  - Import `readResults` from `../score/results.js`
+  - Change signature to:
     ```typescript
     export function printFinalSummary(
       reason: string,
       checkpoint: Checkpoint,
-      calibrationConfig?: CalibrationConfig | undefined,
+      calibrationThresholds?: CalibrationThresholds | undefined,
     ): void
     ```
-  - After the existing `output.info('Stop reason: ...')` line, add the calibration block:
-    - If `calibrationConfig === undefined`, do nothing (backward compatible)
-    - Otherwise: `const entries = readResults(calibrationConfig.window)`
-    - If `entries.length < 5`, print nothing (per spec — don't clutter short runs)
-    - Otherwise: compute calibration and drift, print compact format:
-      `Calibration (last N): pass=X% discard=Y% volatility=Z ✓ Normal`
-      or with drift warning line
-
-  **run/index.ts changes:**
-  - The file already loads config via `loadConfig()` at the top of `runCommand()`. Ensure
-    `config.calibration` is available at the point of each `printFinalSummary` call.
-  - Update all `printFinalSummary(reason, checkpoint)` call sites (lines 293, 341, 431, 468, 472, 1097,
-    1110, 1114) to:
-    `printFinalSummary(reason, checkpoint, config.calibration)`
-
-  **Verify:** `npx tsc --noEmit` passes. Run loop tests confirm calibration line appears when ≥5 entries.
-  Callers without 3rd arg still work identically. Satisfies AC-7 (run loop integration).
-
----
-
-## Tests
-
-- [ ] Create `src/commands/score/calibration.test.ts` — unit tests for all exports
-
-  Tests to include (per spec test plan):
-
-  **`computeCalibration()`:**
-  - Window of 30 mixed-status entries → correct pass rate, discard rate, first-try pass rate, volatility
-  - All-pass entries (100% pass rate)
-  - All-fail entries (0% pass rate)
-  - Exactly 5 entries → computes (minimum threshold)
-  - 4 entries → `actual < 5` (insufficient data sentinel)
-  - All scores identical → volatility = 0
-  - Two scored entries → volatility computed
-  - All scores null → `scoreVolatility = null`
-  - One non-null score → `scoreVolatility = null` (need ≥ 2)
-  - First-try heuristic: entries [pass, pass, fail, fail, pass] → verify 3/4 = 75% (see spec derivation)
-  - `adversarial-fail` entries present → catch rate computed
-  - No `adversarial-fail` entries → `adversarialCatchRate = null`
-  - Stall entries present → stall frequency computed
-  - No stall entries → `stallFrequency = null`
-  - Window larger than available data → uses all available (partial window)
-
-  **`detectTrustDrift()`:**
-  - 0 signals → `isDrift: false`
-  - 1 signal (high pass rate only) → `isDrift: false`
-  - 2 signals (high pass + low discard) → `isDrift: true`, 2 signals returned
-  - All 6 pairwise combinations of 4 signals → each returns `isDrift: true`
-  - 3 signals → `isDrift: true`
-  - 4 signals → `isDrift: true`
-  - `adversarialCatchRate = null` → adversarial signal excluded (not counted)
-  - `scoreVolatility = null` → volatility signal excluded
-  - Adversarial catch rate = 0% with data present → signal fires
-
-  **`formatCalibrationReport()`:**
-  - Normal state → includes "✓ Normal"
-  - Drift state → includes "⚠ Drift" + signal details + suggested actions
-  - Partial window (actual < window) → includes "(partial window: N/W)"
-  - Adversarial data present → adversarial catch rate line shown
-  - Adversarial data absent → no adversarial line
-  - Stall absent → "unavailable" label
-
-  **`formatCalibrationJSON()`:**
-  - Output `JSON.parse()`s without error
-  - All numeric fields are numbers
-  - Null fields serialize as JSON `null` (not omitted)
-  - `partial` boolean correct (true when actual < window)
-
-  **Verify:** `npm test` adds ≥ 30 new unit tests. Satisfies AC-1, AC-2, AC-3, AC-9.
-
-- [ ] Extend existing test files for CLI, config, and run loop
-
-  **`src/commands/score/score.test.ts` (or cli.test.ts):**
-  - `--calibration` flag calls calibration path and produces formatted output
-  - `--calibration --json` produces valid JSON
-  - `--calibration` with insufficient data prints "insufficient data" message and exits 0
-  - `--calibration` with `--history` flag → calibration takes precedence
-
-  **`src/commands/run/progress.test.ts`:**
-  - `printFinalSummary` with `calibrationConfig` and ≥5 results entries → compact calibration line printed
-  - `printFinalSummary` with `calibrationConfig` and <5 entries → no calibration output
-  - `printFinalSummary` without `calibrationConfig` → no calibration output (backward compatible)
-
-  **`src/config/loader.test.ts`:**
-  - Config with `calibration:` section loads correctly with correct field values
-  - Config without `calibration:` → `config.calibration` is `undefined`
-  - Partial calibration config (only `window: 50`) → only `window` overridden, rest are defaults
-
-  **`src/config/validate.test.ts`:**
-  - Invalid `window: 4` (< 5) → validation error
-  - Invalid `warn-pass-rate: 1.1` (> 1) → validation error
-  - Invalid `warn-pass-rate: 0` (not > 0) → validation error
-  - Invalid `warn-volatility: -0.1` (< 0) → validation error
-  - Unknown calibration key → warning
-
-  **Verify:** `npm test` passes, test count increases by ≥ 10 additional tests. Satisfies AC-8 (config
-  tests), AC-4/AC-5 (CLI tests), AC-7 (run loop tests).
-
----
-
-## Backward Compatibility
-
-- [ ] Verify backward compatibility against regression baseline
-
-  Run `npm test && npx tsc --noEmit` and confirm:
-  - Test count ≥ 913 + new tests (no test regressions)
-  - Typecheck clean
-  - `ralph score` (no flags) produces identical output to before this change
-  - `ralph score --history` works unchanged
-  - `ralph score --trend` works unchanged
-  - `ralph score --compare` works unchanged
-  - `ralph score --json` (without `--calibration`) works unchanged
-  - `ralph config validate` passes with a config that has no `calibration:` section
-  - `printFinalSummary` called without 3rd param produces identical output to before
-
-  Satisfies SC-R1.
+  - After the existing `output.info('Stop reason: ...')` line, append calibration block:
+    - Only when `calibrationThresholds` is provided
+    - `readResults(calibrationThresholds.window)` → if entries.length >= 5: compute + detect + print compact line
+    - Compact format: `Calibration (last N): pass=X% discard=X% volatility=X.XXX [✓ Normal | ⚠ Drift: ...]`
+    - If drift: also print `  ⚠ Trust drift: [signals]. Run ralph score --calibration for details.`
+    - If entries < 5: print nothing
+  In `src/commands/run/index.ts`:
+  - Import `DEFAULT_CALIBRATION` from `../../config/defaults.js`
+  - After config is loaded, derive: `const calibrationThresholds = config.calibration ?? DEFAULT_CALIBRATION`
+  - All 9 `printFinalSummary(...)` calls gain a third argument: `calibrationThresholds`
+  - Call sites are at lines: 293, 341, 431, 468, 472, 1097, 1110, 1114 (and one more — verify with grep)
+  Satisfies AC-7.
+  CRITICAL: calibration output is purely additive — must NOT affect stop reason, exit code, or loop logic.
+  Verify: existing progress tests still pass (no 3rd arg → no calibration output → backward compat).
 
 ---
 
 ## Architecture Update
+- [ ] Update `ARCHITECTURE.md` to add `calibration.ts` to the score domain listing
+  In the Directory Map, add under `score/`:
+  ```
+      │   ├── calibration.ts  — Calibration metrics, trust drift detection, report formatting
+      │   └── calibration.test.ts — Unit tests for calibration module
+  ```
+  Note that `progress.ts` now imports from `../score/calibration.js` and `../score/results.js` —
+  this extends the existing documented exception #5 (`run → score`).
 
-- [ ] Update `ARCHITECTURE.md` score domain listing
+---
 
-  - Add `calibration.ts` and `calibration.test.ts` to the score domain listing in the Directory Map
-  - The existing `run → score` cross-command exception (item 5) already covers this; add a note that it
-    now also includes `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport` from
-    `calibration.ts`
+## Tests
+- [ ] Unit tests: `src/commands/score/calibration.test.ts`
+  All test cases from spec's Test Plan:
+  - `computeCalibration()`: mixed statuses, all-pass, all-fail, exactly 5 entries (minimum), 4 entries (insufficient), stall entries present, adversarial entries present, volatility with all-null scores, volatility with 1 non-null (→ null), volatility with identical scores (→ 0), first-try heuristic (example: pass/pass/fail/pass/pass → 3/4=75%), partial window labeling
+  - `detectTrustDrift()`: 0 signals (not drift), 1 signal (not drift), all 6 pairwise 2-signal combinations (all drift), 3 signals, 4 signals, null adversarial rate excluded, null volatility excluded
+  - `formatCalibrationReport()`: ✓ Normal state, ⚠ Drift with signal details, partial window label, adversarial line present when data exists / absent when null, stall unavailable label
+  - `formatCalibrationJSON()`: `JSON.parse()` succeeds, numeric fields are numbers, null fields are JSON null, insufficient data returns error object
+  Satisfies AC-1, AC-2, AC-3, AC-6, AC-9, AC-10 at unit level.
+
+- [ ] Integration tests: extend `src/commands/score/score.test.ts`
+  Mock `readResults`, `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `formatCalibrationJSON` from calibration module.
+  - `--calibration` flag: `formatCalibrationReport` output appears in stdout
+  - `--calibration --json`: stdout is valid JSON
+  - `--calibration` with < 5 entries: "insufficient data" message, process exits 0
+  - `--calibration` combined with `--history`: calibration branch runs (precedence confirmed)
+  Satisfies AC-4, AC-5.
+
+- [ ] Integration tests: extend `src/commands/run/progress.test.ts`
+  - `printFinalSummary` with thresholds + ≥5 mock entries → compact calibration line in output
+  - `printFinalSummary` with thresholds + < 5 mock entries → no calibration line
+  - `printFinalSummary` without thresholds → no calibration line (backward compat)
+  Satisfies AC-7, SC-R1 (backward compat).
+
+- [ ] Config tests: extend `src/config/loader.test.ts` and `src/config/validate.test.ts`
+  - Full `calibration:` section loads all fields correctly
+  - No `calibration:` section → `config.calibration === undefined`
+  - Partial calibration config merges with defaults (only `window: 50` → other fields use defaults)
+  - Invalid `window: 4` → validation error
+  - Invalid `window: 1.5` (non-integer) → validation error
+  - Invalid `warn-pass-rate: 1.1` → validation error
+  - Invalid `warn-pass-rate: 0` → validation error
+  - Invalid `warn-discard-rate: -0.1` → validation error
+  - Invalid `warn-volatility: -1` → validation error
+  Satisfies AC-8.
+
+---
+
+## Backward Compatibility
+- [ ] Verify backward compatibility
+  Run `npm test`. Confirm test count ≥ 913 (regression baseline), 0 failures.
+  Manually confirm `ralph score`, `ralph score --history`, `ralph score --trend`, `ralph score --compare`, `ralph score --json` produce identical output — none of these code paths are modified.
+  Confirm `printFinalSummary` tests without the 3rd argument still pass.
+  Satisfies SC-R1.
 
 ---
 
 ## Verification
-
 - [ ] Run full validation and verify all Phase 3 acceptance criteria
-
-  ```
-  npm test && npx tsc --noEmit
-  ```
-
-  Cross-check each AC from the spec:
-
-  - **AC-1: Calibration computation from results.tsv** — verify `computeCalibration()` returns all
-    six metrics for a known dataset with ≥5 entries; adversarial catch rate and stall frequency only
-    when corresponding status entries exist
-  - **AC-2: Trust drift detection (multi-signal)** — verify pass rate > 0.95 AND discard rate < 0.01
-    returns `isDrift: true` with both signals named
-  - **AC-3: Single signal is not drift** — verify pass rate > 0.95 only returns `isDrift: false`
-  - **AC-4: CLI output** — `ralph score --calibration` prints formatted report with metrics, sparkline,
-    trust status
-  - **AC-5: Insufficient data** — `ralph score --calibration` with < 5 entries prints "insufficient
-    data (N entries, need 5)"
-  - **AC-6: Partial window** — with 12 entries, window=30, report labeled "(partial window: 12/30)"
-  - **AC-7: Run loop integration** — `printFinalSummary` with ≥5 entries prints compact calibration
-    line; with < 5 entries nothing printed
-  - **AC-8: Configurable thresholds** — custom thresholds load from config; missing config uses
-    defaults; invalid values rejected by `ralph config validate`
-  - **AC-9: Adversarial-aware (conditional)** — with `adversarial-fail` entries, rate computed; without,
-    metric is `null` and omitted
-  - **AC-10: JSON output** — `ralph score --calibration --json` outputs valid JSON matching F-CT04
-    schema; null fields are JSON null
-  - **SC-R1: Regression** — all pre-existing tests pass; existing score/run commands unaffected
-
-  Sentinel check: confirm `src/commands/score/calibration.ts` exists.
+  Run: `npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci`
+  Cross-check each AC:
+  - AC-1: `computeCalibration()` with ≥5 entries returns correct rates; conditional metrics null when absent — unit tests
+  - AC-2: pass rate > 0.95 AND discard rate < 0.01 → `isDrift: true`, both signals named — unit tests
+  - AC-3: only pass rate > 0.95 → `isDrift: false` — unit tests
+  - AC-4: `ralph score --calibration` prints formatted report with metrics, sparkline, trust status — CLI test
+  - AC-5: < 5 entries → "insufficient data (N entries, need 5)", exits 0 — CLI test
+  - AC-6: 12 entries with window=30 → "(partial window: 12/30)" — unit test
+  - AC-7: run loop prints compact calibration when ≥5 entries; nothing when < 5 — progress tests
+  - AC-8: custom thresholds load; defaults when absent; invalid values rejected by `ralph config validate` — config tests
+  - AC-9: adversarial-fail entries → catch rate computed; no entries → null and omitted — unit tests
+  - AC-10: `ralph score --calibration --json` outputs valid JSON, all fields present, null as JSON null — CLI test
+  - SC-R1: ≥913 tests pass; unchanged commands produce identical output
+  Confirm sentinel file `src/commands/score/calibration.ts` exists.
