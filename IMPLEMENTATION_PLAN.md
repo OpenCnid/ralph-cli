@@ -30,7 +30,7 @@ Date: 2026-03-13
   - Satisfies F-IV02; foundation for F-IV03 and F-IV04
   - Verify: the 8 edge cases in the spec test plan (present content, absent, whitespace-only, EOF, case-insensitive, h3 ignored, first-of-multiple, partial heading text) are all handled
 
-- [ ] Add `INTENT_REVIEW_TEMPLATE` and update `generateReviewPrompt()` in `src/commands/review/prompts.ts`
+- [x] Add `INTENT_REVIEW_TEMPLATE` and update `generateReviewPrompt()` in `src/commands/review/prompts.ts`
   - Add `INTENT_REVIEW_TEMPLATE` constant with the exact template text from spec F-IV03 (uses `{motivations_content}`, `{diff_stat}`, `{diff_content}`, `{project_name}`, `{architecture_content}` placeholders; no `{specs_content}` or `{rules_content}`)
   - Update `generateReviewPrompt(context, options)` — add `intent?: boolean | undefined` to the `options` type; when true, use `INTENT_REVIEW_TEMPLATE`
   - Populate `{motivations_content}`:

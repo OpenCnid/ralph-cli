@@ -77,3 +77,4 @@ c53be22	27	pass	—	—	38	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 01a3e0a	28	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 28
 90c8f16	29	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 29
 2178f34	30	pass	—	—	24	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 30
+1e72704	1	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add intent and motivations fields to ReviewOptions/ReviewCont	—
