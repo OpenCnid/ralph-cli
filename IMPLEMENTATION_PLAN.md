@@ -17,7 +17,7 @@ Date: 2026-03-13
   Satisfies AC-8.
   Verify: `npx tsc --noEmit` passes after edit.
 
-- [ ] Add `DEFAULT_CALIBRATION` constant to `src/config/defaults.ts`
+- [x] Add `DEFAULT_CALIBRATION` constant to `src/config/defaults.ts`
   ```typescript
   export const DEFAULT_CALIBRATION: CalibrationConfig = {
     window: 30,

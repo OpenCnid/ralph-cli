@@ -1,4 +1,4 @@
-import type { AdversarialConfig, AgentConfig, ArchitectureConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
+import type { AdversarialConfig, AgentConfig, ArchitectureConfig, CalibrationConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -134,6 +134,13 @@ export const DEFAULT_HEAL: HealConfig = {
   commands: ['doctor', 'grade', 'gc', 'lint'],
   'auto-commit': true,
   'commit-prefix': 'ralph: heal',
+};
+
+export const DEFAULT_CALIBRATION: CalibrationConfig = {
+  window: 30,
+  'warn-pass-rate': 0.95,
+  'warn-discard-rate': 0.01,
+  'warn-volatility': 0.005,
 };
 
 export const DEFAULT_REVIEW: ReviewConfig = {
