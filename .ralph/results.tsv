@@ -81,3 +81,4 @@ c53be22	27	pass	—	—	38	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 08cafce	2	pass	—	—	42	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add extractMotivation() to review/context.ts	—
 f470181	3	pass	—	—	47	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add INTENT_REVIEW_TEMPLATE and update generateReviewPrompt() 	—
 7237d7d	4	pass	—	—	159	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: wire --intent flag through CLI to reviewCommand()	—
+daf815b	5	pass	—	—	169	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add motivation-section doctor check to runContentChecks()	—

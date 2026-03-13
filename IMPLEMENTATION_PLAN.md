@@ -77,7 +77,7 @@ Date: 2026-03-13
 
 ## Migration
 
-- [ ] Update `ReviewContext` mock shapes in existing test files
+- [x] Update `ReviewContext` mock shapes in existing test files
   - `src/commands/review/review.test.ts` — every object literal satisfying `ReviewContext` (returned from mocked `assembleContext`) needs `motivations: []` added
   - `src/commands/review/context.test.ts` — every `assembleContext()` return value assertion needs `motivations: []` in the expected shape
   - Required because `motivations: string[]` is a new required field on `ReviewContext`
