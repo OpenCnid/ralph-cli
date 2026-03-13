@@ -22,7 +22,7 @@ Date: 2026-03-13
 
 ## Core Implementation
 
-- [ ] Add `extractMotivation(specContent: string): string | null` to `src/commands/review/context.ts`
+- [x] Add `extractMotivation(specContent: string): string | null` to `src/commands/review/context.ts`
   - Scan line-by-line for the first line that starts with `## ` and whose remaining text contains "motivation" (case-insensitive)
   - Only match `##` headings (exactly two hashes + space) — `###` must not match
   - Collect all lines until the next `##` or `#` heading, or end-of-file
