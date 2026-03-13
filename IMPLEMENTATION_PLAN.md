@@ -12,7 +12,7 @@ Date: 2026-03-13
 
 ## Types
 
-- [ ] Add `intent?: boolean | undefined` to `ReviewOptions` and `motivations: string[]` to `ReviewContext` in `src/commands/review/types.ts`; also update `assembleContext()` return in `src/commands/review/context.ts` to include `motivations: []`
+- [x] Add `intent?: boolean | undefined` to `ReviewOptions` and `motivations: string[]` to `ReviewContext` in `src/commands/review/types.ts`; also update `assembleContext()` return in `src/commands/review/context.ts` to include `motivations: []`
   - `ReviewOptions.intent` is the CLI flag carrier (F-IV04, AC: `ReviewOptions` type includes `intent?: boolean`)
   - `ReviewContext.motivations` holds extracted motivation sections (F-IV04, AC: `ReviewContext` type includes `motivations: string[]`)
   - `assembleContext()` returns `motivations: []` — population happens in `reviewCommand()`, not here (per spec F-IV04 design)

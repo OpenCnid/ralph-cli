@@ -13,6 +13,7 @@ export interface ReviewOptions {
   dryRun?: boolean | undefined;
   verbose?: boolean | undefined;
   diffOnly?: boolean | undefined;
+  intent?: boolean | undefined;
 }
 
 export interface ReviewContext {
@@ -24,5 +25,6 @@ export interface ReviewContext {
   rules: string;
   projectName: string;
   scope: string;
+  motivations: string[];
   durationMs?: number | undefined;
 }

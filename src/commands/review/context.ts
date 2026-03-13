@@ -229,5 +229,6 @@ export function assembleContext(
     rules,
     projectName: config.project.name,
     scope: options.scope ?? 'unknown',
+    motivations: [],
   };
 }

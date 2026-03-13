@@ -140,6 +140,7 @@ function makeReviewContext(overrides: Partial<ReviewContext> = {}): ReviewContex
     rules: '',
     projectName: 'my-project',
     scope: 'staged',
+    motivations: [],
     ...overrides,
   };
 }
