@@ -87,7 +87,7 @@ Date: 2026-03-13
 
 ## Tests
 
-- [ ] Unit tests for `extractMotivation` — add to `src/commands/review/context.test.ts`
+- [x] Unit tests for `extractMotivation` — add to `src/commands/review/context.test.ts`
   - 8 cases per spec test plan:
     1. Returns section content between `## Motivation` and next `##` heading
     2. Returns `null` when no Motivation heading exists
