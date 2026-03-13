@@ -188,7 +188,7 @@ Date: 2026-03-13
 
 ## Integration
 
-- [ ] Wire adversarial pass into `src/commands/run/index.ts` (between auto-commit and scoring); update dry-run to print adversarial prompt.
+- [x] Wire adversarial pass into `src/commands/run/index.ts` (between auto-commit and scoring); update dry-run to print adversarial prompt.
   Satisfies: AC-2, AC-5, AC-6, AC-11, AC-12, AC-13, AC-15.
 
   First: extract `revertToBaseline` as an export from `run/index.ts` (or move to `run/git.ts`) so `adversarial.ts` can import it without circular dependency. If moving to `run/git.ts`, update the existing call sites in `run/index.ts`.

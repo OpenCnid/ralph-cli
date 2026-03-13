@@ -22,8 +22,9 @@ import {
   printFinalSummary,
   type Checkpoint,
 } from './progress.js';
-import { generatePrompt } from './prompts.js';
-import type { RunMode, RunOptions } from './types.js';
+import { generatePrompt, generateAdversarialPrompt } from './prompts.js';
+import { runAdversarialPass } from './adversarial.js';
+import type { RunMode, RunOptions, AdversarialResult } from './types.js';
 import type { ScoreResult } from '../score/types.js';
 
 function isTTY(): boolean {
@@ -259,6 +260,19 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
       const validateCmd = composeValidateCommand(testCmd, typecheckCmd);
       output.info('\nValidate command:');
       output.plain(`  ${validateCmd}`);
+    }
+
+    if (config.run?.adversarial?.enabled === true) {
+      const adversarialPrompt = generateAdversarialPrompt({
+        builderDiff: '(placeholder diff)',
+        specContent: '(placeholder spec)',
+        existingTests: '(placeholder tests)',
+        stageResults: null,
+        budget: config.run.adversarial.budget,
+        testCommand: config.run.validation['test-command'] ?? '',
+      });
+      output.info('\nAdversarial prompt:');
+      output.plain(adversarialPrompt);
     }
 
     return;
@@ -531,6 +545,76 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
         description = captureGitDescription();
       }
 
+      // Adversarial pass (between auto-commit and scoring)
+      let adversarialResult: AdversarialResult | null = null;
+      if (runConfig.adversarial?.enabled === true) {
+        const stageResultsStr = validationResult.stages.length > 0
+          ? validationResult.stages.map((s) => {
+            const status = s.skipped ? 'skip' : s.passed ? 'pass' : 'fail';
+            return `${s.name}:${status}`;
+          }).join(',')
+          : null;
+        adversarialResult = await runAdversarialPass({
+          config: runConfig.adversarial,
+          runConfig,
+          iteration,
+          baselineCommit,
+          originalBranch,
+          preBuilderUntracked: preAgentUntracked,
+          stageResults: stageResultsStr,
+          isSimplify: options.simplify === true,
+          effectiveAutoCommit,
+          verbose: options.verbose,
+        });
+
+        if (adversarialResult.outcome === 'fail') {
+          // runAdversarialPass already reverted to baseline
+          const headAfterRevert = captureShortHead();
+          appendResult({
+            commit: headAfterRevert,
+            iteration,
+            status: 'adversarial-fail',
+            score: null,
+            delta: null,
+            durationS,
+            metrics: '—',
+            description: `${description} [adversary found ${adversarialResult.failedTests.length} bug(s)]`,
+          });
+          scoreContext = buildScoreContext({
+            previousStatus: 'adversarial-fail',
+            previousScore: checkpoint.lastScore ?? null,
+            currentScore: null,
+            delta: null,
+            metrics: '—',
+            changedMetrics: '—',
+            timeoutSeconds: iterationTimeoutSecs,
+            regressionThreshold,
+            previousTestCount: adversarialResult.testCountBefore,
+            currentTestCount: adversarialResult.testCountAfter,
+            failedStage: null,
+            stageResults: null,
+            adversarialResult,
+          });
+          checkpoint.iteration = iteration;
+          checkpoint.history.push({
+            iteration,
+            durationMs: result.durationMs,
+            exitCode: result.exitCode,
+            commit: null,
+            error: result.error ?? null,
+          });
+          saveCheckpoint(checkpoint);
+          printIterationSummary(iteration, result, null, null);
+          continue;
+        }
+
+        if (adversarialResult.outcome === 'pass') {
+          description += ` [+${adversarialResult.testFilesAdded.length} adversarial tests]`;
+          commitHash = captureShortHead(); // reflect commit B
+        }
+        // outcome === 'skip': no change to description or commitHash
+      }
+
       // Scoring (skip if --no-score)
       if (options.noScore !== true) {
         // Capture pre-scoring state for dirty check
@@ -685,6 +769,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             currentTestCount: currTestCount,
             failedStage: null,
             stageResults: null,
+            adversarialResult,
           });
 
           checkpoint.iteration = iteration;
@@ -757,6 +842,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             currentTestCount: currTestCount,
             failedStage: null,
             stageResults: null,
+            adversarialResult,
           });
 
           checkpoint.iteration = iteration;
@@ -925,6 +1011,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           currentTestCount: currTestCount,
           failedStage: null,
           stageResults: null,
+          adversarialResult,
         });
 
         checkpoint.iteration = iteration;
