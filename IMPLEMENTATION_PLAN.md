@@ -167,7 +167,7 @@ Date: 2026-03-13
   - `formatCalibrationJSON()`: `JSON.parse()` succeeds, numeric fields are numbers, null fields are JSON null, insufficient data returns error object
   Satisfies AC-1, AC-2, AC-3, AC-6, AC-9, AC-10 at unit level.
 
-- [ ] Integration tests: extend `src/commands/score/score.test.ts`
+- [x] Integration tests: extend `src/commands/score/score.test.ts`
   Mock `readResults`, `computeCalibration`, `detectTrustDrift`, `formatCalibrationReport`, `formatCalibrationJSON` from calibration module.
   - `--calibration` flag: `formatCalibrationReport` output appears in stdout
   - `--calibration --json`: stdout is valid JSON

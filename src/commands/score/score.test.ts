@@ -10,13 +10,29 @@ vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
 }));
 
+vi.mock('./calibration.js', () => ({
+  computeCalibration: vi.fn(),
+  detectTrustDrift: vi.fn(),
+  formatCalibrationReport: vi.fn(),
+  formatCalibrationJSON: vi.fn(),
+}));
+
 import { spawn } from 'node:child_process';
 const mockSpawn = vi.mocked(spawn);
 
 import { discoverScorer, runScorer } from './scorer.js';
 import { runDefaultScorer } from './default-scorer.js';
 import { appendResult, readResults } from './results.js';
+import * as resultsUtils from './results.js';
 import { renderSparkline, computeTrend } from './trend.js';
+import {
+  computeCalibration,
+  detectTrustDrift,
+  formatCalibrationReport,
+  formatCalibrationJSON,
+} from './calibration.js';
+import * as outputUtils from '../../utils/output.js';
+import { scoreCommand } from './index.js';
 import type { ResultEntry } from './types.js';
 import type { RalphConfig } from '../../config/schema.js';
 
@@ -704,5 +720,91 @@ describe('computeTrend', () => {
     expect(trend.max).toBeCloseTo(0.8);
     expect(trend.first).toBeCloseTo(0.5);
     expect(trend.last).toBeCloseTo(0.8);
+  });
+});
+
+// ─── scoreCommand --calibration (integration) ────────────────────────────────
+
+describe('scoreCommand --calibration', () => {
+  const mockComputeCalibration = vi.mocked(computeCalibration);
+  const mockDetectTrustDrift = vi.mocked(detectTrustDrift);
+  const mockFormatCalibrationReport = vi.mocked(formatCalibrationReport);
+  const mockFormatCalibrationJSON = vi.mocked(formatCalibrationJSON);
+
+  const sampleEntries: ResultEntry[] = Array.from({ length: 5 }, (_, i) => ({
+    commit: `abc${i}`,
+    iteration: i + 1,
+    status: 'pass',
+    score: 0.8 + i * 0.01,
+    delta: null,
+    durationS: 30,
+    metrics: '—',
+    description: `task ${i + 1}`,
+  }));
+
+  const sampleReport = {
+    window: 30,
+    actual: 5,
+    passRate: 1.0,
+    discardRate: 0,
+    adversarialCatchRate: null,
+    firstTryPassRate: 1.0,
+    scoreVolatility: 0.01,
+    stallFrequency: null,
+    scores: [0.8, 0.81, 0.82, 0.83, 0.84] as (number | null)[],
+    partial: true,
+  };
+
+  const sampleDrift = { isDrift: false, signals: [] };
+
+  let readResultsSpy: ReturnType<typeof vi.spyOn>;
+  let plainSpy: ReturnType<typeof vi.spyOn>;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    readResultsSpy = vi.spyOn(resultsUtils, 'readResults').mockReturnValue(sampleEntries);
+    plainSpy = vi.spyOn(outputUtils, 'plain').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    mockComputeCalibration.mockReturnValue(sampleReport);
+    mockDetectTrustDrift.mockReturnValue(sampleDrift);
+    mockFormatCalibrationReport.mockReturnValue('Calibration Report: pass=100%');
+    mockFormatCalibrationJSON.mockReturnValue({ calibration: {}, trustDrift: {}, timestamp: 'now' } as ReturnType<typeof formatCalibrationJSON>);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('prints formatted report when --calibration is set', async () => {
+    await scoreCommand({ calibration: true });
+    expect(mockComputeCalibration).toHaveBeenCalled();
+    expect(mockDetectTrustDrift).toHaveBeenCalled();
+    expect(mockFormatCalibrationReport).toHaveBeenCalledWith(sampleReport, sampleDrift);
+    expect(plainSpy).toHaveBeenCalledWith('Calibration Report: pass=100%');
+  });
+
+  it('outputs valid JSON when --calibration --json is set', async () => {
+    await scoreCommand({ calibration: true, json: true });
+    expect(mockFormatCalibrationJSON).toHaveBeenCalledWith(sampleReport, sampleDrift);
+    expect(consoleLogSpy).toHaveBeenCalledOnce();
+    const jsonStr = consoleLogSpy.mock.calls[0]?.[0] as string;
+    expect(() => JSON.parse(jsonStr)).not.toThrow();
+  });
+
+  it('prints insufficient data message when fewer than 5 entries exist', async () => {
+    readResultsSpy.mockReturnValue([]);
+    await scoreCommand({ calibration: true });
+    expect(plainSpy).toHaveBeenCalledWith(
+      expect.stringContaining('insufficient data'),
+    );
+    expect(mockComputeCalibration).not.toHaveBeenCalled();
+  });
+
+  it('calibration branch takes precedence over --history', async () => {
+    await scoreCommand({ calibration: true, history: true });
+    expect(mockFormatCalibrationReport).toHaveBeenCalled();
+    // readResults called with the window size (a number), not the history limit
+    expect(readResultsSpy).toHaveBeenCalledWith(expect.any(Number));
   });
 });
