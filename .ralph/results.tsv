@@ -4,3 +4,4 @@ ec9c9a1	2	pass	—	—	60	test_count=0 test_total=0 test_rate=0 coverage=0	ralph
 53516af	3	pass	—	—	164	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — add stage fields to  and
 0bb3781	4	pass	—	—	118	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add stage-aware fail message in buildScoreContext()
 bd8b449	5	pass	—	—	44	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — add  as 9th TSV column
+4b743e6	6	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Refactor  to use the stage pipeline executor

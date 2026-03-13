@@ -124,7 +124,7 @@ Date: 2026-03-13
 
 ## Update prompts.ts — stage-aware validate command
 
-- [ ] Update `src/commands/run/prompts.ts` to pass stages to `composeValidateCommand()`
+- [x] Update `src/commands/run/prompts.ts` to pass stages to `composeValidateCommand()`
   - In `buildVariables()`, after deriving `testCmd` and `typecheckCmd`, pass
     `config.run?.validation?.stages` as the third argument to `composeValidateCommand()`.
   - This ensures `{validate_command}` in the agent's build prompt reflects explicit stages when
