@@ -83,9 +83,8 @@ function makeRunConfig(overrides: Partial<RunConfig> = {}): RunConfig {
     'plan-agent': null,
     'build-agent': null,
     prompts: {
-      system: null,
-      'plan-suffix': null,
-      'build-suffix': null,
+      plan: null,
+      build: null,
     },
     loop: {
       'max-iterations': 10,

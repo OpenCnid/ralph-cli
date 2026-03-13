@@ -302,7 +302,7 @@ Date: 2026-03-13
   - `buildScoreContext` with `previousStatus: 'pass'` + `adversarialResult.outcome: 'skip'` + skipReason: output contains `skipped`
   - `buildScoreContext` with `previousStatus: 'pass'` + no `adversarialResult`: output unchanged from pre-Phase-2 (regression guard)
 
-- [ ] Add config validation tests for adversarial config to existing validate/config test files.
+- [x] Add config validation tests for adversarial config to existing validate/config test files.
   Satisfies: AC-1, AC-9, AC-10.
   - Default config: `config.run.adversarial.enabled === false`
   - `budget: 0` → validation error
