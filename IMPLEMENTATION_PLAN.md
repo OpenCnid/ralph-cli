@@ -116,7 +116,7 @@ Date: 2026-03-13
     3. Without `--intent` → intent defaults to false, standard template used
   - Verify: existing 430 lines of tests still pass; 3 new tests added
 
-- [ ] Tests for `--intent` CLI parsing — add to `src/commands/review/cli.test.ts`
+- [x] Tests for `--intent` CLI parsing — add to `src/commands/review/cli.test.ts`
   - 2 cases per spec test plan:
     1. `ralph review --intent` → `options.intent === true`
     2. `--intent` combined with `--dry-run --diff-only` → all flags parse correctly
