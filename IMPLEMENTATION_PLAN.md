@@ -178,7 +178,7 @@ Date: 2026-03-13
     AC-8 verifies. No behavioral test logic changes.
   - Satisfies: AC-8 (backward compat verification)
 
-- [ ] Add tests to `src/commands/run/scoring.test.ts` — stage-aware score context
+- [x] Add tests to `src/commands/run/scoring.test.ts` — stage-aware score context
   - `buildScoreContext()` with `failedStage: 'integration'` and `stageResults: 'unit:pass,typecheck:pass,integration:fail'`
     → output contains `'FAILED validation at stage "integration"'` and `'unit ✓'` and `'integration ✗'`.
   - `buildScoreContext()` with `failedStage: null, stageResults: null` → v0.5 generic message
