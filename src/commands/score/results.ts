@@ -3,7 +3,7 @@ import type { ResultEntry } from './types.js';
 
 const RESULTS_FILE = '.ralph/results.tsv';
 const RALPH_DIR = '.ralph';
-const HEADER = 'commit\titeration\tstatus\tscore\tdelta\tduration_s\tmetrics\tdescription';
+const HEADER = 'commit\titeration\tstatus\tscore\tdelta\tduration_s\tmetrics\tdescription\tstages';
 
 /** Sanitize a value for TSV: replace tabs with spaces. */
 function sanitizeValue(value: string): string {
@@ -44,6 +44,7 @@ export function appendResult(entry: ResultEntry): void {
     String(entry.durationS),
     metrics,
     description,
+    entry.stages ?? '—',
   ].join('\t');
 
   appendFileSync(RESULTS_FILE, row + '\n', 'utf8');
@@ -70,8 +71,7 @@ export function readResults(limit?: number): ResultEntry[] {
 
   return rows.map(line => {
     const cols = line.split('\t');
-    const [commit, iterStr, status, scoreStr, deltaStr, durationStr, metrics, ...descParts] = cols;
-    const description = descParts.join('\t');
+    const [commit, iterStr, status, scoreStr, deltaStr, durationStr, metrics, description, stages] = cols;
 
     return {
       commit: commit ?? '',
@@ -82,6 +82,7 @@ export function readResults(limit?: number): ResultEntry[] {
       durationS: parseInt(durationStr ?? '0', 10),
       metrics: metrics ?? '—',
       description: description ?? '—',
+      stages: stages && stages !== '—' ? stages : undefined,
     };
   });
 }

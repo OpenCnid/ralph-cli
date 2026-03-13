@@ -77,7 +77,7 @@ Date: 2026-03-13
 
 ## Results TSV Enrichment (F-SV05)
 
-- [ ] Update `src/commands/score/results.ts` — add `stages` as 9th TSV column
+- [x] Update `src/commands/score/results.ts` — add `stages` as 9th TSV column
   - Update `HEADER` constant: append `\tstages` (9th column).
   - Update `appendResult()`: write `entry.stages ?? '—'` as 9th column in the row array.
   - Update `readResults()`: after parsing `description` (which currently joins remaining columns
