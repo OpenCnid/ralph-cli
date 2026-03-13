@@ -174,9 +174,9 @@ Last updated: 2026-03-13
 - config/tests: A (stable) — 92% line coverage
 - config/docs: A (stable) — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
-- config/fileHealth: D (stable) — Avg 279 lines, 1 oversized: validate.ts (648)
+- config/fileHealth: D (was A today) — degraded — Avg 279 lines, 1 oversized: validate.ts (648)
 - config/staleness: A (stable) — Median 0d since last change
-- config/overall: D (stable)
+- config/overall: D (was A today) — degraded
 - lint/tests: B (stable) — 83% line coverage
 - lint/docs: A (stable) — 3/3 domain documentation files present
 - lint/architecture: A (stable) — No architectural violations
