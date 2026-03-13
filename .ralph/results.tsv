@@ -33,3 +33,4 @@ bebba13	8	pass	—	—	270	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 39c0cc0	9	pass	—	—	58	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  with new run-domain files.
 c283b40	10	pass	—	—	134	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Write unit tests in .
 2fef88e	11	pass	—	—	52	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add scoring unit tests for adversarial context to .
+d1dcd6d	12	pass	—	—	127	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add config validation tests for adversarial config to existing va

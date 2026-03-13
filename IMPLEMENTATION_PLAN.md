@@ -321,7 +321,7 @@ Date: 2026-03-13
 
 ## Backward Compatibility
 
-- [ ] Verify backward compatibility with adversarial disabled.
+- [x] Verify backward compatibility with adversarial disabled.
   Run: `npm test && npx tsc --noEmit`
   Confirm test count ≥ 868; typecheck clean.
   Confirm: with no `adversarial:` key in config, `runConfig.adversarial?.enabled` is `false` (from `DEFAULT_ADVERSARIAL`), the `if (runConfig.adversarial?.enabled === true)` guard in `run/index.ts` never executes, and all existing behavior is identical.
