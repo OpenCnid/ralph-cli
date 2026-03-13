@@ -117,7 +117,7 @@ Date: 2026-03-13
 
   Verify: unit test mocks git commands; branch created with correct name; no branch when `diagnosticEnabled: false`.
 
-- [ ] Add `runAdversarialPass()` orchestrator to `src/commands/run/adversarial.ts`.
+- [x] Add `runAdversarialPass()` orchestrator to `src/commands/run/adversarial.ts`.
   Satisfies: AC-2 (spawn adversary), AC-5 (commit passing tests as commit B), AC-6 (revert on failure), AC-10 (timeout → skip, fail-open), AC-11 (simplify skip), AC-14 (agent independence), AC-15 (auto-commit=false → skip), AC-16 (no tests written → no-op).
 
   ```typescript

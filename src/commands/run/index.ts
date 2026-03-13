@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, unlinkSync, rmSync } from 'node:
 import { createInterface } from 'node:readline';
 import { loadConfig } from '../../config/loader.js';
 import * as output from '../../utils/output.js';
+import { captureCurrentBranch, captureUntrackedFiles, revertToBaseline } from './git.js';
 import { resolveAgent } from './agent.js';
 import { spawnAgentWithTimeout } from './timeout.js';
 import { detectCompletedTask, normalizePlanContent, composeValidateCommand } from './detect.js';
@@ -70,29 +71,6 @@ function captureShortHead(): string {
   }
 }
 
-function captureCurrentBranch(): string {
-  try {
-    return execSync('git rev-parse --abbrev-ref HEAD', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return '';
-  }
-}
-
-function captureUntrackedFiles(): string[] {
-  try {
-    const result = execSync('git ls-files --others --exclude-standard', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    return result ? result.split('\n').filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
 function captureGitDescription(): string {
   try {
     return execSync('git log -1 --format=%s HEAD', {
@@ -101,42 +79,6 @@ function captureGitDescription(): string {
     }).trim().slice(0, 72);
   } catch {
     return '';
-  }
-}
-
-function revertToBaseline(
-  baselineCommit: string,
-  originalBranch: string,
-  preAgentUntracked: string[],
-): void {
-  // Step 1: Remove stale git locks
-  try {
-    execSync('rm -f .git/index.lock .git/refs/heads/*.lock', { stdio: 'pipe' });
-  } catch { /* ignore */ }
-
-  // Step 2: Verify and restore branch
-  try {
-    const currentBranch = captureCurrentBranch();
-    if (currentBranch && originalBranch && currentBranch !== originalBranch) {
-      output.warn(`Agent switched to branch ${currentBranch} — restoring ${originalBranch}`);
-      execSync(`git checkout ${originalBranch}`, { stdio: 'pipe' });
-    }
-  } catch { /* ignore */ }
-
-  // Step 3: Reset to baseline
-  if (baselineCommit) {
-    try {
-      execSync(`git reset --hard ${baselineCommit}`, { stdio: 'pipe' });
-    } catch { /* ignore */ }
-  }
-
-  // Step 4-5: Remove only new untracked files
-  const currentUntracked = captureUntrackedFiles();
-  const preAgentSet = new Set(preAgentUntracked);
-  for (const f of currentUntracked) {
-    if (!preAgentSet.has(f)) {
-      try { rmSync(f, { recursive: true, force: true }); } catch { /* ignore */ }
-    }
   }
 }
 
