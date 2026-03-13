@@ -588,6 +588,42 @@ describe('mergeWithDefaults heal config', () => {
   });
 });
 
+describe('mergeWithDefaults calibration config', () => {
+  it('no calibration section → config.calibration === undefined', () => {
+    const config = mergeWithDefaults({ project: { name: 'test', language: 'typescript' } });
+    expect(config.calibration).toBeUndefined();
+  });
+
+  it('full calibration section loads all fields correctly', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      calibration: {
+        window: 60,
+        'warn-pass-rate': 0.90,
+        'warn-discard-rate': 0.02,
+        'warn-volatility': 0.01,
+      },
+    });
+    expect(config.calibration).toBeDefined();
+    expect(config.calibration!.window).toBe(60);
+    expect(config.calibration!['warn-pass-rate']).toBe(0.90);
+    expect(config.calibration!['warn-discard-rate']).toBe(0.02);
+    expect(config.calibration!['warn-volatility']).toBe(0.01);
+  });
+
+  it('partial calibration config merges with defaults', () => {
+    const config = mergeWithDefaults({
+      project: { name: 'test', language: 'typescript' },
+      calibration: { window: 50 },
+    });
+    expect(config.calibration).toBeDefined();
+    expect(config.calibration!.window).toBe(50);
+    expect(config.calibration!['warn-pass-rate']).toBe(0.95);
+    expect(config.calibration!['warn-discard-rate']).toBe(0.01);
+    expect(config.calibration!['warn-volatility']).toBe(0.005);
+  });
+});
+
 describe('detectCiEnvironment', () => {
   const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'CIRCLECI', 'JENKINS_URL', 'TRAVIS', 'BUILDKITE'];
 

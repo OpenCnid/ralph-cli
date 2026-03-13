@@ -181,7 +181,7 @@ Date: 2026-03-13
   - `printFinalSummary` without thresholds → no calibration line (backward compat)
   Satisfies AC-7, SC-R1 (backward compat).
 
-- [ ] Config tests: extend `src/config/loader.test.ts` and `src/config/validate.test.ts`
+- [x] Config tests: extend `src/config/loader.test.ts` and `src/config/validate.test.ts`
   - Full `calibration:` section loads all fields correctly
   - No `calibration:` section → `config.calibration === undefined`
   - Partial calibration config merges with defaults (only `window: 50` → other fields use defaults)
