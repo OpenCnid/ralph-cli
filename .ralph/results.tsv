@@ -6,3 +6,4 @@ ec9c9a1	2	pass	—	—	60	test_count=0 test_total=0 test_rate=0 coverage=0	ralph
 bd8b449	5	pass	—	—	44	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — add  as 9th TSV column
 4b743e6	6	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Refactor  to use the stage pipeline executor
 d286604	7	pass	—	—	56	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add stage-aware composeValidateCommand() in detect.ts
+26d4c66	8	pass	—	—	51	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: mark prompts.ts stages task complete (already implemented in 
