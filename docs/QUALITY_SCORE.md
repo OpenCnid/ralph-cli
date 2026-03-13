@@ -30,7 +30,7 @@ Last updated: 2026-03-13
 - **Tests**: A — 92% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: A — Avg 243 lines, no oversized files
+- **File Health**: A — Avg 257 lines, no oversized files
 - **Staleness**: A — Median 3d since last change
 - **Overall**: A
 
@@ -76,7 +76,7 @@ Last updated: 2026-03-13
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 194 lines, no oversized files
-- **Staleness**: A — Median 4d since last change
+- **Staleness**: A — Median 5d since last change
 - **Overall**: B
 
 ### plan
@@ -165,7 +165,7 @@ Last updated: 2026-03-13
 - **Tests**: B — 86% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: B — Avg 175 lines, 1 oversized: index.ts (1052)
+- **File Health**: B — Avg 176 lines, 1 oversized: index.ts (1052)
 - **Staleness**: A — Median 3d since last change
 - **Overall**: B
 
@@ -174,7 +174,7 @@ Last updated: 2026-03-13
 - config/tests: A (stable) — 92% line coverage
 - config/docs: A (stable) — 3/3 domain documentation files present
 - config/architecture: A (stable) — No architectural violations
-- config/fileHealth: A (stable) — Avg 243 lines, no oversized files
+- config/fileHealth: A (stable) — Avg 257 lines, no oversized files
 - config/staleness: A (stable) — Median 3d since last change
 - config/overall: A (stable)
 - lint/tests: B (stable) — 83% line coverage
@@ -205,7 +205,7 @@ Last updated: 2026-03-13
 - init/docs: A (stable) — 3/3 domain documentation files present
 - init/architecture: A (stable) — No architectural violations
 - init/fileHealth: A (stable) — Avg 194 lines, no oversized files
-- init/staleness: A (stable) — Median 4d since last change
+- init/staleness: A (stable) — Median 5d since last change
 - init/overall: B (stable)
 - plan/tests: B (stable) — 87% line coverage
 - plan/docs: A (stable) — 3/3 domain documentation files present
@@ -264,7 +264,7 @@ Last updated: 2026-03-13
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: B (stable) — Avg 175 lines, 1 oversized: index.ts (1052)
+- ralph-cli/fileHealth: B (stable) — Avg 176 lines, 1 oversized: index.ts (1052)
 - ralph-cli/staleness: A (stable) — Median 3d since last change
 - ralph-cli/overall: B (stable)
 
