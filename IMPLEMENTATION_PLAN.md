@@ -196,7 +196,7 @@ Date: 2026-03-13
 ---
 
 ## Backward Compatibility
-- [ ] Verify backward compatibility
+- [x] Verify backward compatibility
   Run `npm test`. Confirm test count ≥ 913 (regression baseline), 0 failures.
   Manually confirm `ralph score`, `ralph score --history`, `ralph score --trend`, `ralph score --compare`, `ralph score --json` produce identical output — none of these code paths are modified.
   Confirm `printFinalSummary` tests without the 3rd argument still pass.
