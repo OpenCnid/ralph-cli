@@ -45,7 +45,7 @@ Date: 2026-03-13
 
 ## Integration
 
-- [ ] Wire `--intent` through CLI → `reviewCommand()` in `src/cli.ts` and `src/commands/review/index.ts`
+- [x] Wire `--intent` through CLI → `reviewCommand()` in `src/cli.ts` and `src/commands/review/index.ts`
   - `src/cli.ts`: add `.option('--intent', 'Evaluate implementation against spec motivations instead of requirements')` to the `ralph review` command block; add `intent?: boolean` to the options type annotation in `.action()`; pass `intent: options.intent` when calling `reviewCommand()`
   - `src/commands/review/index.ts`:
     - Pass `intent: options.intent ?? false` to `generateReviewPrompt()`
