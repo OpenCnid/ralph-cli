@@ -159,7 +159,7 @@ Date: 2026-03-13
 ---
 
 ## Tests
-- [ ] Unit tests: `src/commands/score/calibration.test.ts`
+- [x] Unit tests: `src/commands/score/calibration.test.ts`
   All test cases from spec's Test Plan:
   - `computeCalibration()`: mixed statuses, all-pass, all-fail, exactly 5 entries (minimum), 4 entries (insufficient), stall entries present, adversarial entries present, volatility with all-null scores, volatility with 1 non-null (→ null), volatility with identical scores (→ 0), first-try heuristic (example: pass/pass/fail/pass/pass → 3/4=75%), partial window labeling
   - `detectTrustDrift()`: 0 signals (not drift), 1 signal (not drift), all 6 pairwise 2-signal combinations (all drift), 3 signals, 4 signals, null adversarial rate excluded, null volatility excluded
