@@ -215,6 +215,51 @@ function runContentChecks(projectRoot: string, config: RalphConfig): Check[] {
     fix: existsSync(trackerPath) ? undefined : 'Run `ralph init` to create tech-debt-tracker.md',
   });
 
+  const specsDir = join(projectRoot, config.paths.specs);
+  if (!existsSync(specsDir)) {
+    checks.push({
+      name: 'Spec files have ## Motivation sections',
+      category: 'content',
+      pass: true,
+      detail: 'No spec files found',
+      fix: 'Add a ## Motivation section to each spec describing why the feature exists.',
+    });
+  } else {
+    const specFiles = (() => {
+      try { return readdirSync(specsDir).filter(f => f.endsWith('.md')); } catch { return []; }
+    })();
+    if (specFiles.length === 0) {
+      checks.push({
+        name: 'Spec files have ## Motivation sections',
+        category: 'content',
+        pass: true,
+        detail: 'No spec files found',
+        fix: 'Add a ## Motivation section to each spec describing why the feature exists.',
+      });
+    } else {
+      const missing: string[] = [];
+      for (const file of specFiles) {
+        try {
+          const content = readFileSync(join(specsDir, file), 'utf-8');
+          const lines = content.split('\n');
+          const hasMotivation = lines.some(line => /^## /.test(line) && /motivation/i.test(line.slice(3)));
+          if (!hasMotivation) missing.push(file);
+        } catch { missing.push(file); }
+      }
+      const n = specFiles.length;
+      const m = missing.length;
+      checks.push({
+        name: 'Spec files have ## Motivation sections',
+        category: 'content',
+        pass: m === 0,
+        detail: m === 0
+          ? `All ${n} spec(s) have ## Motivation sections`
+          : `${m} of ${n} spec(s) missing ## Motivation section: ${missing.join(', ')}`,
+        fix: m > 0 ? 'Add a ## Motivation section to each spec describing why the feature exists.' : undefined,
+      });
+    }
+  }
+
   return checks;
 }
 

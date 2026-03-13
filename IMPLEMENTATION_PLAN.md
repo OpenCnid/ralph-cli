@@ -54,7 +54,7 @@ Date: 2026-03-13
   - Satisfies F-IV04; all flag combinations work because intent only changes the prompt template and extraction
   - Verify: `ralph review --help` lists `--intent`; `npx tsc --noEmit` passes
 
-- [ ] Add motivation-section doctor check to `runContentChecks()` in `src/commands/doctor/checks.ts`
+- [x] Add motivation-section doctor check to `runContentChecks()` in `src/commands/doctor/checks.ts`
   - After the existing `tech-debt-tracker.md` check, add a new check:
     - Name: `"Spec files have ## Motivation sections"`
     - Category: `'content'`
