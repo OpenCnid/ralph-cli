@@ -59,3 +59,4 @@ ce118bc	8	pass	—	—	189	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 a63e1aa	9	pass	—	—	258	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Integration tests: extend
 a7b28aa	10	pass	—	—	170	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Integration tests: extend
 e17508d	12	pass	—	—	215	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: verify backward compatibility for trust calibration phase 3
+224f126	13	pass	—	—	89	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: complete Phase 3 trust calibration — all ACs verified
