@@ -310,7 +310,7 @@ Date: 2026-03-13
   - `test-patterns: []` → validation error
   - Unknown key in adversarial config → warning
 
-- [ ] Add prompt unit test for `generateAdversarialPrompt()`.
+- [x] Add prompt unit test for `generateAdversarialPrompt()`.
   Satisfies: AC-9 (budget in prompt), AC-12 (prompt structure).
   - Output contains the configured budget value
   - Output contains `builderDiff` content
