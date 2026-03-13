@@ -8,3 +8,4 @@ bd8b449	5	pass	—	—	44	test_count=0 test_total=0 test_rate=0 coverage=0	ralph
 d286604	7	pass	—	—	56	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add stage-aware composeValidateCommand() in detect.ts
 26d4c66	8	pass	—	—	51	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: mark prompts.ts stages task complete (already implemented in 
 f917d6c	9	pass	—	—	143	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Wire / into  and add dry-run stage display
+3cb21fb	10	pass	—	—	124	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Create  — unit tests for stage executor and default synthesis
