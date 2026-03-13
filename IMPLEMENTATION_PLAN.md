@@ -13,7 +13,7 @@ Date: 2026-03-13
 
 ## Schema & Config
 
-- [ ] Add `AdversarialConfig` to `src/config/schema.ts`; add `adversarial` field to `RunConfig` and raw shape to `RawRalphConfig.run`; add `DEFAULT_ADVERSARIAL` to `src/config/defaults.ts` and wire into `DEFAULT_RUN`; add `'adversarial'` to `KNOWN_RUN_KEYS` in `src/config/validate.ts` and add `validateAdversarialConfig()` (budget > 0, timeout > 0, test-patterns non-empty, unknown-key warnings).
+- [x] Add `AdversarialConfig` to `src/config/schema.ts`; add `adversarial` field to `RunConfig` and raw shape to `RawRalphConfig.run`; add `DEFAULT_ADVERSARIAL` to `src/config/defaults.ts` and wire into `DEFAULT_RUN`; add `'adversarial'` to `KNOWN_RUN_KEYS` in `src/config/validate.ts` and add `validateAdversarialConfig()` (budget > 0, timeout > 0, test-patterns non-empty, unknown-key warnings).
   Satisfies: AC-1 (opt-in default: `enabled: false`), AC-9 (budget field), AC-10 (timeout field), AC-11 (skip-on-simplify field), AC-14 (agent/model fields), AC-15 (validated alongside git config).
   Three-file schema triad exception (schema.ts + defaults.ts + validate.ts).
 

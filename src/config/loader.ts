@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
+import { DEFAULT_ADVERSARIAL, DEFAULT_ARCHITECTURE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -155,6 +155,17 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
         'auto-push': raw.run?.git?.['auto-push'] ?? DEFAULT_RUN.git['auto-push'],
         'commit-prefix': raw.run?.git?.['commit-prefix'] ?? DEFAULT_RUN.git['commit-prefix'],
         branch: raw.run?.git?.branch ?? DEFAULT_RUN.git.branch,
+      },
+      adversarial: {
+        enabled: raw.run?.adversarial?.enabled ?? DEFAULT_ADVERSARIAL.enabled,
+        agent: raw.run?.adversarial?.agent ?? DEFAULT_ADVERSARIAL.agent,
+        model: raw.run?.adversarial?.model ?? DEFAULT_ADVERSARIAL.model,
+        budget: raw.run?.adversarial?.budget ?? DEFAULT_ADVERSARIAL.budget,
+        timeout: raw.run?.adversarial?.timeout ?? DEFAULT_ADVERSARIAL.timeout,
+        'diagnostic-branch': raw.run?.adversarial?.['diagnostic-branch'] ?? DEFAULT_ADVERSARIAL['diagnostic-branch'],
+        'test-patterns': raw.run?.adversarial?.['test-patterns'] ?? DEFAULT_ADVERSARIAL['test-patterns'],
+        'restricted-patterns': raw.run?.adversarial?.['restricted-patterns'] ?? DEFAULT_ADVERSARIAL['restricted-patterns'],
+        'skip-on-simplify': raw.run?.adversarial?.['skip-on-simplify'] ?? DEFAULT_ADVERSARIAL['skip-on-simplify'],
       },
     },
     review: {

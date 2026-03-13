@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generatePrompt, PLAN_TEMPLATE, BUILD_TEMPLATE } from './prompts.js';
 import type { RalphConfig } from '../../config/schema.js';
+import { DEFAULT_ADVERSARIAL } from '../../config/defaults.js';
 
 function makeTempDir(): string {
   const dir = join(tmpdir(), `ralph-run-prompts-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -42,6 +43,7 @@ function baseConfig(overrides: Partial<RalphConfig> = {}): RalphConfig {
       loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
       validation: { 'test-command': 'npm test', 'typecheck-command': 'npx tsc --noEmit' },
       git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+      adversarial: DEFAULT_ADVERSARIAL,
     },
     ...overrides,
   };
@@ -136,6 +138,7 @@ describe('generatePrompt — built-in templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'make test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('build', config);
@@ -254,6 +257,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'npm test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);
@@ -273,6 +277,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': 'npm test', 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('build', config);
@@ -291,6 +296,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': null, 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);
@@ -311,6 +317,7 @@ describe('generatePrompt — custom templates', () => {
         loop: { 'max-iterations': 10, 'stall-threshold': 3, 'iteration-timeout': 900 },
         validation: { 'test-command': null, 'typecheck-command': null },
         git: { 'auto-commit': false, 'auto-push': false, 'commit-prefix': '', branch: null },
+        adversarial: DEFAULT_ADVERSARIAL,
       },
     });
     const result = generatePrompt('plan', config);

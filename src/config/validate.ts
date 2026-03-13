@@ -16,7 +16,8 @@ const VALID_HEAL_COMMANDS = ['doctor', 'grade', 'gc', 'lint'];
 const KNOWN_REVIEW_KEYS = ['agent', 'scope', 'context', 'output'];
 const KNOWN_REVIEW_CONTEXT_KEYS = ['include-specs', 'include-architecture', 'include-diff-context', 'max-diff-lines'];
 const KNOWN_REVIEW_OUTPUT_KEYS = ['format', 'file', 'severity-threshold'];
-const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git'];
+const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop', 'validation', 'git', 'adversarial'];
+const KNOWN_ADVERSARIAL_KEYS = ['enabled', 'agent', 'model', 'budget', 'timeout', 'diagnostic-branch', 'test-patterns', 'restricted-patterns', 'skip-on-simplify'];
 const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
 const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
 const KNOWN_RUN_LOOP_KEYS = ['max-iterations', 'stall-threshold', 'iteration-timeout'];
@@ -160,6 +161,46 @@ function validateStages(stages: unknown, errors: string[]): void {
       if (visited.has(cur)) break;
       visited.add(cur); cur = stageMap.get(cur);
     }
+  }
+}
+
+function validateAdversarialConfig(adv: Record<string, unknown>, errors: string[], warnings: string[]): void {
+  warnUnknownKeys(adv, KNOWN_ADVERSARIAL_KEYS, 'run.adversarial.', warnings);
+  if (adv['enabled'] !== undefined && typeof adv['enabled'] !== 'boolean') {
+    errors.push('"run.adversarial.enabled" must be a boolean.');
+  }
+  if (adv['agent'] !== undefined && adv['agent'] !== null && typeof adv['agent'] !== 'string') {
+    errors.push('"run.adversarial.agent" must be null or a string.');
+  }
+  if (adv['model'] !== undefined && adv['model'] !== null && typeof adv['model'] !== 'string') {
+    errors.push('"run.adversarial.model" must be null or a string.');
+  }
+  if (adv['budget'] !== undefined) {
+    const v = adv['budget'];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v <= 0) {
+      errors.push('"run.adversarial.budget" must be a positive integer.');
+    }
+  }
+  if (adv['timeout'] !== undefined) {
+    const v = adv['timeout'];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v <= 0) {
+      errors.push('"run.adversarial.timeout" must be a positive integer.');
+    }
+  }
+  if (adv['diagnostic-branch'] !== undefined && typeof adv['diagnostic-branch'] !== 'boolean') {
+    errors.push('"run.adversarial.diagnostic-branch" must be a boolean.');
+  }
+  if (adv['test-patterns'] !== undefined) {
+    const valid = validateStringArray(adv['test-patterns'], 'run.adversarial.test-patterns', errors);
+    if (valid && Array.isArray(adv['test-patterns']) && adv['test-patterns'].length === 0) {
+      errors.push('"run.adversarial.test-patterns" must not be empty.');
+    }
+  }
+  if (adv['restricted-patterns'] !== undefined) {
+    validateStringArray(adv['restricted-patterns'], 'run.adversarial.restricted-patterns', errors);
+  }
+  if (adv['skip-on-simplify'] !== undefined && typeof adv['skip-on-simplify'] !== 'boolean') {
+    errors.push('"run.adversarial.skip-on-simplify" must be a boolean.');
   }
 }
 
@@ -481,6 +522,14 @@ export function validate(raw: unknown): ValidationResult {
           if (git['branch'] !== undefined && git['branch'] !== null && typeof git['branch'] !== 'string') {
             errors.push('"run.git.branch" must be null or a string.');
           }
+        }
+      }
+      // adversarial
+      if (run['adversarial'] !== undefined) {
+        if (typeof run['adversarial'] !== 'object' || run['adversarial'] === null) {
+          errors.push('"run.adversarial" must be an object.');
+        } else {
+          validateAdversarialConfig(run['adversarial'] as Record<string, unknown>, errors, warnings);
         }
       }
     }
