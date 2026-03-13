@@ -10,7 +10,7 @@ Date: 2026-03-13
 ---
 
 ## Schema & Config (F-CT06)
-- [ ] Add `CalibrationConfig` interface and update `RalphConfig` / `RawRalphConfig` in `src/config/schema.ts`
+- [x] Add `CalibrationConfig` interface and update `RalphConfig` / `RawRalphConfig` in `src/config/schema.ts`
   Add `CalibrationConfig` with fields `window`, `warn-pass-rate`, `warn-discard-rate`, `warn-volatility`.
   Add `calibration?: CalibrationConfig | undefined` to `RalphConfig`.
   Add `calibration?: Partial<CalibrationConfig>` to `RawRalphConfig`.
