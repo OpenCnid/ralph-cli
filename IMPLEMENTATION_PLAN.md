@@ -156,7 +156,7 @@ Date: 2026-03-13
 
 ## Tests
 
-- [ ] Create `src/commands/run/stages.test.ts` — unit tests for stage executor and default synthesis
+- [x] Create `src/commands/run/stages.test.ts` — unit tests for stage executor and default synthesis
   - `synthesizeDefaultStages()`: both commands present → 2 stages with correct name/required/timeout;
     one null → 1 stage; both null → 0 stages.
   - `executeStages([])`: returns `{ passed: true, stages: [], failedStage: null, testOutput: '' }`.
