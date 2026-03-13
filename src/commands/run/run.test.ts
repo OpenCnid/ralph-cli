@@ -31,6 +31,7 @@ vi.mock('./prompts.js', () => ({
 vi.mock('./detect.js', () => ({
   detectCompletedTask: vi.fn().mockReturnValue(null),
   normalizePlanContent: vi.fn((s: string) => s),
+  composeValidateCommand: vi.fn().mockReturnValue('npm test && npx tsc --noEmit'),
 }));
 
 vi.mock('../../utils/output.js', () => ({
@@ -203,7 +204,7 @@ beforeEach(() => {
   );
 
   // Validation passes by default
-  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '', stages: [], failedStage: null });
 
   // Default scorer returns no score
   mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });

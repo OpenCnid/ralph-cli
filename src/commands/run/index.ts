@@ -5,7 +5,7 @@ import { loadConfig } from '../../config/loader.js';
 import * as output from '../../utils/output.js';
 import { resolveAgent } from './agent.js';
 import { spawnAgentWithTimeout } from './timeout.js';
-import { detectCompletedTask, normalizePlanContent } from './detect.js';
+import { detectCompletedTask, normalizePlanContent, composeValidateCommand } from './detect.js';
 import { acquireLock, releaseLock } from './lock.js';
 import { runValidation } from './validation.js';
 import { discoverScorer, runScorer } from '../score/scorer.js';
@@ -299,6 +299,26 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
       lastMetrics: checkpoint.lastMetrics ?? undefined,
     });
     output.plain(prompt);
+
+    const dryRunValidation = config.run?.validation;
+    const explicitStages = dryRunValidation?.stages;
+    if (explicitStages !== undefined && explicitStages.length > 0) {
+      output.info('\nValidation stages:');
+      const rows = explicitStages.map((s) => {
+        const timeout = s.timeout !== undefined ? `${s.timeout}s` : 'default';
+        const req = s.required ? 'required' : 'optional';
+        const dep = s['run-after'] !== undefined ? ` (after: ${s['run-after']})` : '';
+        return `  ${s.name}  [${req}, timeout: ${timeout}${dep}]  ${s.command}`;
+      });
+      output.plain(rows.join('\n'));
+    } else {
+      const testCmd = dryRunValidation?.['test-command'] ?? null;
+      const typecheckCmd = dryRunValidation?.['typecheck-command'] ?? null;
+      const validateCmd = composeValidateCommand(testCmd, typecheckCmd);
+      output.info('\nValidate command:');
+      output.plain(`  ${validateCmd}`);
+    }
+
     return;
   }
 
@@ -434,6 +454,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: null,
           currentTestCount: null,
+          failedStage: null,
+          stageResults: null,
         });
 
         noChangesCount++;
@@ -510,6 +532,13 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
         revertToBaseline(baselineCommit, originalBranch, preAgentUntracked);
         const headAfterRevert = captureShortHead();
 
+        const stageResultsStr = validationResult.stages.length > 0
+          ? validationResult.stages.map((s) => {
+            const status = s.skipped ? 'skip' : s.passed ? 'pass' : 'fail';
+            return `${s.name}:${status}`;
+          }).join(',')
+          : null;
+
         appendResult({
           commit: headAfterRevert,
           iteration,
@@ -519,6 +548,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           durationS,
           metrics: '—',
           description,
+          stages: stageResultsStr ?? undefined,
         });
 
         scoreContext = buildScoreContext({
@@ -532,6 +562,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: null,
           currentTestCount: null,
+          failedStage: validationResult.failedStage,
+          stageResults: stageResultsStr,
         });
 
         checkpoint.iteration = iteration;
@@ -709,6 +741,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -779,6 +813,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -844,6 +880,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           checkpoint.iteration = iteration;
@@ -886,6 +924,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             regressionThreshold,
             previousTestCount: prevTestCount,
             currentTestCount: currTestCount,
+            failedStage: null,
+            stageResults: null,
           });
 
           // Increment consecutiveDiscards for cumulative regression too
@@ -941,6 +981,8 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           regressionThreshold,
           previousTestCount: prevTestCount,
           currentTestCount: currTestCount,
+          failedStage: null,
+          stageResults: null,
         });
 
         checkpoint.iteration = iteration;

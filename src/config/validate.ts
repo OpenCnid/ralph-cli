@@ -20,7 +20,7 @@ const KNOWN_RUN_KEYS = ['agent', 'plan-agent', 'build-agent', 'prompts', 'loop',
 const KNOWN_RUN_AGENT_KEYS = ['cli', 'args', 'timeout'];
 const KNOWN_RUN_PROMPTS_KEYS = ['plan', 'build'];
 const KNOWN_RUN_LOOP_KEYS = ['max-iterations', 'stall-threshold', 'iteration-timeout'];
-const KNOWN_RUN_VALIDATION_KEYS = ['test-command', 'typecheck-command'];
+const KNOWN_RUN_VALIDATION_KEYS = ['test-command', 'typecheck-command', 'stages'];
 const KNOWN_RUN_GIT_KEYS = ['auto-commit', 'auto-push', 'commit-prefix', 'branch'];
 const KNOWN_PROJECT_KEYS = ['name', 'language', 'description', 'framework'];
 const KNOWN_RUNNER_KEYS = ['cli'];
@@ -116,6 +116,49 @@ function validateAgentConfig(
     const t = obj['timeout'];
     if (typeof t !== 'number' || !Number.isInteger(t) || t <= 0) {
       errors.push(`"${prefix}.timeout" must be a positive integer.`);
+    }
+  }
+}
+
+function validateStages(stages: unknown, errors: string[]): void {
+  if (!Array.isArray(stages)) { errors.push('"run.validation.stages" must be an array.'); return; }
+  if (stages.length === 0) return;
+  const names = new Set<string>();
+  for (let i = 0; i < stages.length; i++) {
+    const s = stages[i] as Record<string, unknown> | undefined;
+    if (!s || typeof s !== 'object') { errors.push(`"run.validation.stages[${i}]" must be an object.`); continue; }
+    if (typeof s['name'] !== 'string' || s['name'].length === 0) {
+      errors.push(`"run.validation.stages[${i}].name" is required and must be a non-empty string.`);
+    } else {
+      if (names.has(s['name'])) errors.push(`"run.validation.stages" has duplicate name: "${s['name']}".`);
+      names.add(s['name']);
+    }
+    if (typeof s['command'] !== 'string' || s['command'].length === 0)
+      errors.push(`"run.validation.stages[${i}].command" is required and must be a non-empty string.`);
+    if (typeof s['required'] !== 'boolean')
+      errors.push(`"run.validation.stages[${i}].required" is required and must be a boolean.`);
+    if (s['run-after'] !== undefined && typeof s['run-after'] !== 'string')
+      errors.push(`"run.validation.stages[${i}].run-after" must be a string.`);
+    if (s['timeout'] !== undefined) {
+      const t = s['timeout'];
+      if (typeof t !== 'number' || !Number.isInteger(t) || t <= 0)
+        errors.push(`"run.validation.stages[${i}].timeout" must be a positive integer.`);
+    }
+  }
+  const stageMap = new Map<string, string | undefined>(
+    (stages as Record<string, unknown>[])
+      .filter(s => typeof s['name'] === 'string' && (s['name'] as string).length > 0)
+      .map(s => [s['name'] as string, typeof s['run-after'] === 'string' ? s['run-after'] as string : undefined])
+  );
+  for (const [name, runAfter] of stageMap) {
+    if (runAfter === undefined) continue;
+    if (!stageMap.has(runAfter)) { errors.push(`"run.validation.stages" has run-after "${runAfter}" which does not reference an existing stage name.`); continue; }
+    const visited = new Set<string>();
+    let cur: string | undefined = runAfter;
+    while (cur !== undefined) {
+      if (cur === name) { errors.push(`"run.validation.stages" has a circular run-after chain involving "${name}".`); break; }
+      if (visited.has(cur)) break;
+      visited.add(cur); cur = stageMap.get(cur);
     }
   }
 }
@@ -411,6 +454,9 @@ export function validate(raw: unknown): ValidationResult {
           }
           if (validation['typecheck-command'] !== undefined && validation['typecheck-command'] !== null && typeof validation['typecheck-command'] !== 'string') {
             errors.push('"run.validation.typecheck-command" must be null or a string.');
+          }
+          if (validation['stages'] !== undefined) {
+            validateStages(validation['stages'], errors);
           }
         }
       }

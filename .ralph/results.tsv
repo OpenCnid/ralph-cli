@@ -1,0 +1,26 @@
+commit	iteration	status	score	delta	duration_s	metrics	description
+bd80557	1	pass	—	—	331	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  to  and stage validation to
+ec9c9a1	2	pass	—	—	60	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Create  — stage type definitions, default synthesis, pipeline exe
+53516af	3	pass	—	—	164	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — add stage fields to  and
+0bb3781	4	pass	—	—	118	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add stage-aware fail message in buildScoreContext()
+bd8b449	5	pass	—	—	44	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — add  as 9th TSV column
+4b743e6	6	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Refactor  to use the stage pipeline executor
+d286604	7	pass	—	—	56	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add stage-aware composeValidateCommand() in detect.ts
+26d4c66	8	pass	—	—	51	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: mark prompts.ts stages task complete (already implemented in 
+f917d6c	9	pass	—	—	143	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Wire / into  and add dry-run stage display
+3cb21fb	10	pass	—	—	124	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Create  — unit tests for stage executor and default synthesis
+ee007fb	11	pass	—	—	78	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Update  — adapt existing assertions for new fields
+920a97d	12	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add tests to  — stage-aware score context
+4050b14	13	pass	—	—	93	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add tests to  — 9th column TSV handling
+c22362e	14	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add config validation tests for stages in
+1b09e36	15	pass	—	—	36	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Verify backward compatibility
+b39011b	16	pass	—	—	68	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: Verify all Phase 1 acceptance criteria — 868 tests pass, type
+f241712	17	pass	—	—	10	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 17
+5f0bbf1	18	pass	—	—	14	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 18
+55b92f8	19	pass	—	—	11	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 19
+c7434e7	20	pass	—	—	20	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 20
+6d3be32	21	pass	—	—	14	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 21
+96b6195	22	pass	—	—	11	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 22
+b884c58	23	pass	—	—	14	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 23
+40999df	24	pass	—	—	22	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 24
+f580837	25	pass	—	—	23	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 25

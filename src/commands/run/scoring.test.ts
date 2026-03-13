@@ -20,6 +20,8 @@ function makeScoreContext(overrides: Partial<ScoreContext> = {}): ScoreContext {
     regressionThreshold: 0.02,
     previousTestCount: null,
     currentTestCount: null,
+    failedStage: null,
+    stageResults: null,
     ...overrides,
   };
 }
@@ -114,6 +116,44 @@ describe('buildScoreContext', () => {
       previousStatus: 'unknown' as 'pass',
     });
     expect(buildScoreContext(ctx)).toBe('');
+  });
+
+  // ── stage-aware fail messages ─────────────────────────────────────────────
+
+  it('previousStatus=fail with 2+ stages: produces stage-aware message naming the failed stage', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: 'integration',
+      stageResults: 'unit:pass,typecheck:pass,integration:fail',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation at stage "integration"');
+    expect(result).toContain('unit ✓');
+    expect(result).toContain('integration ✗');
+  });
+
+  it('previousStatus=fail with null stageResults: produces v0.5 generic message', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: null,
+      stageResults: null,
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation');
+    expect(result).not.toContain('at stage');
+    expect(result).toContain('Ensure all tests pass');
+  });
+
+  it('previousStatus=fail with single-entry stageResults: falls back to generic message', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'fail',
+      failedStage: 'test',
+      stageResults: 'test:fail',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('FAILED validation');
+    expect(result).not.toContain('at stage');
+    expect(result).toContain('Ensure all tests pass');
   });
 
   // ── test count jump warning ───────────────────────────────────────────────
@@ -418,7 +458,7 @@ beforeEach(() => {
     (_config: AgentConfig, prompt: string, _timeout: number, opts?: { verbose?: boolean | undefined; capture?: boolean | undefined }) =>
       mockSpawnAgent(_config, prompt, opts),
   );
-  mockRunValidation.mockReturnValue({ passed: true, testOutput: '' });
+  mockRunValidation.mockReturnValue({ passed: true, testOutput: '', stages: [], failedStage: null });
   mockRunDefaultScorer.mockReturnValue({ score: null, source: 'default' as const, scriptPath: null, metrics: {} });
 
   // Git: always shows changes so the run loop takes the "has new work" path

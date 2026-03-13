@@ -119,6 +119,44 @@ export function buildScoreContext(ctx: ScoreContext): string {
   }
 
   if (previousStatus === 'fail') {
+    const { failedStage, stageResults } = ctx;
+    const entries = stageResults ? stageResults.split(',') : [];
+
+    if (stageResults && entries.length >= 2 && failedStage) {
+      const formatted = entries
+        .map(part => {
+          const colonIdx = part.lastIndexOf(':');
+          if (colonIdx < 0) return part;
+          const name = part.slice(0, colonIdx);
+          const status = part.slice(colonIdx + 1);
+          if (status === 'pass') return `${name} ✓`;
+          if (status === 'fail') return `${name} ✗`;
+          if (status === 'skip') return `${name} ⊘`;
+          return part;
+        })
+        .join(' | ');
+
+      const passingNames = entries
+        .filter(part => part.endsWith(':pass'))
+        .map(part => part.slice(0, part.lastIndexOf(':')));
+
+      let fixLine = `Fix the ${failedStage} failures.`;
+      if (passingNames.length > 0) {
+        const list =
+          passingNames.length === 1
+            ? passingNames[0]
+            : passingNames.slice(0, -1).join(', ') + ' and ' + passingNames[passingNames.length - 1];
+        fixLine += ` ${list} ${passingNames.length === 1 ? 'is' : 'are'} passing — do not change them.`;
+      }
+
+      return (
+        `## Score Context\n` +
+        `⚠ Previous iteration FAILED validation at stage "${failedStage}" and was reverted.\n` +
+        `Stage results: ${formatted}\n` +
+        fixLine
+      );
+    }
+
     return (
       `## Score Context\n` +
       `⚠ Previous iteration FAILED validation and was reverted.\n` +
