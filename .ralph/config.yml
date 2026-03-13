@@ -78,6 +78,11 @@ paths:
   generated: docs/generated
   quality: docs/QUALITY_SCORE.md
 
+run:
+  prompts:
+    plan: docs/exec-plans/trust-calibration-plan-prompt.md
+    build: null
+
 references:
   max-total-kb: 200
   warn-single-file-kb: 80

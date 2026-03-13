@@ -16,6 +16,17 @@ One topic per file. Each spec describes a single feature or concern.
 | `configuration.md` | Config schema and defaults |
 | `v0.1.1-patch.md` | Version 0.1.1 patch spec |
 
+## Trust Calibration (v0.6–v0.8)
+
+| Spec | Phase | Description |
+|------|-------|-------------|
+| `trust-calibration-roadmap.md` | — | Overarching roadmap and ordering rationale |
+| `staged-validation.md` | 1 | Multi-stage validation pipeline (unit → integration → e2e) |
+| `adversarial-generation.md` | 2 | Post-pass adversarial test generation to find edge-case bugs |
+| `calibration-tracking.md` | 3 | Trust drift detection via rolling calibration metrics |
+| `intent-verification.md` | 4 | Spec motivation cross-referencing for intent alignment |
+| `approach-divergence.md` | 5 | Temporal pattern fingerprinting and divergence flagging |
+
 ## Convention
 
 - One spec per file — do not combine multiple features
