@@ -13,3 +13,4 @@ ee007fb	11	pass	—	—	78	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 920a97d	12	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add tests to  — stage-aware score context
 4050b14	13	pass	—	—	93	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add tests to  — 9th column TSV handling
 c22362e	14	pass	—	—	67	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add config validation tests for stages in
+1b09e36	15	pass	—	—	36	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Verify backward compatibility
