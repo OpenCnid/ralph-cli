@@ -67,7 +67,7 @@ Date: 2026-03-13
   - Satisfies F-IV05; `--ci` exit code unaffected (existing score threshold handles it)
   - Verify: `ralph doctor` output includes the motivation check line; `ralph doctor --ci` still exits 0
 
-- [ ] Update `productSpecsIndexMd()` in `src/commands/init/templates.ts`
+- [x] Update `productSpecsIndexMd()` in `src/commands/init/templates.ts`
   - In the `## Convention` block, add the Motivation convention (≤5 lines): each spec should include a `## Motivation` section between the title and `## Requirements` (or equivalent), describing the problem being solved, not the solution
   - Do not restructure the function
   - Satisfies F-IV01
