@@ -129,7 +129,7 @@ Last updated: 2026-03-13
 - **Tests**: B — 87% line coverage
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: C — Avg 236 lines, 1 oversized: index.ts (1123)
+- **File Health**: C — Avg 238 lines, 1 oversized: index.ts (1131)
 - **Staleness**: A — Median 0d since last change
 - **Overall**: C
 
@@ -157,7 +157,7 @@ Last updated: 2026-03-13
 - **Docs**: A — 3/3 domain documentation files present
 - **Architecture**: A — No architectural violations
 - **File Health**: A — Avg 148 lines, no oversized files
-- **Staleness**: A — Median 2d since last change
+- **Staleness**: A — Median 0d since last change
 - **Overall**: C
 
 ### ralph-cli
@@ -165,7 +165,7 @@ Last updated: 2026-03-13
 - **Tests**: B — 86% line coverage
 - **Docs**: A — 5/5 documentation files present
 - **Architecture**: A — No architectural violations
-- **File Health**: B — Avg 186 lines, 2 oversized: index.ts (1123), validate.ts (684)
+- **File Health**: B — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)
 - **Staleness**: A — Median 4d since last change
 - **Overall**: B
 
@@ -240,7 +240,7 @@ Last updated: 2026-03-13
 - run/tests: B (stable) — 87% line coverage
 - run/docs: A (stable) — 3/3 domain documentation files present
 - run/architecture: A (stable) — No architectural violations
-- run/fileHealth: C (stable) — Avg 236 lines, 1 oversized: index.ts (1123)
+- run/fileHealth: C (stable) — Avg 238 lines, 1 oversized: index.ts (1131)
 - run/staleness: A (stable) — Median 0d since last change
 - run/overall: C (stable)
 - review/tests: A (stable) — 95% line coverage
@@ -259,16 +259,16 @@ Last updated: 2026-03-13
 - score/docs: A (stable) — 3/3 domain documentation files present
 - score/architecture: A (stable) — No architectural violations
 - score/fileHealth: A (stable) — Avg 148 lines, no oversized files
-- score/staleness: A (stable) — Median 2d since last change
+- score/staleness: A (stable) — Median 0d since last change
 - score/overall: C (stable)
 - ralph-cli/tests: B (stable) — 86% line coverage
 - ralph-cli/docs: A (stable) — 5/5 documentation files present
 - ralph-cli/architecture: A (stable) — No architectural violations
-- ralph-cli/fileHealth: B (stable) — Avg 186 lines, 2 oversized: index.ts (1123), validate.ts (684)
+- ralph-cli/fileHealth: B (stable) — Avg 187 lines, 2 oversized: index.ts (1131), validate.ts (684)
 - ralph-cli/staleness: A (stable) — Median 4d since last change
 - ralph-cli/overall: B (stable)
 
 ## Action Items
 
 - [ ] config: Split oversized files — Avg 292 lines, 1 oversized: validate.ts (684)
-- [ ] run: Consider splitting large files — Avg 236 lines, 1 oversized: index.ts (1123)
+- [ ] run: Consider splitting large files — Avg 238 lines, 1 oversized: index.ts (1131)
