@@ -29,3 +29,4 @@ f0abbf5	1	pass	—	—	452	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 f795429	3	pass	—	—	74	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add generateAdversarialPrompt() to run/prompts.ts
 61e47de	4	pass	—	—	135	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: create adversarial.ts with enforceFileRestriction and enforce
 187db7d	5	pass	—	—	65	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add pushDiagnosticBranch() to adversarial.ts
+bebba13	8	pass	—	—	270	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: wire adversarial pass into run/index.ts and dry-run output
