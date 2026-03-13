@@ -195,7 +195,7 @@ Date: 2026-03-13
   - Header written by `appendResult` on file creation includes `stages` as 9th column.
   - Satisfies: F-SV05 tests, AC-7
 
-- [ ] Add config validation tests for stages in `src/config/validate.test.ts`
+- [x] Add config validation tests for stages in `src/config/validate.test.ts`
   - Duplicate stage names → `errors` contains message about duplicate names.
   - `run-after` referencing nonexistent stage → error.
   - Circular `run-after` (A → B → A) → error.

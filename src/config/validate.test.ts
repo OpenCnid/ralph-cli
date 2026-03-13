@@ -979,6 +979,91 @@ describe('scoring config validation', () => {
   });
 });
 
+describe('run.validation.stages validation', () => {
+  const withStages = (stages: unknown) => ({
+    ...MINIMAL,
+    run: { validation: { stages } },
+  });
+
+  it('accepts empty stages array', () => {
+    const result = validate(withStages([]));
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts valid stages with all optional fields', () => {
+    const result = validate(withStages([
+      { name: 'unit', command: 'npm test', required: true, timeout: 120 },
+      { name: 'typecheck', command: 'npx tsc --noEmit', required: true, timeout: 60, 'run-after': 'unit' },
+      { name: 'integration', command: 'npm run test:integration', required: false },
+    ]));
+    expect(result.errors).toEqual([]);
+  });
+
+  it('errors on duplicate stage names', () => {
+    const result = validate(withStages([
+      { name: 'unit', command: 'npm test', required: true },
+      { name: 'unit', command: 'npm run unit2', required: false },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('duplicate') && e.includes('unit'))).toBe(true);
+  });
+
+  it('errors on run-after referencing nonexistent stage', () => {
+    const result = validate(withStages([
+      { name: 'unit', command: 'npm test', required: true, 'run-after': 'nonexistent' },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('nonexistent'))).toBe(true);
+  });
+
+  it('errors on circular run-after chain (A → B → A)', () => {
+    const result = validate(withStages([
+      { name: 'a', command: 'echo a', required: true, 'run-after': 'b' },
+      { name: 'b', command: 'echo b', required: true, 'run-after': 'a' },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('circular'))).toBe(true);
+  });
+
+  it('errors on non-array stages', () => {
+    const result = validate(withStages('not-an-array'));
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('run.validation.stages');
+  });
+
+  it('errors on stage missing required name', () => {
+    const result = validate(withStages([
+      { command: 'npm test', required: true },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('stages[0].name'))).toBe(true);
+  });
+
+  it('errors on stage missing required command', () => {
+    const result = validate(withStages([
+      { name: 'unit', required: true },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('stages[0].command'))).toBe(true);
+  });
+
+  it('errors on stage missing required boolean', () => {
+    const result = validate(withStages([
+      { name: 'unit', command: 'npm test' },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('stages[0].required'))).toBe(true);
+  });
+
+  it('errors on non-positive integer timeout', () => {
+    const result = validate(withStages([
+      { name: 'unit', command: 'npm test', required: true, timeout: 0 },
+    ]));
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some(e => e.includes('stages[0].timeout'))).toBe(true);
+  });
+});
+
 describe('run.loop.iteration-timeout validation', () => {
   it('accepts valid iteration-timeout', () => {
     const result = validate({ ...MINIMAL, run: { loop: { 'iteration-timeout': 900 } } });
