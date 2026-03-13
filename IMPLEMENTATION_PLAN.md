@@ -51,7 +51,7 @@ Date: 2026-03-13
 ---
 
 ## Core Implementation (F-CT01, F-CT02, F-CT04, F-CT07)
-- [ ] Create `src/commands/score/calibration.ts`
+- [x] Create `src/commands/score/calibration.ts`
   Exports: `CalibrationReport`, `TrustDriftSignal`, `TrustDriftResult`, `CalibrationThresholds` interfaces;
   `computeCalibration()`, `detectTrustDrift()`, `formatCalibrationReport()`, `formatCalibrationJSON()` functions.
 
