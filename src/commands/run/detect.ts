@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RalphConfig } from '../../config/schema.js';
+import type { RalphConfig, ValidationStage } from '../../config/schema.js';
 
 function fileExists(dir: string, name: string): boolean {
   return existsSync(join(dir, name));
@@ -143,9 +143,14 @@ export function detectCompletedTask(planBefore: string): string | null {
 
 /**
  * Compose the validate command from detected components.
- * Always includes ralph doctor --ci and ralph grade --ci.
+ * When explicit stages are provided, returns only stage commands joined with &&.
+ * Otherwise, includes ralph doctor --ci and ralph grade --ci.
  */
-export function composeValidateCommand(testCmd: string | null, typecheckCmd: string | null): string {
+export function composeValidateCommand(testCmd: string | null, typecheckCmd: string | null, stages?: ValidationStage[]): string {
+  if (stages !== undefined && stages.length > 0) {
+    return stages.map((s) => s.command).join(' && ');
+  }
+
   const parts: string[] = [];
 
   if (testCmd) parts.push(testCmd);

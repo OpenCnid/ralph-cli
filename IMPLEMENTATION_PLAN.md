@@ -110,7 +110,7 @@ Date: 2026-03-13
 
 ## Update detect.ts (F-SV06 prereq)
 
-- [ ] Update `src/commands/run/detect.ts` — stage-aware `composeValidateCommand()`
+- [x] Update `src/commands/run/detect.ts` — stage-aware `composeValidateCommand()`
   - Change `composeValidateCommand()` signature to:
     `composeValidateCommand(testCmd: string | null, typecheckCmd: string | null, stages?: ValidationStage[]): string`
   - When `stages` is defined and non-empty: return command chain of stage commands only

@@ -156,7 +156,7 @@ function buildVariables(
 ): Record<string, string> {
   const testCmd = detectTestCommand(config);
   const typecheckCmd = detectTypecheckCommand(config);
-  const validateCmd = composeValidateCommand(testCmd, typecheckCmd);
+  const validateCmd = composeValidateCommand(testCmd, typecheckCmd, config.run?.validation?.stages);
 
   const now = new Date().toISOString().slice(0, 10);
 
