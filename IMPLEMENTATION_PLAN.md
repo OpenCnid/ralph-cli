@@ -147,7 +147,7 @@ Date: 2026-03-13
 ---
 
 ## Architecture Update
-- [ ] Update `ARCHITECTURE.md` to add `calibration.ts` to the score domain listing
+- [x] Update `ARCHITECTURE.md` to add `calibration.ts` to the score domain listing
   In the Directory Map, add under `score/`:
   ```
       │   ├── calibration.ts  — Calibration metrics, trust drift detection, report formatting
