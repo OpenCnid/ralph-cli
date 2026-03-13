@@ -11,7 +11,7 @@ Date: 2026-03-13
 
 ## Schema & Config (F-SV01)
 
-- [ ] Add `ValidationStage` to `src/config/schema.ts` and stage validation to `src/config/validate.ts`
+- [x] Add `ValidationStage` to `src/config/schema.ts` and stage validation to `src/config/validate.ts`
   - In `schema.ts`: Add `ValidationStage` interface with fields `name: string`, `command: string`,
     `required: boolean`, `'run-after'?: string | undefined`, `timeout?: number | undefined`.
     Extend `ValidationConfig` with `stages?: ValidationStage[] | undefined`.

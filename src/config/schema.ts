@@ -116,9 +116,18 @@ export interface ScoringConfig {
   };
 }
 
+export interface ValidationStage {
+  name: string;
+  command: string;
+  required: boolean;
+  'run-after'?: string | undefined;
+  timeout?: number | undefined;
+}
+
 export interface ValidationConfig {
   'test-command': string | null;
   'typecheck-command': string | null;
+  stages?: ValidationStage[] | undefined;
 }
 
 export interface GitConfig {
