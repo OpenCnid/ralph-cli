@@ -3,6 +3,47 @@ import { existsSync, rmSync } from 'node:fs';
 import type { AdversarialConfig } from '../../config/schema.js';
 import { warn } from '../../utils/output.js';
 
+// ---------------------------------------------------------------------------
+// Diagnostic branch (AC-7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Push the current HEAD (commit A + adversary test files) to a diagnostic
+ * branch so failing tests can be inspected before the main branch is reverted.
+ *
+ * Returns the branch name on success, or null if diagnostic branches are
+ * disabled or if any git command fails (fail-open).
+ */
+export function pushDiagnosticBranch(
+  iteration: number,
+  failureCount: number,
+  diagnosticEnabled: boolean,
+): string | null {
+  if (!diagnosticEnabled) return null;
+
+  const branch = `ralph/adversarial/${iteration}`;
+  try {
+    execSync(`git checkout -b ${branch}`, { stdio: 'pipe' });
+    execSync(
+      `git add -A && git commit -m "ralph: adversarial tests (iteration ${iteration}, ${failureCount} failures)"`,
+      { stdio: 'pipe' },
+    );
+    execSync('git checkout -', { stdio: 'pipe' });
+    return branch;
+  } catch (err) {
+    warn(
+      `Failed to create diagnostic branch ${branch}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    // Attempt to return to original branch on failure
+    try {
+      execSync('git checkout -', { stdio: 'pipe' });
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+}
+
 export interface TestSnapshot {
   testFiles: string[];
   testCount: number | null;

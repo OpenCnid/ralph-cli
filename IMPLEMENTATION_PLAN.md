@@ -102,7 +102,7 @@ Date: 2026-03-13
 
   Verify: unit tests mock `execSync`/`existsSync`; non-test file reverted; test file kept; guard aborts on deleted file; guard aborts on count decrease; guard passes on added tests.
 
-- [ ] Add `pushDiagnosticBranch()` to `src/commands/run/adversarial.ts`.
+- [x] Add `pushDiagnosticBranch()` to `src/commands/run/adversarial.ts`.
   Satisfies: AC-7 (push failing tests to `ralph/adversarial/{iteration}` before reverting).
 
   ```typescript

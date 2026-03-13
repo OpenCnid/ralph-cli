@@ -26,3 +26,4 @@ b884c58	23	pass	—	—	14	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 f580837	25	pass	—	—	23	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 25
 f0abbf5	1	pass	—	—	452	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add AdversarialConfig schema, defaults, and validation
 1e9f040	2	pass	—	—	49	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Add  type and  to ; add  to  union in ; add  field to  in ; add  
+f795429	3	pass	—	—	74	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add generateAdversarialPrompt() to run/prompts.ts
