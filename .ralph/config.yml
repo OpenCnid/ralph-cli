@@ -82,6 +82,21 @@ run:
   prompts:
     plan: docs/exec-plans/trust-calibration-plan-prompt.md
     build: null
+  adversarial:
+    enabled: true
+    budget: 5
+    timeout: 300
+    diagnostic-branch: true
+  validation:
+    stages:
+      - name: test
+        command: npm test
+        required: true
+        timeout: 120
+      - name: typecheck
+        command: npx tsc --noEmit
+        required: true
+        timeout: 60
 
 references:
   max-total-kb: 200
