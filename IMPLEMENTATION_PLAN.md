@@ -73,7 +73,7 @@ The `scanPatternInconsistency` function (line 407) has an internal `patterns` ma
 
 ---
 
-## Task 3 — Create `gc/fingerprint.ts` with snapshot, history I/O, and divergence (F-AD02, F-AD03, F-AD04)
+## Task 3 — Create `gc/fingerprint.ts` with snapshot, history I/O, and divergence (F-AD02, F-AD03, F-AD04) [x]
 
 **File:** `src/commands/gc/fingerprint.ts` (new — **sentinel file for Phase 5**)
 
