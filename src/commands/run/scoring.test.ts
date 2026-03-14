@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, existsSync, rmSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { buildScoreContext, computeRegression, computeChangedMetrics } from './scoring.js';
+import { buildScoreContext, computeRegression, computeChangedMetrics, formatDivergenceContext } from './scoring.js';
 import type { ScoreContext } from '../score/types.js';
 import type { Checkpoint } from './progress.js';
 
@@ -275,6 +275,58 @@ describe('buildScoreContext', () => {
     expect(result).toContain('skipped (no tests written)');
   });
 
+  // ── divergenceInfo ────────────────────────────────────────────────────────
+
+  it('previousStatus=pass with divergenceInfo → output contains divergence info block (SC-14)', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'pass',
+      currentScore: 0.85,
+      previousScore: 0.80,
+      delta: 0.05,
+      metrics: '—',
+      divergenceInfo: 'ℹ Approach divergence detected:\n  error-handling: ".catch()" appeared',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('ℹ Approach divergence detected:');
+    expect(result).toContain('error-handling');
+  });
+
+  it('previousStatus=pass with divergenceInfo=undefined → no divergence block (SC-15)', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'pass',
+      currentScore: 0.85,
+      previousScore: 0.80,
+      delta: 0.05,
+      metrics: '—',
+      divergenceInfo: undefined,
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).not.toContain('divergence');
+    expect(result).toContain('Score Context');
+  });
+
+  it('previousStatus=null → returns empty string regardless of divergenceInfo', () => {
+    const ctx = makeScoreContext({
+      previousStatus: null,
+      divergenceInfo: 'ℹ Approach divergence detected:\n  something',
+    });
+    expect(buildScoreContext(ctx)).toBe('');
+  });
+
+  it('previousStatus=discard with divergenceInfo → output does NOT contain divergence info', () => {
+    const ctx = makeScoreContext({
+      previousStatus: 'discard',
+      previousScore: 0.80,
+      currentScore: 0.75,
+      delta: -0.05,
+      changedMetrics: 'test_count: 100→90',
+      divergenceInfo: 'ℹ Approach divergence detected:\n  something',
+    });
+    const result = buildScoreContext(ctx);
+    expect(result).toContain('DISCARDED');
+    expect(result).not.toContain('ℹ Approach divergence detected:');
+  });
+
   it('previousStatus=pass + no adversarialResult: output unchanged from pre-Phase-2', () => {
     const ctx = makeScoreContext({
       previousStatus: 'pass',
@@ -288,6 +340,40 @@ describe('buildScoreContext', () => {
     expect(result).not.toContain('Adversarial');
     expect(result).toContain('Score Context');
     expect(result).toContain('0.850');
+  });
+});
+
+// ─── formatDivergenceContext ──────────────────────────────────────────────────
+
+describe('formatDivergenceContext', () => {
+  it('one new-pattern item → returns string starting with info prefix', () => {
+    const items = [{ category: 'error-handling', type: 'new-pattern' as const, variant: '.catch()', detail: '".catch()" appeared for the first time (3 files)' }];
+    const result = formatDivergenceContext(items);
+    expect(result).toBeDefined();
+    expect(result!.startsWith('ℹ Approach divergence detected:')).toBe(true);
+  });
+
+  it('multiple items across categories → all categories appear in output', () => {
+    const items = [
+      { category: 'error-handling', type: 'new-pattern' as const, variant: '.catch()', detail: '".catch()" appeared for the first time (3 files)' },
+      { category: 'export-style', type: 'dominant-shift' as const, variant: 'default-export', detail: 'dominant variant changed from named-export to default-export' },
+    ];
+    const result = formatDivergenceContext(items);
+    expect(result).toContain('error-handling');
+    expect(result).toContain('export-style');
+  });
+
+  it('empty array → returns undefined', () => {
+    expect(formatDivergenceContext([])).toBeUndefined();
+  });
+
+  it('output never contains "⚠" (SC-16)', () => {
+    const items = [
+      { category: 'error-handling', type: 'new-pattern' as const, variant: '.catch()', detail: 'appeared for the first time (3 files)' },
+      { category: 'null-checking', type: 'proportion-change' as const, variant: 'optional-chain', detail: 'share changed from 10% to 50%' },
+    ];
+    const result = formatDivergenceContext(items);
+    expect(result).not.toContain('⚠');
   });
 });
 

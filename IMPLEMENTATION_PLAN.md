@@ -401,21 +401,21 @@ Tests use temp directories (via `os.tmpdir()` + random suffix, cleaned up in `af
 
 **Satisfies:** SC-04–SC-13, SC-18, SC-19, SC-20, SC-22, SC-23, SC-24, spec-level criterion 3
 
-### Task 10 — Extend `run/scoring.test.ts` (F-AD05 tests)
+### Task 10 — Extend `run/scoring.test.ts` (F-AD05 tests) [x]
 
 **File:** `src/commands/run/scoring.test.ts` (existing)
 
 **formatDivergenceContext:**
-- [ ] One `new-pattern` item → returns string starting with `"ℹ Approach divergence detected:"`
-- [ ] Multiple items across categories → all categories appear in output
-- [ ] Empty array → returns `undefined`
-- [ ] Output never contains `"⚠"` (SC-16)
+- [x] One `new-pattern` item → returns string starting with `"ℹ Approach divergence detected:"`
+- [x] Multiple items across categories → all categories appear in output
+- [x] Empty array → returns `undefined`
+- [x] Output never contains `"⚠"` (SC-16)
 
 **buildScoreContext extensions:**
-- [ ] `previousStatus: 'pass'` with `divergenceInfo: "ℹ Approach divergence detected: ..."` → output contains the divergence info block (SC-14)
-- [ ] `previousStatus: 'pass'` with `divergenceInfo: undefined` → output identical to pre-change behavior (SC-15)
-- [ ] `previousStatus: null` → returns `''` regardless of `divergenceInfo`
-- [ ] `previousStatus: 'discard'` with `divergenceInfo` set → output does NOT contain divergence info
+- [x] `previousStatus: 'pass'` with `divergenceInfo: "ℹ Approach divergence detected: ..."` → output contains the divergence info block (SC-14)
+- [x] `previousStatus: 'pass'` with `divergenceInfo: undefined` → output identical to pre-change behavior (SC-15)
+- [x] `previousStatus: null` → returns `''` regardless of `divergenceInfo`
+- [x] `previousStatus: 'discard'` with `divergenceInfo` set → output does NOT contain divergence info
 
 **Satisfies:** SC-14, SC-15, SC-16
 
