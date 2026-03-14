@@ -2,70 +2,66 @@
 
 # ralph-cli
 
-## Commands
+## Build / Test / Lint
 
 - Build: `npm run build`
-- Test: `npm test`
-- Run (build mode): `ralph run` — spawn agent, implement next task, commit, loop
-- Run (plan mode): `ralph run plan` — spawn agent to generate/update IMPLEMENTATION_PLAN.md
-- Run with max iterations: `ralph run plan --max 3`
-- Override agent: `ralph run --agent codex`
-- Dry run: `ralph run --dry-run` — show prompt without executing
-- Resume from checkpoint: `ralph run --resume`
-- Score (current): `ralph score` — run fitness scorer, print score + metrics
-- Score history: `ralph score --history [N]` — show last N scored iterations (default 20)
-- Score trend: `ralph score --trend [N]` — sparkline + best/worst summary
-- Score compare: `ralph score --compare` — compare current score vs last recorded
-- Score JSON: `ralph score --json` — structured output for tooling
+- Test: `npm test` (1071 tests, vitest)
 - Typecheck: `npx tsc --noEmit`
 - Lint: `npm run lint`
-- Run locally: `node dist/cli.js <command>`
-- Link for dev: `npm link` → `ralph <command>`
+- Dev: `npm link` → `ralph <command>`
 
-## Project Structure
+## Key Commands
 
-- `src/cli.ts` — Entry point, command router (commander)
-- `src/commands/<name>/index.ts` — One directory per command
-  - `init/` `lint/` `grade/` `gc/` `doctor/` `plan/` `promote/` `ref/` `hooks/` `ci/` `run/`
-  - `review/` `heal/` `score/`
-  - `config-validate.ts` — Standalone config validation
-- `src/commands/lint/engine.ts` — Rule framework (built-in + custom)
-- `src/commands/lint/imports.ts` — Import parser
-- `src/commands/lint/files.ts` — File collector
-- `src/commands/lint/rules/` — Built-in lint rules
-- `src/config/` — Config system
-  - `schema.ts` (types), `loader.ts` (find + parse + merge), `validate.ts`, `defaults.ts`
-- `src/utils/` — Shared utilities
-  - `fs.ts` (ensureDir, safeReadFile, safeWriteFile), `output.ts` (colored console)
-- `docs/product-specs/` — Feature specifications
-- `.ralph/` — Project config and custom rules
-- `dist/` — Compiled output (git-ignored)
+```bash
+ralph run plan                  # Agent generates IMPLEMENTATION_PLAN.md from specs
+ralph run                       # Build loop: task → staged validation → adversarial → score → repeat
+ralph run --dry-run             # Show prompts + stage pipeline without executing
+ralph run --verbose --max 10    # Verbose, capped at 10 iterations
 
-## Documentation
+ralph score --calibration       # Trust drift analysis (pass rate, discard rate, volatility)
+ralph score --trend             # Sparkline + best/worst
 
-| Document | Purpose |
-|----------|---------|
-| `ARCHITECTURE.md` | Domain boundaries, layers, dependency rules |
-| `IMPLEMENTATION_PLAN.md` | Current state, command status, deferred items |
-| `CHANGELOG.md` | Full release history (reverse chronological) |
-| `docs/product-specs/repo-scaffolding.md` | What `ralph init` creates and why |
-| `docs/product-specs/taste-escalation.md` | The promote/escalation ladder concept |
-| `docs/product-specs/drift-detection.md` | What `ralph gc` catches |
-| `docs/product-specs/architectural-enforcement.md` | What `ralph lint` enforces |
-| `docs/product-specs/quality-grading.md` | How `ralph grade` scores projects |
-| `docs/product-specs/repo-diagnostics.md` | What `ralph doctor` checks |
-| `docs/product-specs/configuration.md` | Config schema and defaults |
-| `docs/product-specs/execution-plans.md` | How `ralph plan` works |
-| `docs/product-specs/references.md` | How `ralph ref` manages external docs |
-| `docs/product-specs/integration.md` | Hooks and CI generation |
+ralph review --intent           # Review with spec motivation cross-referencing
+ralph heal                      # Run diagnostics → agent fixes issues
+
+ralph gc --temporal             # Pattern evolution timeline
+ralph gc --temporal --last 5    # Last 5 snapshots
+
+ralph lint                      # Architectural enforcement
+ralph grade                     # Quality grading (5 dimensions, per domain)
+ralph doctor                    # Repo readiness diagnostics
+ralph init                      # Scaffold project structure
+ralph promote                   # Escalate preferences (doc → lint → pattern)
+ralph ref                       # Manage external reference docs
+```
+
+## Architecture
+
+- **Layers:** config → utils → commands → cli (forward-only)
+- **16 command domains** under `src/commands/`, each self-contained
+- **6 documented cross-command exceptions** in ARCHITECTURE.md
+- **File size limit:** 600 lines. Split if approaching.
+- **All output** through `src/utils/output.ts` — no raw `console.log`
+
+Key domains for trust calibration:
+- `run/` — build loop + staged validation (`stages.ts`) + adversarial testing (`adversarial.ts`)
+- `score/` — fitness scoring + calibration tracking (`calibration.ts`)
+- `review/` — code review + intent verification (`prompts.ts` has `INTENT_REVIEW_TEMPLATE`)
+- `gc/` — drift detection + approach divergence (`fingerprint.ts`)
+
+## Config
+
+- `config/schema.ts` — types, `config/defaults.ts` — defaults, `config/validate.ts` + `validators.ts` + `validate-run.ts` — validation
+- Config walks up dirs for `.ralph/config.yml`, merges with defaults
 
 ## Operational Notes
 
-- **ESM only** — `import` statements, never `require()`. `.ts` imports resolve to `.js` in output.
-- **`exactOptionalPropertyTypes`** — Optional props need `| undefined` (e.g., `description?: string | undefined`).
-- **YAML 1.2** — Single-quote regex patterns with backslashes in `.yml` (e.g., `pattern: 'console\\.log'`).
-- **Test isolation** — Tests `chdir()` to temp dirs with `.git/` stubs. Always restore `origCwd` in `afterEach`.
-- **Config resolution** — Walks up directories for `.ralph/config.yml`. Falls back to defaults.
-- **vitest.config.ts** — Excludes `dist/` to prevent running compiled test copies.
-- **tsconfig.json** — `"include": ["src"]` to exclude vitest.config.ts from compilation.
-- **LLM-agnostic** — Zero references to specific AI providers or models anywhere in source or templates.
+- **ESM only** — `.ts` imports resolve to `.js`. Never `require()`.
+- **`exactOptionalPropertyTypes`** — optional props need `| undefined`
+- **Test isolation** — tests `chdir()` to temp dirs. Restore `origCwd` in `afterEach`.
+- **LLM-agnostic** — zero references to specific AI providers in source or templates
+- **Results TSV** — 9 columns. Status: `pass`, `fail`, `discard`, `timeout`, `adversarial-fail`
+
+## Extended Reference
+
+Full project structure, trust calibration details, and documentation index → `docs/AGENTS_DETAIL.md`
