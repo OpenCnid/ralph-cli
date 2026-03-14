@@ -190,7 +190,7 @@ Note: This function does NOT call `formatDivergenceContext`. `run/index.ts` gets
 
 ---
 
-## Task 5 — Wire `--temporal` and `--last` into `gc/index.ts` (F-AD07 wiring)
+## Task 5 — Wire `--temporal` and `--last` into `gc/index.ts` (F-AD07 wiring) [x]
 
 **File:** `src/commands/gc/index.ts`
 

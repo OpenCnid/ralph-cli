@@ -70,7 +70,9 @@ program
   .option('--fix-descriptions', 'Markdown with one fix task per drift item')
   .option('--severity <level>', 'Filter by severity (critical, warning, info)')
   .option('--category <category>', 'Filter by category (principle-violation, dead-code, stale-documentation, pattern-inconsistency)')
-  .action((options: { json?: boolean; fixDescriptions?: boolean; severity?: string; category?: string }) => {
+  .option('--temporal', 'Show pattern history over time')
+  .option('--last <n>', 'Number of iterations to show in temporal view (default: 10)', parseInt)
+  .action((options: { json?: boolean; fixDescriptions?: boolean; severity?: string; category?: string; temporal?: boolean; last?: number }) => {
     gcCommand(options);
   });
 
