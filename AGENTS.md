@@ -17,51 +17,72 @@ ralph run plan                  # Agent generates IMPLEMENTATION_PLAN.md from sp
 ralph run                       # Build loop: task → staged validation → adversarial → score → repeat
 ralph run --dry-run             # Show prompts + stage pipeline without executing
 ralph run --verbose --max 10    # Verbose, capped at 10 iterations
-
-ralph score --calibration       # Trust drift analysis (pass rate, discard rate, volatility)
-ralph score --trend             # Sparkline + best/worst
-
+ralph score --calibration       # Trust drift analysis
 ralph review --intent           # Review with spec motivation cross-referencing
-ralph heal                      # Run diagnostics → agent fixes issues
-
+ralph heal                      # Diagnostics → agent fixes issues
 ralph gc --temporal             # Pattern evolution timeline
-ralph gc --temporal --last 5    # Last 5 snapshots
+ralph lint / ralph grade / ralph doctor / ralph init / ralph promote / ralph ref
+```
 
-ralph lint                      # Architectural enforcement
-ralph grade                     # Quality grading (5 dimensions, per domain)
-ralph doctor                    # Repo readiness diagnostics
-ralph init                      # Scaffold project structure
-ralph promote                   # Escalate preferences (doc → lint → pattern)
-ralph ref                       # Manage external reference docs
+## Project Structure
+
+```
+src/
+├── cli.ts                       — Entry point, commander router
+├── config/
+│   ├── schema.ts                — Types for .ralph/config.yml
+│   ├── loader.ts                — Find, parse, merge config
+│   ├── validate.ts              — Validation orchestrator
+│   ├── validators.ts            — Domain validators (project, arch, gc, quality, etc.)
+│   ├── validate-run.ts          — Run-domain validators (run, stages, adversarial)
+│   └── defaults.ts              — Default config values
+├── utils/                       — fs, output, prompt (shared)
+└── commands/
+    ├── run/                     — Autonomous build loop
+    │   ├── index.ts             — Loop orchestration
+    │   ├── stages.ts            — Multi-stage validation pipeline
+    │   ├── adversarial.ts       — Adversarial pass (file restriction, test guard, diag branch)
+    │   ├── scoring.ts           — Score context (stage-aware, adversarial-aware)
+    │   ├── prompts.ts           — Template engine (plan/build/adversarial)
+    │   ├── agent.ts / timeout.ts — Agent spawn + timeout
+    │   ├── detect.ts            — Auto-detect test/typecheck
+    │   ├── validation.ts        — Delegates to stages
+    │   ├── git.ts               — Revert helpers
+    │   ├── progress.ts          — Checkpoints, banners, calibration summary
+    │   └── types.ts / lock.ts
+    ├── score/                   — Fitness scoring
+    │   ├── calibration.ts       — Trust drift (pass rate, volatility, signals)
+    │   ├── results.ts           — 9-col TSV log (stages col, adversarial-fail status)
+    │   ├── scorer.ts / default-scorer.ts / trend.ts / types.ts
+    │   └── index.ts             — CLI (--calibration, --history, --trend, --json)
+    ├── review/                  — Code review + intent verification
+    │   ├── context.ts           — Diff extraction, extractMotivation()
+    │   ├── prompts.ts           — Standard + INTENT_REVIEW_TEMPLATE
+    │   └── types.ts / index.ts
+    ├── gc/                      — Drift detection + approach divergence
+    │   ├── fingerprint.ts       — Pattern fingerprinting, divergence detection
+    │   ├── scanners.ts          — 4-category scanners + collectPatternData()
+    │   └── history.ts / index.ts
+    ├── heal/                    — Automated self-repair
+    ├── lint/ grade/ doctor/ init/ plan/ promote/ ref/ hooks/ ci/
+    └── config-validate.ts
 ```
 
 ## Architecture
 
 - **Layers:** config → utils → commands → cli (forward-only)
-- **16 command domains** under `src/commands/`, each self-contained
-- **6 documented cross-command exceptions** in ARCHITECTURE.md
-- **File size limit:** 600 lines. Split if approaching.
-- **All output** through `src/utils/output.ts` — no raw `console.log`
-
-Key domains for trust calibration:
-- `run/` — build loop + staged validation (`stages.ts`) + adversarial testing (`adversarial.ts`)
-- `score/` — fitness scoring + calibration tracking (`calibration.ts`)
-- `review/` — code review + intent verification (`prompts.ts` has `INTENT_REVIEW_TEMPLATE`)
-- `gc/` — drift detection + approach divergence (`fingerprint.ts`)
-
-## Config
-
-- `config/schema.ts` — types, `config/defaults.ts` — defaults, `config/validate.ts` + `validators.ts` + `validate-run.ts` — validation
-- Config walks up dirs for `.ralph/config.yml`, merges with defaults
+- **16 domains** under `src/commands/`, self-contained. **6 cross-command exceptions** in ARCHITECTURE.md
+- **600-line file limit.** All output through `src/utils/output.ts`.
 
 ## Operational Notes
 
-- **ESM only** — `.ts` imports resolve to `.js`. Never `require()`.
+- **ESM only** — `.ts` imports → `.js`. Never `require()`.
 - **`exactOptionalPropertyTypes`** — optional props need `| undefined`
-- **Test isolation** — tests `chdir()` to temp dirs. Restore `origCwd` in `afterEach`.
-- **LLM-agnostic** — zero references to specific AI providers in source or templates
-- **Results TSV** — 9 columns. Status: `pass`, `fail`, `discard`, `timeout`, `adversarial-fail`
+- **Test isolation** — tests `chdir()` to temp dirs, restore `origCwd` in `afterEach`
+- **LLM-agnostic** — zero AI provider references in source or templates
+- **Results TSV** — 9 columns. Status: `pass`/`fail`/`discard`/`timeout`/`adversarial-fail`
 
-## Extended Reference
+## Specs & Docs
 
-Full project structure, trust calibration details, and documentation index → `docs/AGENTS_DETAIL.md`
+Trust calibration → `docs/product-specs/trust-calibration-roadmap.md`
+All specs → `docs/product-specs/`. Extended reference → `docs/AGENTS_DETAIL.md`
