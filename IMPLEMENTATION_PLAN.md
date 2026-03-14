@@ -425,10 +425,10 @@ Tests use temp directories (via `os.tmpdir()` + random suffix, cleaned up in `af
 
 ### Task 11 — Verify backward compatibility
 
-- [ ] Run `ralph config-validate` against own `.ralph/config.yml` (no `gc.divergence` section) → no new errors or warnings (SC-25, spec-level criterion 5)
-- [ ] Run `ralph gc` (no `--temporal`, no `pattern-history.jsonl` present) → output identical to before this change (spec-level criterion 4)
-- [ ] `npm test` → all 1011 pre-existing tests still pass, total is higher (spec-level criterion 1)
-- [ ] `git diff src/commands/gc/gc.test.ts` → empty (SC-02)
+- [x] Run `ralph config-validate` against own `.ralph/config.yml` (no `gc.divergence` section) → no new errors or warnings (SC-25, spec-level criterion 5)
+- [x] Run `ralph gc` (no `--temporal`, no `pattern-history.jsonl` present) → output identical to before this change (spec-level criterion 4)
+- [x] `npm test` → all 1011 pre-existing tests still pass, total is higher (spec-level criterion 1)
+- [x] `git diff src/commands/gc/gc.test.ts` → empty (SC-02)
 
 ---
 
