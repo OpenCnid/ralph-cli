@@ -109,3 +109,4 @@ b636bde	8	pass	—	—	355	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 02010f5	16	pass	—	—	18	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 16	—
 ce1e089	17	pass	—	—	12	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 17	—
 1db0359	18	pass	—	—	13	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 18	—
+86d5995	1	pass	—	—	289	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: add focused unit tests for scorer.ts and default-scorer.ts [+2 adversarial tests]	—
