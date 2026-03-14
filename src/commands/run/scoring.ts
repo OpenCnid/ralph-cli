@@ -1,7 +1,8 @@
 import type { ScoreContext } from '../score/types.js';
 import type { Checkpoint } from './progress.js';
-import type { ScoringConfig } from '../../config/schema.js';
+import type { ScoringConfig, RalphConfig } from '../../config/schema.js';
 import type { DivergenceItem } from '../gc/fingerprint.js';
+import { computeAndRecordDivergence } from '../gc/fingerprint.js';
 
 export interface RegressionResult {
   delta: number;
@@ -59,6 +60,12 @@ export function computeChangedMetrics(prevMetrics: string, currMetrics: string):
   }
 
   return changes.length > 0 ? changes.join(', ') : '(none)';
+}
+
+/** Capture divergence info for a passing iteration; swallows errors so the run loop never crashes. */
+export function captureDivergence(pr: string, cfg: RalphConfig, i: number, h: string | null): string | undefined {
+  try { const it = computeAndRecordDivergence(pr, cfg, i, h ?? ''); return it.length > 0 ? formatDivergenceContext(it) : undefined; }
+  catch { return undefined; }
 }
 
 /**

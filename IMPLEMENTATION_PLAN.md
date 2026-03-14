@@ -259,7 +259,7 @@ Note: This function does NOT call `formatDivergenceContext`. `run/index.ts` gets
 
 ---
 
-## Task 7 — Run loop integration (F-AD06 wiring)
+## Task 7 — Run loop integration (F-AD06 wiring) [x]
 
 **File:** `src/commands/run/index.ts`
 
