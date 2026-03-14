@@ -78,6 +78,10 @@ docs/
 | `ralph grade` | Score project quality across 5 dimensions |
 | `ralph gc` | Detect drift from golden principles |
 | `ralph doctor` | Diagnose repo readiness for AI agents |
+| `ralph run` | Autonomous build loop with staged validation and adversarial testing |
+| `ralph score` | Fitness scoring with calibration tracking |
+| `ralph review` | Agent-powered code review with intent verification |
+| `ralph heal` | Automated self-repair from diagnostics |
 | `ralph plan` | Manage execution plans with decision logs and tech debt tracking |
 | `ralph promote` | Escalate preferences through the enforcement ladder |
 | `ralph ref` | Manage external reference docs for agent context |
@@ -181,6 +185,105 @@ ralph gc --json                   # Structured output for CI/agents
 ```
 
 Drift is tracked across runs. Items that persist across multiple scans are flagged as persistent — rising drift count means entropy is outpacing cleanup.
+
+## Autonomous Build Loop
+
+`ralph run` orchestrates AI agents in an iterative build loop — plan a task, implement it, validate, score, and repeat:
+
+```bash
+ralph run plan              # Agent creates IMPLEMENTATION_PLAN.md from specs
+ralph run                   # Build loop: implement → validate → score → next task
+ralph run --dry-run         # Show prompts and stage pipeline without executing
+ralph run --max 10          # Limit to 10 iterations
+ralph run --verbose         # Show full agent output
+```
+
+The build loop includes fitness scoring (test pass rate, coverage), regression detection with automatic revert, and stall detection when agents stop making progress.
+
+### Staged Validation
+
+Validation runs as a configurable multi-stage pipeline instead of a single pass/fail:
+
+```yaml
+run:
+  validation:
+    stages:
+      - name: unit
+        command: npm test
+        required: true
+        timeout: 120
+      - name: typecheck
+        command: npx tsc --noEmit
+        required: true
+      - name: integration
+        command: npm run test:integration
+        required: true
+        run-after: unit
+        timeout: 180
+      - name: e2e
+        command: npm run test:e2e
+        required: false     # informational — doesn't block
+        run-after: integration
+```
+
+When a stage fails, the agent gets targeted feedback — "unit tests passed but integration broke" instead of just "validation failed." Stages support dependencies (`run-after`), per-stage timeouts, and required vs. informational modes.
+
+### Adversarial Testing
+
+After each successful build iteration, ralph can spawn a second agent to break the first agent's code:
+
+```yaml
+run:
+  adversarial:
+    enabled: true
+    budget: 5               # max test cases per iteration
+    timeout: 300             # seconds
+    diagnostic-branch: true  # preserve failing tests for debugging
+```
+
+The adversary writes edge-case tests targeting boundary conditions, error paths, and race conditions the builder likely missed. It's mechanically constrained — file restriction enforcement prevents it from modifying implementation code, and a test deletion guard prevents it from removing existing tests. If the adversary finds a bug, the iteration is reverted and the failing tests are pushed to a diagnostic branch for inspection.
+
+### Calibration Tracking
+
+Track whether ralph's validation is actually catching bugs or just rubber-stamping:
+
+```bash
+ralph score --calibration
+```
+
+```
+Calibration (last 30 iterations):
+  Pass rate:       97%  (threshold: 95%)
+  Discard rate:     3%
+  Score volatility: 0.012
+  Stall frequency: 10%
+
+  ⚠ Trust drift: high pass rate + low discard rate
+  Consider: add adversarial testing, increase test coverage requirements
+```
+
+Calibration is also shown automatically at the end of each `ralph run` session.
+
+### Intent Verification
+
+`ralph review --intent` cross-references code changes against the spec's stated motivation, not just its requirements:
+
+```bash
+ralph review --intent        # Review with motivation cross-referencing
+```
+
+This catches implementations that satisfy the letter of the spec but miss its purpose. `ralph doctor` also checks that spec files include `## Motivation` sections.
+
+### Approach Divergence
+
+`ralph gc --temporal` tracks how coding patterns evolve across iterations:
+
+```bash
+ralph gc --temporal          # Show pattern evolution timeline
+ralph gc --temporal --last 5 # Last 5 snapshots only
+```
+
+Detects when the dominant approach to error handling, exports, or null-checking shifts unexpectedly — a signal that an agent changed its coding style without being asked to.
 
 ## Configuration
 
@@ -307,7 +410,7 @@ git clone https://github.com/OpenCnid/ralph-cli.git
 cd ralph-cli
 npm install
 npm run build
-npm test           # 297 tests across 13 files
+npm test           # 1051 tests across 42 files
 ```
 
 The project uses TypeScript (strict mode, ESM), vitest for tests, and eslint for linting. See `AGENTS.md` for architecture details and development conventions.
