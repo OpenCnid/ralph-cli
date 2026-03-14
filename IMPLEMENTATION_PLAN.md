@@ -137,7 +137,7 @@ export function detectDivergence(
 
 ---
 
-## Task 4 — Add `formatTemporalView` and `computeAndRecordDivergence` to `gc/fingerprint.ts` (F-AD07 core, F-AD06 helper)
+## Task 4 — Add `formatTemporalView` and `computeAndRecordDivergence` to `gc/fingerprint.ts` (F-AD07 core, F-AD06 helper) [x]
 
 **File:** `src/commands/gc/fingerprint.ts` (extend — add two more functions)
 

@@ -2,8 +2,9 @@ import { appendFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { safeReadFile, ensureDir } from '../../utils/fs.js';
 import * as output from '../../utils/output.js';
-import type { DivergenceConfig } from '../../config/schema.js';
+import type { DivergenceConfig, RalphConfig } from '../../config/schema.js';
 import type { PatternData } from './scanners.js';
+import { collectPatternData } from './scanners.js';
 
 // F-AD02: Pattern Snapshot Computation
 
@@ -152,5 +153,148 @@ export function detectDivergence(
     }
   }
 
+  return items;
+}
+
+// F-AD07: Temporal CLI View
+
+function formatDistribution(variants: Record<string, number>): string {
+  const total = Object.values(variants).reduce((a, b) => a + b, 0);
+  if (total === 0) return '(no matches)';
+  const sorted = Object.entries(variants)
+    .filter(([, count]) => count > 0)
+    .sort(([aV, aC], [bV, bC]) => bC - aC || aV.localeCompare(bV));
+  return sorted.map(([variant, count]) => {
+    const pct = Math.round((count / total) * 100);
+    return `${variant} (${pct}%)`;
+  }).join(', ');
+}
+
+function variantsEqual(a: Record<string, number>, b: Record<string, number>): boolean {
+  const nonZero = (r: Record<string, number>) => Object.entries(r).filter(([, v]) => v > 0);
+  const aPairs = nonZero(a);
+  const bPairs = nonZero(b);
+  if (aPairs.length !== bPairs.length) return false;
+  for (const [k, v] of aPairs) {
+    if ((b[k] ?? 0) !== v) return false;
+  }
+  return true;
+}
+
+export function formatTemporalView(history: PatternFingerprint[], last: number): string {
+  if (history.length === 0) {
+    return 'No pattern history found. Run `ralph run build` to start tracking.';
+  }
+
+  const entries = history.slice(-last);
+
+  const allCategories = new Set<string>();
+  for (const entry of entries) {
+    for (const category of Object.keys(entry.patterns)) {
+      allCategories.add(category);
+    }
+  }
+
+  const sections: string[] = [
+    `Pattern History (last ${entries.length} iterations)`,
+    '──────────────────────────────────────',
+  ];
+
+  for (const category of [...allCategories].sort()) {
+    const categoryLines: string[] = ['', `${category}:`];
+
+    interface EntryData {
+      iteration: number;
+      variants: Record<string, number>;
+      hasDivergence: boolean;
+    }
+
+    const entryData: EntryData[] = entries.map((entry, i) => {
+      const variants = entry.patterns[category] ?? {};
+      let hasDivergence = false;
+      if (i > 0) {
+        const prevEntry = entries[i - 1];
+        const prevVariants = prevEntry !== undefined ? (prevEntry.patterns[category] ?? {}) : {};
+        for (const [variant, count] of Object.entries(variants)) {
+          if (count > 0 && (prevVariants[variant] ?? 0) === 0) {
+            hasDivergence = true;
+            break;
+          }
+        }
+      }
+      return { iteration: entry.iteration, variants, hasDivergence };
+    });
+
+    interface Group {
+      startIter: number;
+      endIter: number;
+      variants: Record<string, number>;
+      hasDivergence: boolean;
+    }
+
+    const groups: Group[] = [];
+    for (const ed of entryData) {
+      const prev = groups[groups.length - 1];
+      if (prev && !ed.hasDivergence && variantsEqual(prev.variants, ed.variants)) {
+        prev.endIter = ed.iteration;
+      } else {
+        groups.push({
+          startIter: ed.iteration,
+          endIter: ed.iteration,
+          variants: ed.variants,
+          hasDivergence: ed.hasDivergence,
+        });
+      }
+    }
+
+    const isStable = groups.length === 1 && entries.length > 1;
+
+    const maxIterLen = Math.max(
+      ...groups.map(g =>
+        g.startIter === g.endIter
+          ? `iter ${g.startIter}:`.length
+          : `iter ${g.startIter}-${g.endIter}:`.length,
+      ),
+    );
+
+    for (const group of groups) {
+      const iterStr =
+        group.startIter === group.endIter
+          ? `iter ${group.startIter}:`
+          : `iter ${group.startIter}-${group.endIter}:`;
+      const distStr = formatDistribution(group.variants);
+      let line = `  ${iterStr.padEnd(maxIterLen + 2)}${distStr}`;
+      if (group.hasDivergence) {
+        line += '  ← divergence';
+      } else if (isStable) {
+        line += '  — stable';
+      }
+      categoryLines.push(line);
+    }
+
+    sections.push(...categoryLines);
+  }
+
+  return sections.join('\n');
+}
+
+// F-AD06 helper: Run loop integration
+
+export function computeAndRecordDivergence(
+  projectRoot: string,
+  config: RalphConfig,
+  iteration: number,
+  commit: string,
+): DivergenceItem[] {
+  if (config.gc.divergence?.enabled === false) return [];
+
+  const patternData = collectPatternData(projectRoot, config);
+  const currentFingerprint = computeFingerprint(patternData, iteration, commit);
+  const history = loadPatternHistory(projectRoot);
+  const previous = history[history.length - 1] ?? null;
+  const items = previous
+    ? detectDivergence(currentFingerprint, previous, config.gc.divergence!)
+    : [];
+  appendPatternHistory(projectRoot, currentFingerprint);
   return items;
 }
