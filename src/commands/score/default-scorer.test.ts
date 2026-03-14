@@ -101,6 +101,17 @@ describe('runDefaultScorer', () => {
     expect(result.score).toBeCloseTo(0.0, 4);
   });
 
+  it('coverage-only score when coverage present but no test output matches', () => {
+    const coveragePath = join(tmpDir, 'coverage.json');
+    writeFileSync(coveragePath, JSON.stringify({ total: { statements: { pct: 60.0 } } }));
+    const config = makeConfig(coveragePath);
+    // No recognizable test pattern → testRate=null, coverage=0.6 → score=0.6
+    const result = runDefaultScorer('all good, nothing failed', config);
+    expect(result.score).toBeCloseTo(0.6, 4);
+    expect(result.metrics['test_count']).toBe('0');
+    expect(result.metrics['test_total']).toBe('0');
+  });
+
   it('boundary: coverage at 100% contributes maximum to score', () => {
     const coveragePath = join(tmpDir, 'coverage.json');
     writeFileSync(coveragePath, JSON.stringify({ total: { statements: { pct: 100.0 } } }));

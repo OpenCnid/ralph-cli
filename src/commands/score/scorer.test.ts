@@ -56,6 +56,22 @@ describe('discoverScorer', () => {
   it('returns null when config is undefined and no script files exist', () => {
     expect(discoverScorer(undefined)).toBeNull();
   });
+
+  it('throws when config.script is set but the file does not exist', () => {
+    const config = {
+      script: join(tmpDir, 'nonexistent-score.sh'),
+      'regression-threshold': 0.02,
+      'cumulative-threshold': 0.1,
+      'auto-revert': false,
+      'default-weights': { tests: 0.6, coverage: 0.4 },
+    };
+    expect(() => discoverScorer(config)).toThrow(/Scoring script not found/);
+  });
+
+  it('auto-discovers score.sh in CWD when config is undefined', () => {
+    writeFileSync(join(tmpDir, 'score.sh'), '#!/bin/sh\necho 0.5');
+    expect(discoverScorer(undefined)).toBe('score.sh');
+  });
 });
 
 // ─── runScorer ────────────────────────────────────────────────────────────────
@@ -108,6 +124,32 @@ describe('runScorer', () => {
     const result = await promise;
     expect(result.score).toBeNull();
     expect(result.error).toMatch(/invalid score/);
+  });
+
+  it('returns null score when script outputs score out of range (>1.0)', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as unknown as ReturnType<typeof spawn>);
+
+    const promise = runScorer('score.sh', 1, 'abc1234');
+    proc.stdout.emit('data', Buffer.from('1.5\n'));
+    proc.emit('close', 0);
+
+    const result = await promise;
+    expect(result.score).toBeNull();
+    expect(result.error).toMatch(/out of range/);
+  });
+
+  it('returns null score when script exits 0 with empty stdout', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as unknown as ReturnType<typeof spawn>);
+
+    const promise = runScorer('score.sh', 1, 'abc1234');
+    // No data emitted — process closes cleanly with empty output
+    proc.emit('close', 0);
+
+    const result = await promise;
+    expect(result.score).toBeNull();
+    expect(result.error).toBe('empty output');
   });
 
   it('returns null score and kills process after 60s timeout', async () => {
