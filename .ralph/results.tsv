@@ -102,3 +102,4 @@ b636bde	8	pass	—	—	355	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 92cad8b	9	pass	—	—	82	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: One  item → returns string starting with	—
 0293dc9	10	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Run  against own  (no  section) → no new errors or warnings (SC-2	—
 7bdec40	11	pass	—	—	131	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: SC-01: src/commands/gc/scanners.ts:438:      if (content.includes	—
+222979f	12	pass	—	—	24	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 12	—
