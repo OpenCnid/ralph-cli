@@ -1,4 +1,4 @@
-import type { AdversarialConfig, AgentConfig, ArchitectureConfig, CalibrationConfig, CoverageConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
+import type { AdversarialConfig, AgentConfig, ArchitectureConfig, CalibrationConfig, CoverageConfig, DivergenceConfig, DoctorConfig, DirectionMode, GitConfig, HealConfig, LoopConfig, PromptsConfig, RunConfig, ReviewConfig, RulesConfig, GcConfig, PathsConfig, QualityConfig, ReferencesConfig, ScoringConfig, ValidationConfig } from './schema.js';
 
 export const DEFAULT_LAYERS: string[] = ['types', 'config', 'data', 'service', 'ui'];
 
@@ -28,9 +28,16 @@ export const DEFAULT_QUALITY: QualityConfig = {
   coverage: DEFAULT_COVERAGE,
 };
 
+export const DEFAULT_DIVERGENCE: DivergenceConfig = {
+  enabled: true,
+  'new-pattern-threshold': 1,
+  'proportion-change-threshold': 0.20,
+};
+
 export const DEFAULT_GC: GcConfig = {
   'consistency-threshold': 60,
   exclude: ['node_modules', 'dist', '.next', 'coverage'],
+  divergence: DEFAULT_DIVERGENCE,
 };
 
 export const DEFAULT_DOCTOR: DoctorConfig = {

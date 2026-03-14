@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { RalphConfig, RawRalphConfig } from './schema.js';
-import { DEFAULT_ADVERSARIAL, DEFAULT_ARCHITECTURE, DEFAULT_CALIBRATION, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
+import { DEFAULT_ADVERSARIAL, DEFAULT_ARCHITECTURE, DEFAULT_CALIBRATION, DEFAULT_DIVERGENCE, DEFAULT_DOCTOR, DEFAULT_GC, DEFAULT_HEAL, DEFAULT_PATHS, DEFAULT_QUALITY, DEFAULT_REFERENCES, DEFAULT_RUN, DEFAULT_REVIEW, DEFAULT_SCORING } from './defaults.js';
 import { validate } from './validate.js';
 
 const CONFIG_FILENAME = 'config.yml';
@@ -91,6 +91,11 @@ export function mergeWithDefaults(raw: RawRalphConfig, isCi: boolean = false): R
     gc: {
       'consistency-threshold': raw.gc?.['consistency-threshold'] ?? DEFAULT_GC['consistency-threshold'],
       exclude: raw.gc?.exclude ?? DEFAULT_GC.exclude,
+      divergence: {
+        enabled: raw.gc?.divergence?.enabled ?? DEFAULT_DIVERGENCE.enabled,
+        'new-pattern-threshold': raw.gc?.divergence?.['new-pattern-threshold'] ?? DEFAULT_DIVERGENCE['new-pattern-threshold'],
+        'proportion-change-threshold': raw.gc?.divergence?.['proportion-change-threshold'] ?? DEFAULT_DIVERGENCE['proportion-change-threshold'],
+      },
     },
     doctor: {
       'minimum-score': raw.doctor?.['minimum-score'] ?? DEFAULT_DOCTOR['minimum-score'],

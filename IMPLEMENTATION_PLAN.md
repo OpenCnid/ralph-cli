@@ -9,7 +9,7 @@ Date: 2026-03-14
 
 ---
 
-## Task 1 — Config schema, defaults, and validation (F-AD08)
+## Task 1 — Config schema, defaults, and validation (F-AD08) [x]
 
 **Files:** `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/validate.ts`
 
