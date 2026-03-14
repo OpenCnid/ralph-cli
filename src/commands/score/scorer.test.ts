@@ -164,4 +164,50 @@ describe('runScorer', () => {
     expect(result.error).toBe('timeout');
     expect(proc.kill).toHaveBeenCalledWith('SIGKILL');
   });
+
+  it('returns source=default when EACCES comes from proc error event (not spawn throw)', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as unknown as ReturnType<typeof spawn>);
+
+    const promise = runScorer('score.sh', 1, 'abc1234');
+    const eaccesErr = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+    proc.emit('error', eaccesErr);
+
+    const result = await promise;
+    expect(result.score).toBeNull();
+    expect(result.source).toBe('default');
+    expect(result.error).toBe('EACCES');
+  });
+
+  it('returns valid score of exactly 0.0 (boundary: minimum valid score)', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as unknown as ReturnType<typeof spawn>);
+
+    const promise = runScorer('score.sh', 1, 'abc1234');
+    proc.stdout.emit('data', Buffer.from('0.0\n'));
+    proc.emit('close', 0);
+
+    const result = await promise;
+    expect(result.score).toBe(0.0);
+    expect(result.error).toBeUndefined();
+    expect(result.source).toBe('script');
+  });
+
+  it('auto-discovers score.ts in CWD when score.sh does not exist', () => {
+    // discoverScorer() checks score.sh first, then score.ts
+    // This tests the fallback to score.ts discovery
+    const { mkdtempSync, writeFileSync: wfs, rmSync: rms } = require('node:fs');
+    const { join: pjoin } = require('node:path');
+    const { tmpdir: osTmpdir } = require('node:os');
+    const tDir = mkdtempSync(pjoin(osTmpdir(), 'ralph-scorer-ts-'));
+    const origCwd2 = process.cwd();
+    try {
+      process.chdir(tDir);
+      wfs(pjoin(tDir, 'score.ts'), 'export {}');
+      expect(discoverScorer(undefined)).toBe('score.ts');
+    } finally {
+      process.chdir(origCwd2);
+      rms(tDir, { recursive: true, force: true });
+    }
+  });
 });
