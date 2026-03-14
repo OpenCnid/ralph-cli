@@ -404,12 +404,12 @@ export function scanStaleDocumentation(projectRoot: string, config: RalphConfig)
   return items;
 }
 
-export function scanPatternInconsistency(projectRoot: string, config: RalphConfig): DriftItem[] {
-  const items: DriftItem[] = [];
+export type PatternData = Record<string, Map<string, { files: string[]; fileLines: Map<string, number> }>>;
+
+export function collectPatternData(projectRoot: string, config: RalphConfig): PatternData {
   const files = collectFiles(projectRoot, { exclude: config.gc.exclude });
-  const threshold = config.gc['consistency-threshold'];
   type PatternEntry = { files: string[]; fileLines: Map<string, number> };
-  const patterns: Record<string, Map<string, PatternEntry>> = {
+  const patterns: PatternData = {
     'error-handling': new Map<string, PatternEntry>(),
     'export-style': new Map<string, PatternEntry>(),
     'null-checking': new Map<string, PatternEntry>(),
@@ -462,6 +462,14 @@ export function scanPatternInconsistency(projectRoot: string, config: RalphConfi
       }
     } catch { /* ignore */ }
   }
+
+  return patterns;
+}
+
+export function scanPatternInconsistency(projectRoot: string, config: RalphConfig): DriftItem[] {
+  const items: DriftItem[] = [];
+  const threshold = config.gc['consistency-threshold'];
+  const patterns = collectPatternData(projectRoot, config);
   for (const [category, variants] of Object.entries(patterns)) {
     if (variants.size < 2) continue;
 

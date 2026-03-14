@@ -91,3 +91,21 @@ e9ce4d6	10	pass	—	—	66	test_count=0 test_total=0 test_rate=0 coverage=0	ralp
 49724b8	12	pass	—	—	62	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Tests for motivation doctor check — add to  (or whichever file co	—
 450ce81	13	pass	—	—	194	test_count=0 test_total=0 test_rate=0 coverage=0	ralph-cli: verify Phase 4 backward compatibility and acceptance criteria	—
 6a14891	14	pass	—	—	16	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 14	—
+e99715c	1	pass	—	—	114	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 1	—
+ffb5978	2	pass	—	—	64	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 2	—
+67c0c66	3	pass	—	—	115	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 3	—
+588007f	4	pass	—	—	230	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 4	—
+bc4e82e	5	pass	—	—	49	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 5	—
+8684ae4	6	pass	—	—	78	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 6	—
+07cf04a	7	pass	—	—	273	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 7	—
+b636bde	8	pass	—	—	355	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Mixed patterns project → correct file counts per variant per cate	—
+92cad8b	9	pass	—	—	82	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: One  item → returns string starting with	—
+0293dc9	10	pass	—	—	50	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Run  against own  (no  section) → no new errors or warnings (SC-2	—
+7bdec40	11	pass	—	—	131	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: SC-01: src/commands/gc/scanners.ts:438:      if (content.includes	—
+222979f	12	pass	—	—	24	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 12	—
+657741f	13	pass	—	—	9	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 13	—
+52cbe2c	14	pass	—	—	11	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 14	—
+6d98296	15	pass	—	—	9	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 15	—
+02010f5	16	pass	—	—	18	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 16	—
+ce1e089	17	pass	—	—	12	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 17	—
+1db0359	18	pass	—	—	13	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 18	—

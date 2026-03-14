@@ -35,4 +35,5 @@ export interface ScoreContext {
   failedStage: string | null;       // name of failed stage, null if passed or no stages
   stageResults: string | null;      // "unit:pass,typecheck:pass,integration:fail" or null
   adversarialResult?: import('../run/types.js').AdversarialResult | null | undefined;
+  divergenceInfo?: string | undefined;
 }

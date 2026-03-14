@@ -56,9 +56,16 @@ export interface QualityConfig {
   coverage: CoverageConfig;
 }
 
+export interface DivergenceConfig {
+  enabled: boolean;
+  'new-pattern-threshold': number;
+  'proportion-change-threshold': number;
+}
+
 export interface GcConfig {
   'consistency-threshold': number;
   exclude: string[];
+  divergence?: DivergenceConfig | undefined;
 }
 
 export interface DoctorConfig {
@@ -249,6 +256,7 @@ export interface RawRalphConfig {
   gc?: Partial<{
     'consistency-threshold': number;
     exclude: string[];
+    divergence?: Partial<{ enabled: boolean; 'new-pattern-threshold': number; 'proportion-change-threshold': number; }>;
   }>;
   doctor?: Partial<{
     'minimum-score': number;

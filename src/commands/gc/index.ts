@@ -11,17 +11,30 @@ import {
 } from './scanners.js';
 import type { HistoryEntry } from './history.js';
 import { loadHistory, saveHistoryEntry, detectTrend } from './history.js';
+import { formatTemporalView, loadPatternHistory } from './fingerprint.js';
 
 interface GcOptions {
   json?: boolean | undefined;
   fixDescriptions?: boolean | undefined;
   severity?: string | undefined;
   category?: string | undefined;
+  temporal?: boolean | undefined;
+  last?: number | undefined;
 }
 
 export function gcCommand(options: GcOptions): void {
   const projectRoot = findProjectRoot(process.cwd());
   const { config, warnings } = loadConfig(projectRoot);
+
+  if (options.temporal) {
+    const history = loadPatternHistory(projectRoot);
+    if (options.json) {
+      plain(JSON.stringify(history.slice(-(options.last ?? 10)), null, 2));
+    } else {
+      plain(formatTemporalView(history, options.last ?? 10));
+    }
+    return;
+  }
 
   if (!options.json) {
     for (const w of warnings) warn(w);

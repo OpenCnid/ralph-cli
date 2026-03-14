@@ -1,6 +1,8 @@
 import type { ScoreContext } from '../score/types.js';
 import type { Checkpoint } from './progress.js';
-import type { ScoringConfig } from '../../config/schema.js';
+import type { ScoringConfig, RalphConfig } from '../../config/schema.js';
+import type { DivergenceItem } from '../gc/fingerprint.js';
+import { computeAndRecordDivergence } from '../gc/fingerprint.js';
 
 export interface RegressionResult {
   delta: number;
@@ -60,6 +62,22 @@ export function computeChangedMetrics(prevMetrics: string, currMetrics: string):
   return changes.length > 0 ? changes.join(', ') : '(none)';
 }
 
+/** Capture divergence info for a passing iteration; swallows errors so the run loop never crashes. */
+export function captureDivergence(pr: string, cfg: RalphConfig, i: number, h: string | null): string | undefined {
+  try { const it = computeAndRecordDivergence(pr, cfg, i, h ?? ''); return it.length > 0 ? formatDivergenceContext(it) : undefined; }
+  catch { return undefined; }
+}
+
+/**
+ * Format divergence items as an informational string for the score context.
+ * Returns undefined when there are no items.
+ */
+export function formatDivergenceContext(items: DivergenceItem[]): string | undefined {
+  if (items.length === 0) return undefined;
+  const lines = items.map(item => `  ${item.category}: ${item.detail}`).join('\n');
+  return `ℹ Approach divergence detected:\n${lines}`;
+}
+
 /**
  * Generate the {score_context} string for the next iteration's prompt.
  * Returns empty string when previousStatus is null (first iteration).
@@ -103,6 +121,10 @@ export function buildScoreContext(ctx: ScoreContext): string {
         const reason = ar.skipReason ?? 'unknown';
         context += `\nAdversarial testing: skipped (${reason}).`;
       }
+    }
+
+    if (ctx.divergenceInfo) {
+      context += '\n\n' + ctx.divergenceInfo;
     }
 
     return context;

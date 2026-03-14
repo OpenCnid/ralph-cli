@@ -32,7 +32,8 @@ const KNOWN_RULES_KEYS = ['max-lines', 'naming'];
 const KNOWN_NAMING_KEYS = ['schemas', 'types'];
 const KNOWN_QUALITY_KEYS = ['minimum-grade', 'coverage'];
 const KNOWN_COVERAGE_KEYS = ['tool', 'report-path'];
-const KNOWN_GC_KEYS = ['consistency-threshold', 'exclude'];
+const KNOWN_GC_KEYS = ['consistency-threshold', 'exclude', 'divergence'];
+const KNOWN_DIVERGENCE_KEYS = ['enabled', 'new-pattern-threshold', 'proportion-change-threshold'];
 const KNOWN_DOCTOR_KEYS = ['minimum-score', 'custom-checks'];
 const KNOWN_PATHS_KEYS = ['agents-md', 'architecture-md', 'docs', 'specs', 'plans', 'design-docs', 'references', 'generated', 'quality'];
 const KNOWN_REFERENCES_KEYS = ['max-total-kb', 'warn-single-file-kb'];
@@ -233,6 +234,25 @@ function validateCalibrationConfig(cal: Record<string, unknown>, errors: string[
   }
 }
 
+function validateDivergenceConfig(div: Record<string, unknown>, errors: string[], warnings: string[]): void {
+  warnUnknownKeys(div, KNOWN_DIVERGENCE_KEYS, 'gc.divergence.', warnings);
+  if (div['enabled'] !== undefined && typeof div['enabled'] !== 'boolean') {
+    errors.push('"gc.divergence.enabled" must be a boolean.');
+  }
+  if (div['new-pattern-threshold'] !== undefined) {
+    const v = div['new-pattern-threshold'];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) {
+      errors.push('"gc.divergence.new-pattern-threshold" must be an integer ≥ 1.');
+    }
+  }
+  if (div['proportion-change-threshold'] !== undefined) {
+    const v = div['proportion-change-threshold'];
+    if (typeof v !== 'number' || v <= 0 || v >= 1) {
+      errors.push('"gc.divergence.proportion-change-threshold" must be a number in the range (0.0, 1.0) exclusive.');
+    }
+  }
+}
+
 export function validate(raw: unknown): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -405,6 +425,13 @@ export function validate(raw: unknown): ValidationResult {
       }
       if (gc['exclude'] !== undefined) {
         validateStringArray(gc['exclude'], 'gc.exclude', errors);
+      }
+      if (gc['divergence'] !== undefined) {
+        if (typeof gc['divergence'] !== 'object' || gc['divergence'] === null) {
+          errors.push('"gc.divergence" must be an object.');
+        } else {
+          validateDivergenceConfig(gc['divergence'] as Record<string, unknown>, errors, warnings);
+        }
       }
     }
   }

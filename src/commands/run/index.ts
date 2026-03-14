@@ -13,7 +13,7 @@ import { discoverScorer, runScorer } from '../score/scorer.js';
 import { runDefaultScorer } from '../score/default-scorer.js';
 import { appendResult } from '../score/results.js';
 import { DEFAULT_CALIBRATION } from '../../config/defaults.js';
-import { buildScoreContext, computeChangedMetrics } from './scoring.js';
+import { buildScoreContext, computeChangedMetrics, captureDivergence } from './scoring.js';
 import {
   loadCheckpoint,
   saveCheckpoint,
@@ -764,6 +764,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             try { unlinkSync('.ralph/keep'); } catch { /* ignore */ }
           }
 
+          const divergenceInfo = captureDivergence(process.cwd(), config, iteration, commitHash);
           scoreContext = buildScoreContext({
             previousStatus: 'pass',
             previousScore: null,
@@ -778,6 +779,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             failedStage: null,
             stageResults: null,
             adversarialResult,
+            divergenceInfo,
           });
 
           checkpoint.iteration = iteration;
@@ -837,6 +839,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             try { unlinkSync('.ralph/keep'); } catch { /* ignore */ }
           }
 
+          const divergenceInfo = captureDivergence(process.cwd(), config, iteration, commitHash);
           scoreContext = buildScoreContext({
             previousStatus: 'pass',
             previousScore: prevLastScore,
@@ -851,6 +854,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
             failedStage: null,
             stageResults: null,
             adversarialResult,
+            divergenceInfo,
           });
 
           checkpoint.iteration = iteration;
@@ -1006,6 +1010,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
         checkpoint.bestDiscardedScore = null;
         checkpoint.lastMetrics = currMetricsStr;
 
+        const divergenceInfo = captureDivergence(process.cwd(), config, iteration, commitHash);
         scoreContext = buildScoreContext({
           previousStatus: 'pass',
           previousScore: prevLastScore,
@@ -1020,6 +1025,7 @@ export async function runCommand(mode: RunMode, options: RunOptions): Promise<vo
           failedStage: null,
           stageResults: null,
           adversarialResult,
+          divergenceInfo,
         });
 
         checkpoint.iteration = iteration;

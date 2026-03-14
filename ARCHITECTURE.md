@@ -27,6 +27,11 @@ src/
     │   └── rules/      — Built-in lint rules (5 rules)
     ├── grade/          — Quality grading (5 dimensions, per-domain, trends)
     ├── gc/             — Drift detection (4 categories, dedup, trends)
+    │   ├── index.ts        — gcCommand entry point, temporal view wiring
+    │   ├── scanners.ts     — Pattern scanners and collectPatternData
+    │   ├── history.ts      — GC trend history I/O
+    │   ├── fingerprint.ts      — Snapshot computation, divergence detection, pattern history I/O, temporal view
+    │   └── fingerprint.test.ts — Unit tests for all fingerprint functions
     ├── doctor/         — Repo diagnostics (structure/content/backpressure/ops)
     ├── plan/           — Execution plan management
     ├── promote/        — Taste escalation (doc → lint → pattern)
@@ -99,13 +104,14 @@ Dependencies flow top-to-bottom only. Each layer may import from layers above it
 
 ## Cross-Command Exceptions
 
-Four intentional cross-command imports exist:
+Six intentional cross-command imports exist:
 
 1. **doctor → init** — `doctor --fix` calls init's scaffolding to repair missing structure.
 2. **promote → lint engine** — `promote` imports the lint engine to count violations when tracking escalation.
 3. **review → run/agent** — `review/index.ts` reuses `resolveAgent` and `spawnAgent` from `run/agent.ts` to avoid duplicating agent resolution logic.
 4. **heal → run/agent + run/detect** — `heal/index.ts` reuses agent resolution/spawn and validation command detection from the `run` domain.
 5. **run → score** — `run/index.ts` imports `discoverScorer`, `runScorer`, `runDefaultScorer`, `appendResult`, and `buildScoreContext` from the `score` domain to integrate fitness scoring into the build loop. `run/progress.ts` additionally imports `computeCalibration`, `detectTrustDrift`, and `CalibrationThresholds` from `score/calibration.ts` and `readResults` from `score/results.ts` to display calibration summaries in the final run summary.
+6. **run → gc/fingerprint** — `run/index.ts` imports `computeAndRecordDivergence` from `gc/fingerprint.ts` to record pattern snapshots and detect approach divergence after each passing build iteration. `run/scoring.ts` imports the `DivergenceItem` type from `gc/fingerprint.ts` to format divergence context for the next iteration's prompt.
 
 Intra-domain import patterns in the `run` domain:
 - `adversarial.ts` imports `spawnAgentWithTimeout` from `run/timeout.ts` (agent execution with deadline)
