@@ -98,3 +98,4 @@ ffb5978	2	pass	—	—	64	test_count=0 test_total=0 test_rate=0 coverage=0	ralph
 bc4e82e	5	pass	—	—	49	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 5	—
 8684ae4	6	pass	—	—	78	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 6	—
 07cf04a	7	pass	—	—	273	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: iteration 7	—
+b636bde	8	pass	—	—	355	test_count=0 test_total=0 test_rate=0 coverage=0	ralph: Mixed patterns project → correct file counts per variant per cate	—
