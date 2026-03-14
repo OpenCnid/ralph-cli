@@ -46,7 +46,7 @@ Schema triad — changed together (exception to 1-task/1-file rule per Task Auth
 
 ---
 
-## Task 2 — Extract `collectPatternData()` from `scanPatternInconsistency` (F-AD01)
+## Task 2 — Extract `collectPatternData()` from `scanPatternInconsistency` (F-AD01) [x]
 
 **File:** `src/commands/gc/scanners.ts`
 
