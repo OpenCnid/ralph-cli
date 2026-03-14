@@ -328,7 +328,7 @@ Implement `computeAndRecordDivergenceInfo(projectRoot, config, iteration, commit
 
 ---
 
-## Task 8 — Update ARCHITECTURE.md
+## Task 8 — Update ARCHITECTURE.md [x]
 
 **File:** `ARCHITECTURE.md`
 
@@ -356,48 +356,48 @@ Update the Directory Map to show new files under `gc/`:
 Tests use temp directories (via `os.tmpdir()` + random suffix, cleaned up in `afterEach`) for file I/O tests.
 
 **collectPatternData (integration via computeFingerprint):**
-- [ ] Mixed patterns project → correct file counts per variant per category
-- [ ] Excluded dirs (per config.gc.exclude) → not counted
-- [ ] Empty project (no source files) → all categories have empty maps
+- [x] Mixed patterns project → correct file counts per variant per category
+- [x] Excluded dirs (per config.gc.exclude) → not counted
+- [x] Empty project (no source files) → all categories have empty maps
 
 **computeFingerprint:**
-- [ ] Multiple categories with variants → correct `PatternFingerprint` structure
-- [ ] Empty patternData → `{ patterns: { "error-handling": {}, "export-style": {}, "null-checking": {} } }`
-- [ ] `iteration`, `commit`, `timestamp` fields populated correctly
-- [ ] Performance: completes in <500ms for a 1000-entry fake patternData (spec-level criterion 3)
+- [x] Multiple categories with variants → correct `PatternFingerprint` structure
+- [x] Empty patternData → `{ patterns: { "error-handling": {}, "export-style": {}, "null-checking": {} } }`
+- [x] `iteration`, `commit`, `timestamp` fields populated correctly
+- [x] Performance: completes in <500ms for a 1000-entry fake patternData (spec-level criterion 3)
 
 **loadPatternHistory / appendPatternHistory:**
-- [ ] Append to missing file → file created, one entry readable
-- [ ] Append to existing file → entry appended, previous entries preserved
-- [ ] Load from missing file → returns `[]` without throwing
-- [ ] Load from file with 3 valid + 1 corrupt line → returns 3 entries
-- [ ] Load from empty file → returns `[]`
-- [ ] `appendPatternHistory` write error → `warn` called, no throw (mock fs to throw)
+- [x] Append to missing file → file created, one entry readable
+- [x] Append to existing file → entry appended, previous entries preserved
+- [x] Load from missing file → returns `[]` without throwing
+- [x] Load from file with 3 valid + 1 corrupt line → returns 3 entries
+- [x] Load from empty file → returns `[]`
+- [x] `appendPatternHistory` write error → `warn` called, no throw (mock fs to throw)
 
 **detectDivergence:**
-- [ ] Previous `{ "error-handling": { "try-catch": 10 } }`, current adds `.catch()` with 3 files → `new-pattern` item for `.catch()`
-- [ ] New pattern below threshold (`new-pattern-threshold: 3`, new pattern has 2 files) → no item
-- [ ] Named-export was dominant, default-export becomes dominant → `dominant-shift` item
-- [ ] Share changes 0.30 > threshold 0.20 → `proportion-change` item
-- [ ] Share changes 0.10 < threshold 0.20 → no item
-- [ ] `previous` is null → returns `[]`
-- [ ] `previous` is undefined → returns `[]`
-- [ ] Category total 0 in current → no `proportion-change` (no division by zero)
-- [ ] Category total 0 in previous → no `proportion-change`
-- [ ] Tied dominance → alphabetical tiebreaker selects correct dominant
-- [ ] Category in current but absent in previous → variants ≥ threshold treated as `new-pattern`
+- [x] Previous `{ "error-handling": { "try-catch": 10 } }`, current adds `.catch()` with 3 files → `new-pattern` item for `.catch()`
+- [x] New pattern below threshold (`new-pattern-threshold: 3`, new pattern has 2 files) → no item
+- [x] Named-export was dominant, default-export becomes dominant → `dominant-shift` item
+- [x] Share changes 0.30 > threshold 0.20 → `proportion-change` item
+- [x] Share changes 0.10 < threshold 0.20 → no item
+- [x] `previous` is null → returns `[]`
+- [x] `previous` is undefined → returns `[]`
+- [x] Category total 0 in current → no `proportion-change` (no division by zero)
+- [x] Category total 0 in previous → no `proportion-change`
+- [x] Tied dominance → alphabetical tiebreaker selects correct dominant
+- [x] Category in current but absent in previous → variants ≥ threshold treated as `new-pattern`
 
 **formatTemporalView:**
-- [ ] 10-entry history with divergence at iteration 9 → output contains `"← divergence"`
-- [ ] Empty history → guidance message (not an error)
-- [ ] Single entry → baseline only, no `"← divergence"` annotation
-- [ ] `last: 5` with 10 entries → only last 5 entries shown
+- [x] 10-entry history with divergence at iteration 9 → output contains `"← divergence"`
+- [x] Empty history → guidance message (not an error)
+- [x] Single entry → baseline only, no `"← divergence"` annotation
+- [x] `last: 5` with 10 entries → only last 5 entries shown
 
 **computeAndRecordDivergence:**
-- [ ] Enabled, no previous → appends first entry, returns `[]`
-- [ ] Enabled, with previous and divergence → appends and returns items
-- [ ] `enabled: false` → returns `[]`, no file written
-- [ ] Defaults apply when `config.gc.divergence` not set (use a config with no divergence field)
+- [x] Enabled, no previous → appends first entry, returns `[]`
+- [x] Enabled, with previous and divergence → appends and returns items
+- [x] `enabled: false` → returns `[]`, no file written
+- [x] Defaults apply when `config.gc.divergence` not set (use a config with no divergence field)
 
 **Satisfies:** SC-04–SC-13, SC-18, SC-19, SC-20, SC-22, SC-23, SC-24, spec-level criterion 3
 
