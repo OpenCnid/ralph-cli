@@ -434,7 +434,7 @@ Tests use temp directories (via `os.tmpdir()` + random suffix, cleaned up in `af
 
 ## Verification
 
-### Task 12 — Full validation and AC cross-check
+### Task 12 — Full validation and AC cross-check [x]
 
 ```
 npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
@@ -443,52 +443,52 @@ npm test && npx tsc --noEmit && ralph doctor --ci && ralph grade --ci
 Cross-check each success criterion:
 
 **F-AD01 (Scanner Data Extraction):**
-- [ ] SC-01: `grep -rn "content.includes('try {')" src/commands/gc/` matches only `scanners.ts`; `grep -rn "collectPatternData" src/commands/gc/` shows calls from both `scanners.ts` and `fingerprint.ts`
-- [ ] SC-02: `git diff src/commands/gc/gc.test.ts` shows zero changes
-- [ ] SC-03: `import { collectPatternData } from './scanners.js'` compiles in `gc/fingerprint.ts`
+- [x] SC-01: `grep -rn "content.includes('try {')" src/commands/gc/` matches only `scanners.ts`; `grep -rn "collectPatternData" src/commands/gc/` shows calls from both `scanners.ts` and `fingerprint.ts`
+- [x] SC-02: `git diff src/commands/gc/gc.test.ts` shows zero changes
+- [x] SC-03: `import { collectPatternData } from './scanners.js'` compiles in `gc/fingerprint.ts`
 
 **F-AD02 (Pattern Snapshot Computation):**
-- [ ] SC-04: Test verifies correct counts for 10 try-catch + 3 .catch() project
-- [ ] SC-05: Test verifies empty project returns empty objects per category
+- [x] SC-04: Test verifies correct counts for 10 try-catch + 3 .catch() project
+- [x] SC-05: Test verifies empty project returns empty objects per category
 
 **F-AD03 (Pattern History Storage):**
-- [ ] SC-06: After `appendPatternHistory()`, file ends with valid JSON line matching entry
-- [ ] SC-07: 3 valid + 1 corrupt line → `loadPatternHistory` returns 3 entries
-- [ ] SC-08: Missing file → `loadPatternHistory` returns `[]` without throwing
+- [x] SC-06: After `appendPatternHistory()`, file ends with valid JSON line matching entry
+- [x] SC-07: 3 valid + 1 corrupt line → `loadPatternHistory` returns 3 entries
+- [x] SC-08: Missing file → `loadPatternHistory` returns `[]` without throwing
 
 **F-AD04 (Divergence Detection):**
-- [ ] SC-09: `.catch()` introduced → `new-pattern` item
-- [ ] SC-10: Named-export → default-export dominance → `dominant-shift` item
-- [ ] SC-11: 0.30 absolute share change > 0.20 threshold → `proportion-change` item
-- [ ] SC-12: Category total 0 → no `proportion-change` (no division by zero)
-- [ ] SC-13: null/undefined previous → `[]`
+- [x] SC-09: `.catch()` introduced → `new-pattern` item
+- [x] SC-10: Named-export → default-export dominance → `dominant-shift` item
+- [x] SC-11: 0.30 absolute share change > 0.20 threshold → `proportion-change` item
+- [x] SC-12: Category total 0 → no `proportion-change` (no division by zero)
+- [x] SC-13: null/undefined previous → `[]`
 
 **F-AD05 (Score Context Integration):**
-- [ ] SC-14: `divergenceInfo` present → `buildScoreContext` output contains "ℹ Approach divergence detected:"
-- [ ] SC-15: `divergenceInfo` undefined → output byte-identical to current behavior for same inputs
-- [ ] SC-16: `grep -n "⚠" src/commands/gc/fingerprint.ts src/commands/run/scoring.ts` → zero matches in divergence code
-- [ ] SC-17: Code review: no divergence code path triggers revert, modifies score value, or blocks commit
+- [x] SC-14: `divergenceInfo` present → `buildScoreContext` output contains "ℹ Approach divergence detected:"
+- [x] SC-15: `divergenceInfo` undefined → output byte-identical to current behavior for same inputs
+- [x] SC-16: `grep -n "⚠" src/commands/gc/fingerprint.ts src/commands/run/scoring.ts` → zero matches in divergence code
+- [x] SC-17: Code review: no divergence code path triggers revert, modifies score value, or blocks commit
 
 **F-AD06 (Run Loop Integration):**
-- [ ] SC-18: After passing build iteration, `.ralph/pattern-history.jsonl` has new entry with correct iteration + commit
-- [ ] SC-19: `gc.divergence.enabled: false` → `pattern-history.jsonl` not created or modified
-- [ ] SC-20: `computeAndRecordDivergence` throws → run loop continues normally
-- [ ] SC-21: `git diff --stat src/commands/run/index.ts` shows ≤10 lines added (excluding imports)
+- [x] SC-18: After passing build iteration, `.ralph/pattern-history.jsonl` has new entry with correct iteration + commit
+- [x] SC-19: `gc.divergence.enabled: false` → `pattern-history.jsonl` not created or modified
+- [x] SC-20: `computeAndRecordDivergence` throws → run loop continues normally
+- [x] SC-21: `git diff --stat src/commands/run/index.ts` shows ≤10 lines added (excluding imports) — verified: 6 lines
 
 **F-AD07 (Temporal CLI View):**
-- [ ] SC-22: 10-entry history with divergence at iter 9 → `formatTemporalView` output contains "← divergence"
-- [ ] SC-23: Missing/empty history → guidance message (not error/stack trace)
-- [ ] SC-24: `--temporal` does not write to `gc-report.md` or `gc-history.jsonl`
+- [x] SC-22: 10-entry history with divergence at iter 9 → `formatTemporalView` output contains "← divergence"
+- [x] SC-23: Missing/empty history → guidance message (not error/stack trace)
+- [x] SC-24: `--temporal` does not write to `gc-report.md` or `gc-history.jsonl`
 
 **F-AD08 (Configuration):**
-- [ ] SC-25: Config with no `gc.divergence` loads without error; `config.gc.divergence.enabled === true`
-- [ ] SC-26: `gc: { divergence: { enabled: false } }` → `config.gc.divergence.enabled === false`
-- [ ] SC-27: `gc: { divergence: { 'new-pattern-threshold': 0 } }` fails with message containing "new-pattern-threshold" and "≥ 1"
-- [ ] SC-28: `gc: { divergence: { 'proportion-change-threshold': 1.5 } }` fails with message containing "proportion-change-threshold" and range
+- [x] SC-25: Config with no `gc.divergence` loads without error; `config.gc.divergence.enabled === true`
+- [x] SC-26: `gc: { divergence: { enabled: false } }` → `config.gc.divergence.enabled === false`
+- [x] SC-27: `gc: { divergence: { 'new-pattern-threshold': 0 } }` fails with message containing "new-pattern-threshold" and "≥ 1"
+- [x] SC-28: `gc: { divergence: { 'proportion-change-threshold': 1.5 } }` fails with message containing "proportion-change-threshold" and range
 
 **Spec-level criteria:**
-- [ ] 1. All pre-existing 1011 tests pass; `gc.test.ts` unchanged
-- [ ] 2. All 28 feature-level SCs pass
-- [ ] 3. `computeFingerprint` completes in <500ms for 1000-file project (verified by test)
-- [ ] 4. `ralph gc` (no `--temporal`, no history file) produces identical output to before
-- [ ] 5. `ralph config-validate` against own config → no warnings from divergence fields
+- [x] 1. All pre-existing 1011 tests pass; `gc.test.ts` unchanged — verified: 1051 tests pass
+- [x] 2. All 28 feature-level SCs pass
+- [x] 3. `computeFingerprint` completes in <500ms for 1000-file project (verified by test)
+- [x] 4. `ralph gc` (no `--temporal`, no history file) produces identical output to before
+- [x] 5. `ralph config-validate` against own config → no warnings from divergence fields
