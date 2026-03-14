@@ -8,7 +8,7 @@ Date: 2026-03-13
 
 ## Task 1: Add unit tests for `src/commands/score/scorer.ts`
 
-- [ ] Create `src/commands/score/scorer.test.ts` with tests for `discoverScorer()` and `runScorer()`
+- [x] Create `src/commands/score/scorer.test.ts` with tests for `discoverScorer()` and `runScorer()`
   - `discoverScorer()` with custom script path → returns script path
   - `discoverScorer()` with null script → returns null
   - `runScorer()` with valid script → parses JSON output as ScoreResult
@@ -19,7 +19,7 @@ Date: 2026-03-13
 
 ## Task 2: Add unit tests for `src/commands/score/default-scorer.ts`
 
-- [ ] Create `src/commands/score/default-scorer.test.ts` with tests for `runDefaultScorer()`
+- [x] Create `src/commands/score/default-scorer.test.ts` with tests for `runDefaultScorer()`
   - Given test output with "X passed" → extracts test count
   - Given coverage data with statement percentages → computes weighted score
   - Given no test output → returns score 0
@@ -30,6 +30,6 @@ Date: 2026-03-13
 
 ## Verification
 
-- [ ] Run `npm test && npx tsc --noEmit`
+- [x] Run `npm test && npx tsc --noEmit`
   Confirm test count > 1051, typecheck clean.
   Run `ralph grade --ci` and check if score domain grade improved from C.
