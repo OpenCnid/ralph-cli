@@ -222,7 +222,7 @@ Note: This function does NOT call `formatDivergenceContext`. `run/index.ts` gets
 
 ---
 
-## Task 6 — Score context extension (F-AD05)
+## Task 6 — Score context extension (F-AD05) [x]
 
 **Files:** `src/commands/score/types.ts`, `src/commands/run/scoring.ts`
 
